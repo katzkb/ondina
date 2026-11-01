@@ -685,7 +685,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
 ### 5.2 Stage 1（決定的。全て再現可能）
 1. **意味的 hunk**: 変更ファイルを before / after ともに tree-sitter-kotlin でパースし、差分が触れている最小の宣言ノード（fun / class / property / top-level）を 1 hunk にする。1 宣言に複数の変更範囲があれば 1 hunk にまとめる。SQL はファイル単位。実装は `packages/core/src/hunks/extract.ts`。規則（2026-09-15 確定）:
    - 宣言の単位: class / object / companion / fun / property / secondary constructor / init / typealias / enum entry。関数本体の中のローカル宣言には降りない。直前に隣接するコメント（KDoc）は宣言の範囲に含める（アノテーションは構文木上すでに宣言の中）
-   - 行 diff の変更ブロックの i 行目どうしを旧側・新側で対にし、対の宣言が異なれば共通の親宣言に格上げする（例: `class Order` の中で `getDiscount()` を消して `applyDiscount()` を足すと `Order` 全体が 1hunk。8 章の R / A を同じ核 hunk から導出するため）。共通の親宣言がない（トップレベルどうし）ならファイル hunk に格上げする
+   - 行 diff の変更ブロックの i 行目どうしを旧側・新側で対にし、対の宣言が異なれば共通の親宣言に格上げする（例: `class Order` の中で `getDiscount()` を消して `applyDiscount()` を足すと `Order` 全体が 1 hunk。8 章の R / A を同じ核 hunk から導出するため）。共通の親宣言がない（トップレベルどうし）ならファイル hunk に格上げする
    - 入れ子になった hunk は外側の hunk に統合する
    - 宣言の外側（package / import / トップレベルコメント）の変更は、1 ファイルにつき 1 つのファイル hunk（`symbolKind: 'file'`、`symbolFqName` はパス、`symbol` はファイル名）にまとめる。宣言とは対にしない（import の変更と同じブロックに宣言の追加があっても、宣言はファイル hunk に巻き込まれない）
    - 空白だけの行の変更は hunk を作らない
