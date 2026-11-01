@@ -1,27 +1,29 @@
-# ondina の使い方
+[日本語](ja/usage.md)
 
-入れ方・更新・困ったときの手順と、機能ごとの使い方です。概要は [README](../README.md) にあります。
+# Using ondina
 
-## 入れる
+Installation, updates, troubleshooting, and usage by feature. See the [README](../README.md) for an overview.
 
-前提: Mac、Node.js 22 以上、pnpm 12 以上、git。PR を読む（`ondina analyze <pr>`）には、PR のホスト（github.com か GitHub Enterprise Server）にログインした `gh`。gh がほかのホストにもログインしていても、ondina は gh に PR のホストを渡す
+## Install
 
-### 初回
+Requirements: Mac, Node.js 22 or later, pnpm 12 or later, git. To read a PR (`ondina analyze <pr>`), you need `gh` logged in to the PR's host (github.com or GitHub Enterprise Server). ondina passes the PR's host to gh even if gh is also logged in to other hosts
 
-1. clone する
+### First installation
+
+1. Clone
    ```sh
    git clone https://github.com/katzkb/ondina.git ~/.local/share/ondina
    ```
-2. 組み立てて `ondina` コマンドを置く
+2. Build and install the `ondina` command
    ```sh
    sh ~/.local/share/ondina/scripts/install.sh
    ```
-   `[1/6]`〜`[6/6]` の後に入ったバージョンが出る。`~/.local/bin` が PATH に無ければ、`~/.zshenv` に足す 1 行も出る（`~/.zshrc` は対話の zsh しか読まず、AI エージェントが実行する非対話の zsh からは ondina が見つからない）。Tab 補完の定義は `~/.zsh_functions/_ondina` に置かれ、`ondina update` のたびに作り直される。最後に普段の zsh を起こして補完が効くかを確かめ、効いていなければ `~/.zshrc` の末尾に足す `source "…/.zsh_functions/_ondina"` の 1 行が出る（足したらターミナルを開き直す）。AI エージェント（Codex・OpenCode）のスキルは `~/.agents/skills/ondina/`・`~/.agents/skills/ondina-comments/`・`~/.agents/skills/ondina-preview/` に置かれる（下の「AI エージェントから開く・コメントを入れさせる」「AI が作った変更を PR の前に見る」）
-3. kotlin-lsp（地図の関連の線と色分けに使う。なくても動く）は、2 の `[6/6]` が `~/.local/share/kotlin-lsp/` に入れる。ondina が持っている最新のバージョンの番号（`scripts/kotlin-lsp-version`。GitHub Actions が毎朝 https://github.com/Kotlin/kotlin-lsp/releases を見て書き換える）で JetBrains からダウンロードし（360 MB ほど、展開後 1.1 GB ほど）、SHA-256 を確かめて展開する。github.com には問い合わせない。外へ出るのは download.jetbrains.com だけ。使うバージョンは `current` というバージョンによらない名前で指す。ondina はこの `current` を自分で見つけるので、`~/.zshrc` などに書き足すものはない（AI エージェントから実行する `ondina analyze` でも起きる）。前に `~/.zshrc` へ足した `export ONDINA_LSP_COMMAND=…/current/bin/intellij-server` は残しても消してもよい。別の場所を指していれば、そちらが先に使われるので、消すよう出る
+   The installed version appears after `[1/6]`–`[6/6]`. If `~/.local/bin` is missing from PATH, it also prints a line to add to `~/.zshenv` (`~/.zshrc` is read only by interactive zsh, so non-interactive zsh run by AI agents cannot find ondina). Tab completion definitions are placed in `~/.zsh_functions/_ondina` and rebuilt on every `ondina update`. At the end, it starts your usual zsh to check completion. If completion does not work, it prints a `source "…/.zsh_functions/_ondina"` line to add at the end of `~/.zshrc` (reopen the terminal after adding it). AI agent skills (Codex and OpenCode) are placed in `~/.agents/skills/ondina/`, `~/.agents/skills/ondina-comments/`, and `~/.agents/skills/ondina-preview/` (see "Open from an AI agent and have it add comments" and "View AI-generated changes before a PR" below)
+3. kotlin-lsp (used for map relationship lines and coloring; ondina works without it) is installed in `~/.local/share/kotlin-lsp/` by `[6/6]` of step 2. It downloads from JetBrains using the latest version number held by ondina (`scripts/kotlin-lsp-version`, updated by GitHub Actions every morning from https://github.com/Kotlin/kotlin-lsp/releases), checks SHA-256, and extracts it (about 360 MB, about 1.1 GB after extraction). It does not query github.com. Its only external connection is to download.jetbrains.com. A version-independent name, `current`, points to the version in use. ondina finds this `current` itself, so nothing needs to be added to `~/.zshrc` or elsewhere (it also starts for `ondina analyze` run by an AI agent). You can keep or remove an `export ONDINA_LSP_COMMAND=…/current/bin/intellij-server` previously added to `~/.zshrc`. If it points elsewhere, that location takes precedence, so a message asks you to remove it
 
-   kotlin-lsp は試用版で、出てから約 30 日で起動しなくなる（263.4702.0 は 2026-10-09 に切れた）。切れると、解析した画面の入口に「関連の線がありません。言語サーバーが使えませんでした: … This build of kotlin-server has expired.」と出る。そのときは `ondina update` を打ってから `ondina analyze` を実行し直す。新しいバージョンが出ていれば入れ替わり、古いバージョンは消える。`ondina update` が「kotlin-lsp は最新です」と言うのに切れているときは、新しいバージョンが出るまで待つ（バージョンの間が 30 日より空くことがある。262.9593.0 → 263.4702.0 は 48 日）。新しいバージョンが ondina に届くのは、出た次の朝 6 時ごろ
+   kotlin-lsp is a trial build and stops starting about 30 days after release (263.4702.0 expired on 2026-10-09). When it expires, the analysis entry screen shows "No relationship lines. The language server could not be used: … This build of kotlin-server has expired." (「関連の線がありません。言語サーバーが使えませんでした: … This build of kotlin-server has expired.」). Run `ondina update`, then run `ondina analyze` again. If a new version is available, it replaces the old one and the old version is removed. If `ondina update` says "kotlin-lsp is up to date" (「kotlin-lsp は最新です」) but it has expired, wait for a new version (releases can be more than 30 days apart; 262.9593.0 → 263.4702.0 took 48 days). New versions reach ondina at about 6 a.m. the morning after release
 
-### 更新する・戻す
+### Update or roll back
 
 ```sh
 ondina update            # main の最新を取って組み立て直す
@@ -29,44 +31,44 @@ ondina update 1857abd    # そのバージョンに戻す
 ondina --version         # インストールされているバージョン（コミットと日付）
 ```
 
-更新のたびに「ondina を 1857abd → 9a0b1c2 にしました」と、入ったコミットの一覧が出る。kotlin-lsp も、新しいバージョンが出ていれば入れ替わる（「kotlin-lsp を 263.4702.0 → 263.6379.0 にしました」）。kotlin-lsp だけを最新にするなら `sh ~/.local/share/ondina/scripts/install-kotlin-lsp.sh`
+Each update shows "Updated ondina from 1857abd → 9a0b1c2" (「ondina を 1857abd → 9a0b1c2 にしました」) and the list of included commits. kotlin-lsp is also replaced if a new version is available ("Updated kotlin-lsp from 263.4702.0 → 263.6379.0" (「kotlin-lsp を 263.4702.0 → 263.6379.0 にしました」)). To update only kotlin-lsp, run `sh ~/.local/share/ondina/scripts/install-kotlin-lsp.sh`
 
-更新の前から動いている画面（serve）は、古いコードのまま新しい画面を配り続ける。`ondina serve list` で「更新前」と出たものは `ondina serve restart <ポート>`（全部なら `--all`）で起動し直す
+A screen (serve) already running before the update keeps serving the new screen with old code. Restart entries marked "Before update" (「更新前」) in `ondina serve list` with `ondina serve restart <ポート>` (or `--all` for all entries)
 
-### 困ったとき
+### Troubleshooting
 
-- 「github.com から取れませんでした」: github.com に届くか（ネットワークや proxy）を確かめてから `ondina update`
-- 「組み立てに失敗しました」: メッセージに出る `sh …/scripts/install.sh <前のバージョン>` で前のバージョンに戻る
-- 「kotlin-lsp: …を落とせませんでした」: kotlin-lsp は今のバージョンのままで、ondina の更新は済んでいる。download.jetbrains.com に届くか（ネットワークや proxy）を確かめてから `sh ~/.local/share/ondina/scripts/install-kotlin-lsp.sh`
-- `ondina` そのものが起動しないときは、`sh ~/.local/share/ondina/scripts/install.sh` を直接走らせれば直せる
-- `ondina update` が途中で止まって先へ進めない（入っているバージョンのスクリプト自体が壊れている）ときは、git で取り直してからスクリプトを直接走らせる
+- "Could not fetch from github.com" (「github.com から取れませんでした」): check access to github.com (network or proxy), then run `ondina update`
+- "Build failed" (「組み立てに失敗しました」): roll back with `sh …/scripts/install.sh <前のバージョン>` shown in the message
+- "kotlin-lsp: could not download …" (「kotlin-lsp: …を落とせませんでした」): kotlin-lsp remains at its current version; the ondina update is complete. Check access to download.jetbrains.com (network or proxy), then run `sh ~/.local/share/ondina/scripts/install-kotlin-lsp.sh`
+- If `ondina` itself will not start, run `sh ~/.local/share/ondina/scripts/install.sh` directly to repair it
+- If `ondina update` stops partway and cannot continue (the installed version's script itself is broken), fetch again with git and run the script directly
   ```sh
   git -C ~/.local/share/ondina fetch
   git -C ~/.local/share/ondina checkout --detach origin/main
   sh ~/.local/share/ondina/scripts/install.sh
   ```
 
-### リポジトリで初めて使うとき
+### First use in a repository
 
-- 解析の置き場 `.ondina/` と設定 `ondina.config.yaml` を、コミットしないよう `.git/info/exclude` に足す（`.ondina` は末尾に `/` を付けない。付けると、worktree に置いた `.ondina` の symlink が無視されない）
+- Add the analysis directory `.ondina/` and configuration `ondina.config.yaml` to `.git/info/exclude` so they are not committed (do not add a trailing `/` to `.ondina`. With it, a `.ondina` symlink in a worktree is not ignored)
   ```sh
   printf '.ondina\nondina.config.yaml\n' >> .git/info/exclude
   ```
-- 初めての `ondina analyze` は、PR の前にリポジトリ全体のファイルの一覧を LLM に渡して、構成（地図の帯になる層）を推定する。結果は `.ondina/structure.json` に残り、2 回目からはそれを使う（LLM を呼ばない）。後でファイルが増えて「構成に分類できないファイルが n 件増えました」と出たら、`ondina structure` で推定し直してから `ondina analyze` を実行し直す
-- 言語サーバー（kotlin-lsp）は、`~/.local/share/kotlin-lsp/current` に入っていれば（上の 3）既定で起動する。yaml も環境変数も要らない。別の場所のものを使うときは `ONDINA_LSP_COMMAND` に `bin/intellij-server` のパスを入れる（先に使われる）。PR ごとの初回は準備に 1 分ほどかかる（大きなリポジトリではもっとかかる。待っている間は 30 秒おきに、何をしているかを 1 行出す）。起動したくないときは `ondina analyze <pr> --no-lsp`
-- 層を自分で決めたいときだけ、`ondina.config.yaml` に `layers` を書く（推定より優先する）。見本は `fixtures/order-service/ondina.config.yaml`
-- LLM コマンドは、使ってよいものを画面のレール下部の欄で選ぶ（下の「LLM コマンド」の表）
+- On the first `ondina analyze`, before the PR, the LLM receives a list of all files in the repository and infers its structure (the layers that become map bands). The result is saved in `.ondina/structure.json` and reused from the second run onward (no LLM call). If files are added later and you see "n more files could not be classified in the structure" (「構成に分類できないファイルが n 件増えました」), run `ondina structure` to infer it again, then rerun `ondina analyze`
+- The language server (kotlin-lsp) starts by default if installed at `~/.local/share/kotlin-lsp/current` (step 3 above). No yaml or environment variables are needed. To use one elsewhere, set `ONDINA_LSP_COMMAND` to its `bin/intellij-server` path (takes precedence). Initial preparation for each PR takes about a minute (longer in large repositories; while waiting, one line reports what it is doing every 30 seconds). To avoid starting it, use `ondina analyze <pr> --no-lsp`
+- Write `layers` in `ondina.config.yaml` only if you want to define layers yourself (takes precedence over inference). See `fixtures/order-service/ondina.config.yaml` for an example
+- Choose an allowed LLM command in the field at the bottom of the screen's rail (the "LLM commands" table below)
 
-### PR に新しいコミットが積まれたとき
+### When new commits are added to a PR
 
-- 画面を開いていれば、上の帯の下に「新しいコミットが 2 件あります」と出る（画面に戻ったときと 2 分おきに GitHub に問い合わせる）。［解析し直す］を押すと裏で `ondina analyze` が走り、経過と進捗が同じ行に出る。その間も前のバージョンはそのまま使える
-- 終わると「新しいバージョンの解析ができました」と［切り替える］が出る。押すまで前のバージョンのまま
-- 切り替えると、差分が変わっていない「問題なし」と、行が変わっていない送っていないメモ・AI の下書きを引き継ぐ。変わった差分は未確認に戻り、その数と、移せずに前のバージョンに残したメモの数が同じ行に出る。前のバージョンは左上の選択でいつでも開ける
-- ターミナルで `ondina analyze <pr>` を実行し直しても、画面でその新しいバージョンを開いたときに同じように引き継ぐ。画面を開いたままでよい。ブラウザのタブに戻ると、新しい解析が左上の一覧に出る
+- With the screen open, "There are 2 new commits" (「新しいコミットが 2 件あります」) appears below the top bar (GitHub is queried when you return to the screen and every 2 minutes). Press Analyze again (「解析し直す」) to run `ondina analyze` in the background. Status and progress appear on the same line. You can keep using the previous version during analysis
+- When it finishes, "Analysis of the new version is ready" (「新しいバージョンの解析ができました」) and Switch (「切り替える」) appear. The previous version remains until you press it
+- Switching carries over No issues (「問題なし」) marks on unchanged diffs, and unsent notes and AI drafts on unchanged lines. Changed diffs return to unreviewed, and the same line shows their count and the count of notes that could not be moved and remain in the previous version. You can open the previous version anytime using the selector at the upper left
+- Rerunning `ondina analyze <pr>` in a terminal also carries these over when you open that new version on screen. You can leave the screen open. When you return to the browser tab, the new analysis appears in the list at the upper left
 
-### AI エージェントから開く・コメントを入れさせる
+### Open from an AI agent and have it add comments
 
-Codex や OpenCode から ondina を動かせる。`ondina update` が `~/.agents/skills/` にスキルを置くので、対象のリポジトリで頼むだけでよい。
+You can run ondina from Codex or OpenCode. `ondina update` places skills in `~/.agents/skills/`, so you only need to ask in the target repository.
 
 ```
 PR 123 を ondina で開いて        … 解析して画面を開く（スキル ondina）
@@ -74,57 +76,57 @@ ondina で開いて                  … 番号がなければ、今いるブラ
 PR 123 をレビューして ondina にコメントして   … 画面の「AI の下書き」にコメントが並ぶ（スキル ondina-comments）
 ```
 
-- 開いて → 画面で PR をざっくり理解 → コメントを頼む → 下書きを見ながら最後までレビュー、の順を想定している。「PR 123 を ondina で開いてコメントして」と一度に頼んでもよい
-- スキルを名指しするときは、Codex は `$ondina` / `$ondina-comments`（例: `$ondina $ondina-comments PR 123`）、OpenCode はコマンドの `/ondina` / `/ondina-comments`（例: `/ondina PR 123 を開いてコメントして`）
-- 開くスキルは、今のバージョンの解析がなければ `ondina analyze` を走らせ（数分）、`ondina serve --background` で画面を起動してブラウザで開く。`--background` の画面はエージェントが終わっても残る。このリポジトリの画面が既に動いていれば、それを使う（同じリポジトリの別の worktree で起動した画面も）。止めるときは `ondina serve stop <ポート>`（4177 番が埋まっていたときは別のポートで起動する）。動いている画面は `ondina serve list` でポート・フォルダ・バージョンを一覧にでき、`ondina update` の前から動いているものには「更新前」と出る。`ondina serve restart <ポート>` で今のバージョンで起動し直す
-- コメントのスキルは解析しない。開いていない PR を頼むと「先に ondina で開いて」と返す
-- PR 番号を言わなければ、どちらのスキルも今いるブランチ（worktree ならその worktree のブランチ）の PR を使う。ブランチに PR がなければ、番号を聞いて止まる
-- PR の解析は、worktree の中で実行しても元の checkout の `.ondina/` に入る。1 つの画面に、どの worktree で解析した PR も出る。PR の無い変更の解析と設定は、コマンドを実行した worktree の `.ondina/` にできる。元の checkout と設定も分けたくなければ、worktree を作るときに元の checkout の `.ondina` への symlink を置く
-- エージェントは `ondina list` で解析したバージョンを調べ、そのバージョンの差分を読み、`[must]` / `[imo]` / `[ask]` を頭に付けたコメントを `ondina comments add` で渡す
-- 下書きは締めの画面の「AI の下書き」に並ぶ。画面を開いていれば、ブラウザのタブに戻るだけで出る。採用・編集・破棄を選び、採用したものだけが自分のメモと一緒に GitHub に送られる。エージェントは GitHub に送らない
-- スキルを置くバージョンに上げた最初の `ondina update` では、まだ置かれない（走るのは入っていたバージョンの install.sh）。もう一度 `ondina update` を実行すると置かれる
-- スキルは `ondina update` のたびに置き直す。手で書き換えても戻る
+- The intended order is: open → get an outline of the PR on screen → request comments → finish the review while reading drafts. You can also ask "Open PR 123 in ondina and add comments" in one request
+- To name skills explicitly, use `$ondina` / `$ondina-comments` in Codex (example: `$ondina $ondina-comments PR 123`), or the `/ondina` / `/ondina-comments` commands in OpenCode (example: `/ondina PR 123 を開いてコメントして`)
+- The opening skill runs `ondina analyze` if there is no analysis for the current version (a few minutes), starts the screen with `ondina serve --background`, and opens it in a browser. A `--background` screen remains after the agent finishes. If a screen for this repository is already running, it reuses it (including one started in another worktree of the same repository). Stop it with `ondina serve stop <ポート>` (it starts on another port if 4177 is occupied). `ondina serve list` lists running screens by port, folder, and version. Screens running since before `ondina update` show Before update. Restart with the current version using `ondina serve restart <ポート>`
+- The comment skill does not analyze. If asked about a PR that is not open, it replies "Open it in ondina first" (「先に ondina で開いて」)
+- Without a PR number, both skills use the PR for the current branch (the worktree's branch if in a worktree). If the branch has no PR, they ask for a number and stop
+- PR analysis goes into the original checkout's `.ondina/`, even when run in a worktree. One screen shows PRs analyzed in any worktree. Analysis and configuration for changes without a PR go into `.ondina/` in the worktree where the command runs. To share configuration with the original checkout too, create a symlink to the original checkout's `.ondina` when creating the worktree
+- The agent checks analyzed versions with `ondina list`, reads the diff for that version, and passes comments prefixed with `[must]` / `[imo]` / `[ask]` through `ondina comments add`
+- Drafts appear in AI drafts (「AI の下書き」) on the wrap-up (「締め」) screen. If the screen is open, just return to the browser tab to see them. Choose to accept, edit, or discard them. Only accepted drafts are sent to GitHub with your notes. The agent does not send them to GitHub
+- On the first `ondina update` to a version that installs skills, they are not installed yet (it runs the previously installed version's install.sh). Run `ondina update` again to install them
+- Skills are replaced on every `ondina update`. Manual changes are overwritten
 
-### AI が作った変更を PR の前に見る
+### View AI-generated changes before a PR
 
-AI エージェントに作らせた変更を、PR を作る前に ondina で疑似 PR として見て、コメントをそのエージェントに返せる（スキル ondina-preview）。
+You can view AI-generated changes in ondina as a pseudo PR before creating a PR, then return comments to that agent (the ondina-preview skill).
 
 ```
 作った変更を ondina で見せて       … 題と説明を書いて解析し、画面を開いて、返したコメントを待つ
 ondina で返したコメントを読んで    … エージェントが待っていなかったときに、返したコメントを受け取らせる
 ```
 
-- エージェントは `ondina analyze --base main --title <題> --body <説明>`（`--head` 無し）で解析する。今のブランチのコミットと、コミットしていない変更・新しいファイルを合わせて 1 つの疑似 PR にする。ondina はコミットを作らず、作業ツリー・index・ブランチも変えない（`.ondina` を `.gitignore` に入れていてもよい）
-- 画面で変更を見て、行番号の「+」でメモを書き、締めの画面の「AI に返す」を押す。採用した AI の下書きも一緒に返る
-- エージェントは `ondina comments wait` で待っていて、受け取ると直し、解析し直す。画面の上に「新しいバージョン … の解析ができました」と出たら切り替える。終わったらエージェントに「OK」などと伝える
-- 返した後に「いま待っている AI はいません」と出たら、エージェントは待っていない。エージェントに「ondina で返したコメントを読んで」と頼む（返したコメントは受け取るまで消えない）
-- 終わったら知らせが来る形でコマンドをバックグラウンドで走らせられるエージェントは、待つ間も話せる。そうでないエージェントは、コマンドが終わるまで待つ
+- The agent analyzes with `ondina analyze --base main --title <題> --body <説明>` (without `--head`). It combines the current branch's commits, uncommitted changes, and new files into one pseudo PR. ondina does not create commits or change the working tree, index, or branch (`.ondina` may be in `.gitignore`)
+- View the changes, write notes using "+" by line numbers, and press Return to AI (「AI に返す」) on the wrap-up screen. Accepted AI drafts are returned too
+- The agent waits with `ondina comments wait`. When comments arrive, it makes changes and analyzes again. Switch when "Analysis of the new version … is ready" (「新しいバージョン … の解析ができました」) appears at the top of the screen. Tell the agent "OK" or similar when finished
+- If "No AI is waiting now" (「いま待っている AI はいません」) appears after returning comments, the agent is not waiting. Ask it to "Read the comments returned through ondina" (「ondina で返したコメントを読んで」) (returned comments remain until received)
+- Agents that can run a command in the background and receive a completion notification can keep talking while waiting. Other agents wait until the command finishes
 
-### チケットを出すとき
+### Show a ticket
 
-- `ondina analyze <pr> --ticket SHOP-421`（番号）、`--ticket https://…/browse/SHOP-421`（URL）、`--ticket ./ticket.md`（ファイル）。説明の画面（キー `2`）の「仕様」に、題・種類・状態・本文が出る。取れなければ理由が出る（解析は止まらない）
-- `--ticket` を付けなければ、PR の題・ブランチ名・本文から番号や URL を拾い、LLM がこの PR のチケットを選んで取る。画面には推定として、見つけた場所と選ばなかった候補が出る。違うときは `--ticket` で指定し直す
-- チケットが取れたら、LLM がチケットから「この PR で成り立つべきこと」（要求）を抜き出し、要求ごとに対応するコースを選ぶ。「仕様」には要求の行と、対応するコースの丸（押すとそのコースを選ぶ）が出て、対応がない要求は赤。原文は下に畳まれる。上の帯の「仕様 n/N」は対応するコースがある要求の数
-- Jira（Cloud でも Jira Server / Data Center でも）: 画面の設定（歯車）の「Jira の URL」に入れる（URL で指定するなら要らない）。トークンは `ondina token` で Mac のキーチェーン（サービス名 `ondina-jira`）に入れる。トークンを貼って Enter（画面には出ない。シェルの履歴にも残らない）。入れたものを読み戻して確かめる
-  - 入れ直すときも `ondina token`（上書き）。クリップボードからなら `pbpaste | ondina token`
-  - 環境変数 `ONDINA_TICKET_TOKEN` があれば、キーチェーンより先にそれを使う（Mac 以外はこちら）
-  - Jira Cloud: Atlassian のアカウントで作る API トークンと、設定の「Jira のメール」
-  - Jira Server / Data Center: Jira のプロフィールで作る個人用アクセストークン。メールは空のまま
-- Jira 以外: 設定の「チケットの取り方」を「コマンド」にして、チケットを取るコマンドを書く。値は環境変数 `ONDINA_TICKET` で渡り、stdout に JSON（`title` / `body` / `url`）か本文（Markdown）を出す。例: GitHub Issues なら `gh issue view "$ONDINA_TICKET" --json title,body,url`
-- プロキシが要るネットワークでは、まだ Jira に届かない（画面に「Jira に接続できませんでした」と出る）
+- Use `ondina analyze <pr> --ticket SHOP-421` (ID), `--ticket https://…/browse/SHOP-421` (URL), or `--ticket ./ticket.md` (file). Spec (「仕様」) on the explain screen (key `2`) shows the title, type, status, and body. If retrieval fails, it shows the reason (analysis continues)
+- Without `--ticket`, it extracts IDs and URLs from the PR title, branch name, and body. The LLM chooses and retrieves the ticket for this PR. The screen marks it as inferred and shows where it was found and candidates not chosen. If it is wrong, specify it again with `--ticket`
+- When a ticket is retrieved, the LLM extracts "what should hold for this PR" (requirements) from it and chooses corresponding courses for each requirement. Spec shows requirement rows and circles for corresponding courses (press to select that course). Requirements without a match are red. The original text is collapsed below. "Spec n/N" (「仕様 n/N」) in the top bar counts requirements with a corresponding course
+- Jira (Cloud or Jira Server / Data Center): enter it in Jira URL (「Jira の URL」) in the screen settings (gear) (unnecessary when specifying a URL). Store the token in the Mac keychain (service name `ondina-jira`) with `ondina token`. Paste the token and press Enter (it is not displayed or saved in shell history). The stored value is read back to verify it
+  - Use `ondina token` again to replace it (overwrite). From the clipboard: `pbpaste | ondina token`
+  - If the environment variable `ONDINA_TICKET_TOKEN` is set, it takes precedence over the keychain (use this outside Mac)
+  - Jira Cloud: an API token created in your Atlassian account, and Jira email (「Jira のメール」) in settings
+  - Jira Server / Data Center: a personal access token created in your Jira profile. Leave email blank
+- Other than Jira: set Ticket retrieval (「チケットの取り方」) in settings to Command (「コマンド」) and enter a command to retrieve tickets. The value is passed through the environment variable `ONDINA_TICKET`. Output JSON (`title` / `body` / `url`) or a body (Markdown) to stdout. Example for GitHub Issues: `gh issue view "$ONDINA_TICKET" --json title,body,url`
+- Jira is not yet reachable on networks requiring a proxy (the screen shows "Could not connect to Jira" (「Jira に接続できませんでした」))
 
-## LLM コマンド
+## LLM commands
 
-`ondina analyze` は差分の切り出しと追従検出のあとで LLM を 1 回呼び、変更を「How」（やったことのまとまり）に分けて要約と作者説明の裏付け判定を出す。LLM は特定ベンダーに固定しない。約束は次の 1 つだけ:
+After extracting diffs and detecting follow-ons, `ondina analyze` calls the LLM once to divide changes into "How" (groups of what was done), summarize them, and assess support for the author's description. The LLM is not tied to a specific vendor. There is just one contract:
 
-> `sh -c <command>` で起動し、stdin にプロンプト全文、stdout に JSON オブジェクト 1 つを返す
+> Start through `sh -c <command>`, receive the full prompt on stdin, and return one JSON object on stdout
 
-| コマンド | 確認したバージョン | 備考 |
+| Command | Verified version | Notes |
 |---|---|---|
-| `claude -p --tools "" --max-turns 1 --model opus`（既定） | Claude Code 2.1.274 | サブスクのログインで動く。`ANTHROPIC_API_KEY` があれば API 課金 |
-| `codex exec --skip-git-repo-check -s read-only -` | codex-cli 0.154.0 | 進捗は stderr、JSON は stdout |
-| `opencode run` | OpenCode 1.18.31 | 引数なしで stdin を読む。`-m provider/model` でモデル指定 |
+| `claude -p --tools "" --max-turns 1 --model opus` (default) | Claude Code 2.1.274 | Works with a subscription login. Uses API billing if `ANTHROPIC_API_KEY` is set |
+| `codex exec --skip-git-repo-check -s read-only -` | codex-cli 0.154.0 | Progress on stderr, JSON on stdout |
+| `opencode run` | OpenCode 1.18.31 | Reads stdin without arguments. Specify the model with `-m provider/model` |
 
-指定の優先順: UI のレール下部の欄（`.ondina/ui.json`） > 環境変数 `ONDINA_LLM_COMMAND` > `ondina.config.yaml` の `llm.command` > 既定。
-生の出力は `.ondina/<pr>/llm/<headSha>.json` に残り、同じ headSha では呼び直さない（`--relabel` で呼び直す。`--no-llm` でスキップする）。テストは LLM を起動しない。
+Precedence: field at the bottom of the UI rail (`.ondina/ui.json`) > environment variable `ONDINA_LLM_COMMAND` > `llm.command` in `ondina.config.yaml` > default.
+Raw output is saved in `.ondina/<pr>/llm/<headSha>.json`. It is not called again for the same headSha (use `--relabel` to call again; `--no-llm` to skip). Tests do not start the LLM.
 

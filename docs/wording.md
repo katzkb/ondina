@@ -1,37 +1,39 @@
-# 製品の日本語の決まり
+[日本語](ja/wording.md)
 
-ondina の画面・CLI・LLM への指示文で日本語を書くときの決まりである。AI エージェントも人も、文言を足す・直す前にこの文書を読む。
+# Japanese wording rules for the product
 
-決まりの一部は、lint（`pnpm lint`）がエラーにする。ルールは `eslint-rules/wording.js` にある。lint は CI でも走る。lint を通っても、この文書に合わない文は直す。
+These rules apply to Japanese text in ondina's screens, CLI, and LLM instructions. AI agents and people must read this document before adding or changing wording.
 
-## 対象
+Lint (`pnpm lint`) reports errors for some of these rules. The rules are in `eslint-rules/wording.js`. Lint also runs in CI. Even if lint passes, change sentences that do not follow this document.
 
-- 画面（`packages/web/src`）のボタン・見出し・案内・エラー・キー操作の一覧
-- CLI（`packages/cli/src`）のメッセージとヘルプ
-- core（`packages/core/src`）が出すメッセージと、LLM への指示文（`*/prompt.ts`）
+## Scope
 
-テストとコメントは対象外である。
+- Buttons, headings, guidance, errors, and the keyboard shortcut list on screens (`packages/web/src`)
+- CLI (`packages/cli/src`) messages and help
+- Messages from core (`packages/core/src`) and LLM instructions (`*/prompt.ts`)
 
-## 文末は種類で分ける
+Tests and comments are outside the scope.
 
-| 種類 | 文末 | 例 |
+## Use sentence endings by text type
+
+| Type | Ending | Example |
 |---|---|---|
-| ボタン・見出し・ラベル・チップ | 体言止めか「〜する」 | 閉じる、問題なし |
-| お知らせ・空の表示・エラー | です・ます | 解析がまだありません。 |
-| 説明の文・ヒント | です・ます | 承認はいつでも押せます。 |
-| CLI のメッセージ | です・ます | 引数は指定できません |
-| CLI のヘルプの説明 | 「〜する」 | ローカル UI を起動する |
-| LLM が書く文 | 常体 | 在庫が足りなければ引かない。 |
+| Buttons, headings, labels, chips | A noun phrase or 「〜する」 | 閉じる、問題なし |
+| Notices, empty states, errors | です・ます | 解析がまだありません。 |
+| Explanations, hints | です・ます | 承認はいつでも押せます。 |
+| CLI messages | です・ます | 引数は指定できません |
+| CLI help descriptions | 「〜する」 | ローカル UI を起動する |
+| Text written by the LLM | Plain form | 在庫が足りなければ引かない。 |
 
-ボタンやラベルには「。」を付けない。「。」を付けた文や、「〜ない」で終わる文は、lint がお知らせの文として扱う。
+Do not add 「。」 to buttons or labels. Lint treats sentences with 「。」 or ending in 「〜ない」 as notices.
 
-LLM が書く文（案内文と案内人の答え）は常体にする。指示文と例文も常体で書く。
+Use plain form for text written by the LLM (guidance and the guide's answers). Write instructions and examples in plain form too.
 
-## 決まった言い方を使う
+## Use established expressions
 
-英語の単語を 1 語ずつ日本語に置いた言い方をやめる。日本語のソフトが使う決まった言い方にする。
+Avoid replacing English words one by one with Japanese. Use established expressions from Japanese software.
 
-| 使わない | 使う |
+| Do not use | Use |
 |---|---|
 | 知らないコマンド | 'foo' というコマンドはありません |
 | 捨てました | 除外しました |
@@ -44,51 +46,51 @@ LLM が書く文（案内文と案内人の答え）は常体にする。指示�
 | 見たとしてマーク | 見た印を付ける |
 | 〜の形ではありません | 〜の形式ではありません |
 
-lint がエラーにする語の一覧は `eslint-rules/wording.js` の `WORDS` が正である。エラーにするときは、置き換え先をエラー文に出す。
+`WORDS` in `eslint-rules/wording.js` is the source of truth for words that lint reports as errors. Include the replacement in the error message.
 
-表にない語は、次の順で考える。
+For words outside the table, consider the following in order.
 
-1. 英語の元の語を思い浮かべない。日本語のソフトで同じ操作を何と呼ぶかを考える
-2. 英語の文の組み立てをなぞらない。「〜を判断する場所」は「〜を考えるときに見ます」のように組み直す
-3. 「ない」「もの」「こと」はひらがなで書く
-4. 同じ操作には同じ言葉を使う。編集は「編集」、削除は「削除」とする
+1. Do not start from the original English word. Think about what Japanese software calls the same operation
+2. Do not follow English sentence structure. Rephrase, for example, 「〜を判断する場所」 as 「〜を考えるときに見ます」
+3. Write 「ない」「もの」「こと」 in hiragana
+4. Use the same word for the same operation. Use 「編集」 for editing and 「削除」 for deletion
 
-## 追従グループ（同じ書き換えの束）を画面で何と呼ぶか
+## What to call follow-on groups (bundles of the same rewrite) on screen
 
-設計書の用語と、画面に出す言葉は違う。コードの識別子は設計書の用語のままにする。
+Design doc terms differ from on-screen wording. Keep code identifiers in the design doc's terminology.
 
-| 設計書の用語 | 画面の言葉 |
+| Design doc term | On-screen wording |
 |---|---|
 | 代表（representative） | サンプル |
 | 逸脱（deviation） | 差異あり |
 | 近い逸脱（near） | わずかな差異 |
 
-代表との距離（語の数）は画面に出さない。わずかな差異は赤で示す。
+Do not show the distance from the representative (word count) on screen. Show slight differences in red.
 
-## 今は残している画面の言葉
+## On-screen wording kept for now
 
-次の語は、画面でそのまま使っている。言い換えるかは別に決める。
+The following words are used as-is on screen. Whether to rephrase them will be decided separately.
 
 - 核、追従、未帰属、絡み、How
-- 上のバーの帰属、閲覧
+- 帰属、閲覧 in the top bar
 - 停留所、入口、締め、差分のない相手
 
-## 例外の付け方
+## How to add exceptions
 
-決まりに従えない行は、lint を行ごとに外し、理由を書く。ルール全体は外さない。
+For a line that cannot follow the rules, disable lint for that line and state the reason. Do not disable the entire rule.
 
 ```ts
 // eslint-disable-next-line ondina/wording-endings -- コマンドとオプションの説明は「〜する」の形が決まり
 export const usage = `...`;
 ```
 
-LLM への指示文は、文末のルールを `eslint.config.js` で外してある。対象は `packages/core/src/*/prompt.ts` と `packages/core/src/ticket/choice.ts` である。直訳調の語のルールは外さない。
+The sentence-ending rule is disabled for LLM instructions in `eslint.config.js`. This covers `packages/core/src/*/prompt.ts` and `packages/core/src/ticket/choice.ts`. The rule for literal translations remains enabled.
 
-## 語を足すとき
+## When adding words
 
-新しい直訳調の言い回しを見つけたら、次の手順で直す。
+When you find a new expression that reads like a literal translation, fix it as follows.
 
-1. `eslint-rules/wording.js` の `WORDS` に、語と置き換え先を足す
-2. `eslint-rules/wording.test.js` に、エラーになる例と通る例を足す
-3. `pnpm lint` で引っかかった既存の文言を直す
-4. この文書の表に載せるかを決める。よく使う語だけ載せる
+1. Add the word and its replacement to `WORDS` in `eslint-rules/wording.js`
+2. Add failing and passing examples to `eslint-rules/wording.test.js`
+3. Fix existing wording flagged by `pnpm lint`
+4. Decide whether to include it in this document's table. Include only frequently used words
