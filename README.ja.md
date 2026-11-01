@@ -1,3 +1,5 @@
+[English](README.md)
+
 # ondina
 
 大きな PR を読むためのレビュー支援ツールです。

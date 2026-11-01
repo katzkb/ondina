@@ -1,3 +1,5 @@
+[English](../design.md)
+
 # ondina 設計書
 
 > **ondina** — 水先案内人。水路を示すが、舵は切らない。

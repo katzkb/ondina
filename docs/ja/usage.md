@@ -1,3 +1,5 @@
+[English](../usage.md)
+
 # ondina の使い方
 
 入れ方・更新・困ったときの手順と、機能ごとの使い方です。概要は [README](../../README.ja.md) にあります。
