@@ -41,7 +41,7 @@ ondina serve          # http://127.0.0.1:4177/ で開く
 - LLM は、`sh -c` で起動できるコマンドなら何でも使えます（Claude Code・Codex・OpenCode で確認済み）。画面の設定で選びます
 - Codex や OpenCode からは「PR 123 を ondina で開いて」と頼めます。AI が作った変更を、PR の前に ondina で見ることもできます
 
-詳しい使い方は [docs/usage.md](docs/usage.md) にあります。
+詳しい使い方は [docs/ja/usage.md](docs/ja/usage.md) にあります。
 
 ## 開発
 
@@ -53,4 +53,4 @@ pnpm typecheck
 pnpm lint
 ```
 
-設計書は [docs/design.md](docs/design.md)、画面の仕様は [docs/prototype.html](docs/prototype.html) です。
+設計書は [docs/ja/design.md](docs/ja/design.md)、画面の仕様は [docs/prototype.html](docs/prototype.html) です。
