@@ -1,0 +1,7 @@
+{
+  "command": "claude -p --tools \"\" --max-turns 1 --model opus",
+  "stdout": "{\"lead\":\"Order から promo は消え、同じ位置に discount が足された。材料の中で promo の名が残るのは、PromoService.apply が呼ぶ legacyPromo だ。\",\"items\":[{\"text\":\"Order のコンストラクタから promo: Promo? を消した\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"base\",\"line\":6}},{\"text\":\"promo から額を読んでいた getDiscount も消した\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"base\",\"line\":8}},{\"text\":\"discount は applyDiscount の中で DiscountPolicy.rateFor の率から求める\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":9,\"endLine\":10}},{\"text\":\"PromoService.apply は discount が 0 より大きくなければ legacyPromo(order) を使う\",\"cite\":{\"path\":\"src/main/kotlin/com/example/promo/PromoService.kt\",\"side\":\"head\",\"line\":10}}],\"tail\":\"legacyPromo の中身は材料になく、作者に聞くなら PromoService の 10 行目を指す。\"}\n",
+  "stderr": "",
+  "ms": 25962,
+  "recordedAt": "2026-10-15T07:03:57.793Z"
+}

@@ -1,0 +1,815 @@
+[
+  {
+    "id": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+    "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+    "lang": "kotlin",
+    "symbol": "discountField()",
+    "symbolFqName": "com.example.admin.OrderAdminView.discountField",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountField(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "7c3620df39b9ef5cf954a62175bf0def4361cf79",
+    "path": "src/main/kotlin/com/example/analytics/OrderMetrics.kt",
+    "lang": "kotlin",
+    "symbol": "discount()",
+    "symbolFqName": "com.example.analytics.OrderMetrics.discount",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discount(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "7d1f264e32ec64a4a8e87582280d3c51c0e9beca",
+    "path": "src/main/kotlin/com/example/audit/OrderAuditLog.kt",
+    "lang": "kotlin",
+    "symbol": "discountAtAudit()",
+    "symbolFqName": "com.example.audit.OrderAuditLog.discountAtAudit",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountAtAudit(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "079cc62bead02b816f5900d3da3accddb6cfc225",
+    "path": "src/main/kotlin/com/example/batch/DailySettlement.kt",
+    "lang": "kotlin",
+    "symbol": "settledDiscount()",
+    "symbolFqName": "com.example.batch.DailySettlement.settledDiscount",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun settledDiscount(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "78b5e2fce82e915e87d96f07a36f818d0f441d27",
+    "path": "src/main/kotlin/com/example/cart/CartSummary.kt",
+    "lang": "kotlin",
+    "symbol": "total()",
+    "symbolFqName": "com.example.cart.CartSummary.total",
+    "symbolKind": "function",
+    "lnOld": 12,
+    "lnNew": 12,
+    "lines": [
+      "     fun total(): Money {",
+      "-        return items.sumOf { it.price } - order.getDiscount()",
+      "+        return items.sumOf { it.price } - order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "3fe1dde4f7eced5e63034f751a8d7c51185a3395",
+    "path": "src/main/kotlin/com/example/checkout/CheckoutPresenter.kt",
+    "lang": "kotlin",
+    "symbol": "discountToShow()",
+    "symbolFqName": "com.example.checkout.CheckoutPresenter.discountToShow",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountToShow(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "lang": "kotlin",
+    "symbol": "Logger.kt",
+    "symbolFqName": "src/main/kotlin/com/example/common/Logger.kt",
+    "symbolKind": "file",
+    "lnOld": 3,
+    "lnNew": 3,
+    "lines": [
+      "+import java.time.Instant"
+    ]
+  },
+  {
+    "id": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "lang": "kotlin",
+    "symbol": "format()",
+    "symbolFqName": "com.example.common.Logger.format",
+    "symbolKind": "function",
+    "lnOld": 6,
+    "lnNew": 8,
+    "lines": [
+      "-    fun format(level: Level, msg: String) = \"[$level] $msg\"",
+      "+    fun format(level: Level, msg: String) = \"[$level] ${Instant.now()} $msg\""
+    ]
+  },
+  {
+    "id": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c",
+    "path": "src/main/kotlin/com/example/config/FeatureFlags.kt",
+    "lang": "kotlin",
+    "symbol": "DISCOUNT_V2",
+    "symbolFqName": "com.example.config.FeatureFlags.DISCOUNT_V2",
+    "symbolKind": "property",
+    "lnOld": 5,
+    "lnNew": 5,
+    "lines": [
+      "+    const val DISCOUNT_V2 = true"
+    ]
+  },
+  {
+    "id": "18ada3da5f913983c4b5036e21e96b3f03fb3a22",
+    "path": "src/main/kotlin/com/example/dashboard/DiscountWidget.kt",
+    "lang": "kotlin",
+    "symbol": "value()",
+    "symbolFqName": "com.example.dashboard.DiscountWidget.value",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun value(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "0ce459a50c74ffd6bb848b193e6801134ddd471d",
+    "path": "src/main/kotlin/com/example/export/OrderCsvExporter.kt",
+    "lang": "kotlin",
+    "symbol": "discountColumn()",
+    "symbolFqName": "com.example.export.OrderCsvExporter.discountColumn",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountColumn(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "34572795b5d3947558d3dffb3f15fcc32a885a0e",
+    "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+    "lang": "kotlin",
+    "symbol": "discountLine()",
+    "symbolFqName": "com.example.invoice.InvoiceBuilder.discountLine",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountLine(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "b6f9e151047a59c46732bb8dce91c63d9aab47ea",
+    "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+    "lang": "kotlin",
+    "symbol": "grandTotal()",
+    "symbolFqName": "com.example.invoice.InvoiceBuilder.grandTotal",
+    "symbolKind": "function",
+    "lnOld": 11,
+    "lnNew": 11,
+    "lines": [
+      "     fun grandTotal(order: Order): Money {",
+      "-        return order.subtotal - order.getDiscount()",
+      "+        return order.subtotal - order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "c44dfbbec354bf0fe7baa0e88955218093477d7b",
+    "path": "src/main/kotlin/com/example/legacy/LegacyOrderAdapter.kt",
+    "lang": "kotlin",
+    "symbol": "legacyDiscount()",
+    "symbolFqName": "com.example.legacy.LegacyOrderAdapter.legacyDiscount",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun legacyDiscount(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "60e94e42327d58a58d4908e5cd433da84e76966a",
+    "path": "src/main/kotlin/com/example/loyalty/PointCalculator.kt",
+    "lang": "kotlin",
+    "symbol": "base()",
+    "symbolFqName": "com.example.loyalty.PointCalculator.base",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun base(order: Order): Money {",
+      "-        return order.subtotal - order.getDiscount()",
+      "+        return order.subtotal - order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9",
+    "path": "src/main/kotlin/com/example/notification/OrderMailer.kt",
+    "lang": "kotlin",
+    "symbol": "discountLine()",
+    "symbolFqName": "com.example.notification.OrderMailer.discountLine",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountLine(order: Order): Money {",
+      "-        val d = order.getDiscount()",
+      "+        val d = order.discount",
+      "         return d",
+      "     }"
+    ]
+  },
+  {
+    "id": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
+    "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+    "lang": "kotlin",
+    "symbol": "ApplyDiscountRequest.kt",
+    "symbolFqName": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+    "symbolKind": "file",
+    "lnOld": 1,
+    "lnNew": 1,
+    "lines": [
+      "+package com.example.order.api"
+    ]
+  },
+  {
+    "id": "89802175d3898bded24a787f90beee1a5312f3a7",
+    "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+    "lang": "kotlin",
+    "symbol": "ApplyDiscountRequest",
+    "symbolFqName": "com.example.order.api.ApplyDiscountRequest",
+    "symbolKind": "class",
+    "lnOld": 1,
+    "lnNew": 3,
+    "lines": [
+      "+data class ApplyDiscountRequest(val discountCode: String)"
+    ]
+  },
+  {
+    "id": "02e146608288f588fded777b8b37c3a6f5a00023",
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "lang": "kotlin",
+    "symbol": "OrderController.kt",
+    "symbolFqName": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "symbolKind": "file",
+    "lnOld": 8,
+    "lnNew": 8,
+    "lines": [
+      "+import org.springframework.web.bind.annotation.RequestBody"
+    ]
+  },
+  {
+    "id": "130e7d62f211839eec7c68582ae3565629d8c673",
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "lang": "kotlin",
+    "symbol": "apply()",
+    "symbolFqName": "com.example.order.api.OrderController.apply",
+    "symbolKind": "function",
+    "lnOld": 15,
+    "lnNew": 16,
+    "lines": [
+      "     @PostMapping(\"/orders/{id}/discount\")",
+      "-    fun apply(@PathVariable id: String): OrderResponse {",
+      "-        val order = useCase.execute(OrderId(id))",
+      "+    fun apply(@PathVariable id: String, @RequestBody body: ApplyDiscountRequest): OrderResponse {",
+      "+        val order = useCase.execute(OrderId(id), body.discountCode)",
+      "+        repository.save(order)",
+      "         return OrderResponse.from(order)",
+      "     }"
+    ]
+  },
+  {
+    "id": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+    "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+    "lang": "kotlin",
+    "symbol": "OrderDetailResponse",
+    "symbolFqName": "com.example.order.api.OrderDetailResponse",
+    "symbolKind": "class",
+    "lnOld": 5,
+    "lnNew": 5,
+    "lines": [
+      " data class OrderDetailResponse(",
+      "     val id: String,",
+      "     val subtotal: Long,",
+      "     val total: Long,",
+      "+    val discount: Long,",
+      " ) {",
+      "     companion object {",
+      "         fun from(o: Order) = OrderDetailResponse(",
+      "             id = o.id.value,",
+      "             subtotal = o.subtotal.amount,",
+      "             total = o.total().amount,",
+      "+            discount = o.discount.amount,",
+      "         )",
+      "     }",
+      " }"
+    ]
+  },
+  {
+    "id": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+    "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+    "lang": "kotlin",
+    "symbol": "OrderResponse",
+    "symbolFqName": "com.example.order.api.OrderResponse",
+    "symbolKind": "class",
+    "lnOld": 5,
+    "lnNew": 5,
+    "lines": [
+      " data class OrderResponse(",
+      "     val id: String,",
+      "     val subtotal: Long,",
+      "+    val discount: Long,",
+      " ) {",
+      "     companion object {",
+      "         fun from(o: Order) = OrderResponse(",
+      "             id = o.id.value,",
+      "             subtotal = o.subtotal.amount,",
+      "+            discount = o.discount.amount,",
+      "         )",
+      "     }",
+      " }"
+    ]
+  },
+  {
+    "id": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+    "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+    "lang": "kotlin",
+    "symbol": "OrderSummaryResponse",
+    "symbolFqName": "com.example.order.api.OrderSummaryResponse",
+    "symbolKind": "class",
+    "lnOld": 5,
+    "lnNew": 5,
+    "lines": [
+      " data class OrderSummaryResponse(",
+      "     val id: String,",
+      "     val total: Long,",
+      "+    val discount: Long,",
+      " ) {",
+      "     companion object {",
+      "         fun from(o: Order) = OrderSummaryResponse(",
+      "             id = o.id.value,",
+      "             total = o.total().amount,",
+      "+            discount = o.discount.amount,",
+      "         )",
+      "     }",
+      " }"
+    ]
+  },
+  {
+    "id": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "lang": "kotlin",
+    "symbol": "ApplyDiscountUseCase.kt",
+    "symbolFqName": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "symbolKind": "file",
+    "lnOld": 3,
+    "lnNew": 3,
+    "lines": [
+      "+import com.example.order.domain.DiscountCommand"
+    ]
+  },
+  {
+    "id": "a135ba90941c193b82bb22bc319e52347521ee99",
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "lang": "kotlin",
+    "symbol": "execute()",
+    "symbolFqName": "com.example.order.application.ApplyDiscountUseCase.execute",
+    "symbolKind": "function",
+    "lnOld": 14,
+    "lnNew": 15,
+    "lines": [
+      "-    fun execute(id: OrderId): Order {",
+      "+    fun execute(id: OrderId, code: String): Order {",
+      "         val order = repository.find(id) ?: throw OrderNotFound(id)",
+      "+        order.applyDiscount(DiscountCommand(code))",
+      "+        repository.save(order)",
+      "         return order",
+      "     }"
+    ]
+  },
+  {
+    "id": "08620bbd277424422d535274fc7a98e037583e4c",
+    "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+    "lang": "kotlin",
+    "symbol": "DiscountCommand.kt",
+    "symbolFqName": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+    "symbolKind": "file",
+    "lnOld": 1,
+    "lnNew": 1,
+    "lines": [
+      "+package com.example.order.domain"
+    ]
+  },
+  {
+    "id": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
+    "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+    "lang": "kotlin",
+    "symbol": "DiscountCommand",
+    "symbolFqName": "com.example.order.domain.DiscountCommand",
+    "symbolKind": "class",
+    "lnOld": 1,
+    "lnNew": 3,
+    "lines": [
+      "+data class DiscountCommand(val code: String)"
+    ]
+  },
+  {
+    "id": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+    "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+    "lang": "kotlin",
+    "symbol": "Order",
+    "symbolFqName": "com.example.order.domain.Order",
+    "symbolKind": "class",
+    "lnOld": 3,
+    "lnNew": 3,
+    "lines": [
+      " class Order(",
+      "     val id: OrderId,",
+      "     val subtotal: Money,",
+      "-    val promo: Promo? = null,",
+      "+    var discount: Money = Money.ZERO,",
+      " ) {",
+      "-    fun getDiscount(): Money = promo?.amount ?: Money.ZERO",
+      "+    fun applyDiscount(cmd: DiscountCommand) {",
+      "+        val rate = DiscountPolicy.rateFor(cmd.code)",
+      "+        discount = subtotal * rate",
+      "+    }",
+      " ",
+      "-    fun total(): Money = subtotal",
+      "+    fun total(): Money = subtotal - discount",
+      " }"
+    ]
+  },
+  {
+    "id": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "lang": "kotlin",
+    "symbol": "save()",
+    "symbolFqName": "com.example.order.infra.OrderRepositoryImpl.save",
+    "symbolKind": "function",
+    "lnOld": 14,
+    "lnNew": 14,
+    "lines": [
+      "     override fun save(order: Order) {",
+      "         jdbc.update(",
+      "-            \"update orders set subtotal = :subtotal where id = :id\",",
+      "-            mapOf(\"id\" to order.id.value, \"subtotal\" to order.subtotal.amount),",
+      "+            \"update orders set subtotal = :subtotal, discount = :discount where id = :id\",",
+      "+            mapOf(",
+      "+                \"id\" to order.id.value,",
+      "+                \"subtotal\" to order.subtotal.amount,",
+      "+                \"discount\" to order.discount.amount,",
+      "+            ),",
+      "         )",
+      "     }"
+    ]
+  },
+  {
+    "id": "3b823c2027bd0957f11251555393d73cee9318ed",
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "lang": "kotlin",
+    "symbol": "find()",
+    "symbolFqName": "com.example.order.infra.OrderRepositoryImpl.find",
+    "symbolKind": "function",
+    "lnOld": 21,
+    "lnNew": 25,
+    "lines": [
+      "     override fun find(id: OrderId): Order? =",
+      "         jdbc.query(",
+      "-            \"select id, subtotal from orders where id = :id\",",
+      "+            \"select id, subtotal, discount from orders where id = :id\",",
+      "             mapOf(\"id\" to id.value),",
+      "         ) { rs, _ ->",
+      "             Order(",
+      "                 id = OrderId(rs.getString(\"id\")),",
+      "                 subtotal = Money(rs.getLong(\"subtotal\")),",
+      "+                discount = Money(rs.getLong(\"discount\")),",
+      "             )",
+      "         }.firstOrNull()"
+    ]
+  },
+  {
+    "id": "cabe82f14a82b677e5ca8078b7b90f15609371e3",
+    "path": "src/main/kotlin/com/example/partner/PartnerFeed.kt",
+    "lang": "kotlin",
+    "symbol": "discountPayload()",
+    "symbolFqName": "com.example.partner.PartnerFeed.discountPayload",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountPayload(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3",
+    "path": "src/main/kotlin/com/example/pricing/PriceBreakdown.kt",
+    "lang": "kotlin",
+    "symbol": "discountPart()",
+    "symbolFqName": "com.example.pricing.PriceBreakdown.discountPart",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountPart(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "47dc9545806ff578b57ab0793821f2cc2c1b3a49",
+    "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+    "lang": "kotlin",
+    "symbol": "apply()",
+    "symbolFqName": "com.example.promo.PromoService.apply",
+    "symbolKind": "function",
+    "lnOld": 9,
+    "lnNew": 9,
+    "lines": [
+      "     fun apply(order: Order): Money {",
+      "-        val d = order.getDiscount()",
+      "+        val d = order.discount.takeIf { it > Money.ZERO } ?: legacyPromo(order)",
+      "         return d",
+      "     }"
+    ]
+  },
+  {
+    "id": "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7",
+    "path": "src/main/kotlin/com/example/receipt/ReceiptPrinter.kt",
+    "lang": "kotlin",
+    "symbol": "discountLine()",
+    "symbolFqName": "com.example.receipt.ReceiptPrinter.discountLine",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountLine(order: Order): Money {",
+      "-        val d = order.getDiscount()",
+      "+        val d = order.discount",
+      "         return d",
+      "     }"
+    ]
+  },
+  {
+    "id": "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c",
+    "path": "src/main/kotlin/com/example/report/SalesReport.kt",
+    "lang": "kotlin",
+    "symbol": "discountOf()",
+    "symbolFqName": "com.example.report.SalesReport.discountOf",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discountOf(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506",
+    "path": "src/main/kotlin/com/example/search/OrderDocument.kt",
+    "lang": "kotlin",
+    "symbol": "discount()",
+    "symbolFqName": "com.example.search.OrderDocument.discount",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun discount(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "9cfdbdf61c4a956c952939696c72096aa265c4bd",
+    "path": "src/main/kotlin/com/example/shipping/FreeShippingRule.kt",
+    "lang": "kotlin",
+    "symbol": "threshold()",
+    "symbolFqName": "com.example.shipping.FreeShippingRule.threshold",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun threshold(order: Order): Money {",
+      "-        return order.subtotal - order.getDiscount()",
+      "+        return order.subtotal - order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "d4ebe4338bbc4cc8e92947fd0262f50bf585797a",
+    "path": "src/main/kotlin/com/example/support/RefundEstimator.kt",
+    "lang": "kotlin",
+    "symbol": "refundable()",
+    "symbolFqName": "com.example.support.RefundEstimator.refundable",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun refundable(order: Order): Money {",
+      "-        return order.subtotal - order.getDiscount()",
+      "+        return order.subtotal - order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "9d6e9f791f8b693d7758aa240592b444cbf5e084",
+    "path": "src/main/kotlin/com/example/tax/TaxCalculator.kt",
+    "lang": "kotlin",
+    "symbol": "taxable()",
+    "symbolFqName": "com.example.tax.TaxCalculator.taxable",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun taxable(order: Order): Money {",
+      "-        return order.subtotal - order.getDiscount()",
+      "+        return order.subtotal - order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "fc611ea6e00d7be77f29312964dd5facc0b2dccf",
+    "path": "src/main/kotlin/com/example/warehouse/PickingSlip.kt",
+    "lang": "kotlin",
+    "symbol": "footerDiscount()",
+    "symbolFqName": "com.example.warehouse.PickingSlip.footerDiscount",
+    "symbolKind": "function",
+    "lnOld": 7,
+    "lnNew": 7,
+    "lines": [
+      "     fun footerDiscount(order: Order): Money {",
+      "-        return order.getDiscount()",
+      "+        return order.discount",
+      "     }"
+    ]
+  },
+  {
+    "id": "40e1361cdc0e10bdf58a3323c633e282a8902036",
+    "path": "src/main/resources/db/migration/V421__discount.sql",
+    "lang": "sql",
+    "symbol": "V421__discount.sql",
+    "symbolFqName": "src/main/resources/db/migration/V421__discount.sql",
+    "symbolKind": "file",
+    "lnOld": 1,
+    "lnNew": 1,
+    "lines": [
+      "+ALTER TABLE orders",
+      "+  ADD COLUMN discount BIGINT NOT NULL DEFAULT 0;"
+    ]
+  },
+  {
+    "id": "d81273406425493877cce76b6a078c2f3b98944f",
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "lang": "kotlin",
+    "symbol": "`throws when order is missing`()",
+    "symbolFqName": "com.example.order.application.ApplyDiscountUseCaseTest.`throws when order is missing`",
+    "symbolKind": "function",
+    "lnOld": 16,
+    "lnNew": 16,
+    "lines": [
+      "     @Test",
+      "     fun `throws when order is missing`() {",
+      "         every { repository.find(any()) } returns null",
+      "-        assertFailsWith<OrderNotFound> { useCase.execute(OrderId(\"nope\")) }",
+      "+        assertFailsWith<OrderNotFound> { useCase.execute(OrderId(\"nope\"), \"SPRING10\") }",
+      "     }"
+    ]
+  },
+  {
+    "id": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "lang": "kotlin",
+    "symbol": "`saves the order after applying`()",
+    "symbolFqName": "com.example.order.application.ApplyDiscountUseCaseTest.`saves the order after applying`",
+    "symbolKind": "function",
+    "lnOld": 21,
+    "lnNew": 22,
+    "lines": [
+      "+    @Test",
+      "+    fun `saves the order after applying`() {",
+      "+        useCase.execute(OrderId(\"o-1\"), \"SPRING10\")",
+      "+        verify(exactly = 1) { repository.save(any()) }",
+      "+    }"
+    ]
+  },
+  {
+    "id": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+    "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+    "lang": "kotlin",
+    "symbol": "`applies the policy rate to subtotal`()",
+    "symbolFqName": "com.example.order.domain.OrderTest.`applies the policy rate to subtotal`",
+    "symbolKind": "function",
+    "lnOld": 12,
+    "lnNew": 13,
+    "lines": [
+      "+    @Test",
+      "+    fun `applies the policy rate to subtotal`() {",
+      "+        val order = Order(id = OrderId(\"o-1\"), subtotal = Money(1000))",
+      "+        order.applyDiscount(DiscountCommand(\"SPRING10\"))",
+      "+        assertEquals(Money(900), order.total())",
+      "+    }"
+    ]
+  },
+  {
+    "id": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+    "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+    "lang": "kotlin",
+    "symbol": "`keeps total when code is unknown`()",
+    "symbolFqName": "com.example.order.domain.OrderTest.`keeps total when code is unknown`",
+    "symbolKind": "function",
+    "lnOld": 12,
+    "lnNew": 20,
+    "lines": [
+      "+    @Test",
+      "+    fun `keeps total when code is unknown`() {",
+      "+        val order = Order(id = OrderId(\"o-1\"), subtotal = Money(1000))",
+      "+        order.applyDiscount(DiscountCommand(\"NOPE\"))",
+      "+        assertEquals(Money(1000), order.total())",
+      "+    }"
+    ]
+  },
+  {
+    "id": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+    "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+    "lang": "kotlin",
+    "symbol": "`persists discount`()",
+    "symbolFqName": "com.example.order.infra.OrderRepositoryImplTest.`persists discount`",
+    "symbolKind": "function",
+    "lnOld": 17,
+    "lnNew": 18,
+    "lines": [
+      "+    @Test",
+      "+    fun `persists discount`() {",
+      "+        repository.save(orderWithDiscount(100))",
+      "+        assertEquals(Money(100), repository.find(OrderId(\"o-1\"))!!.discount)",
+      "+    }"
+    ]
+  },
+  {
+    "id": "7826f5464b504df32d03817b1421873bc12479bd",
+    "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+    "lang": "kotlin",
+    "symbol": "`reads zero discount for rows saved before the column existed`()",
+    "symbolFqName": "com.example.order.infra.OrderRepositoryImplTest.`reads zero discount for rows saved before the column existed`",
+    "symbolKind": "function",
+    "lnOld": 17,
+    "lnNew": 24,
+    "lines": [
+      "+    @Test",
+      "+    fun `reads zero discount for rows saved before the column existed`() {",
+      "+        repository.save(Order(id = OrderId(\"o-2\"), subtotal = Money(500)))",
+      "+        assertEquals(Money.ZERO, repository.find(OrderId(\"o-2\"))!!.discount)",
+      "+    }"
+    ]
+  },
+  {
+    "id": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+    "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+    "lang": "kotlin",
+    "symbol": "orderWithDiscount()",
+    "symbolFqName": "com.example.order.infra.OrderRepositoryImplTest.orderWithDiscount",
+    "symbolKind": "function",
+    "lnOld": 17,
+    "lnNew": 30,
+    "lines": [
+      "+    private fun orderWithDiscount(amount: Long) =",
+      "+        Order(id = OrderId(\"o-1\"), subtotal = Money(1000), discount = Money(amount))"
+    ]
+  }
+]

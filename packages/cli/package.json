@@ -1,0 +1,25 @@
+{
+  "name": "@ondina/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ondina CLI。analyze で Analysis.json を生成し、serve でローカル UI を出す",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ondina": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ondina/core": "workspace:*",
+    "@ondina/model": "workspace:*",
+    "@ondina/web": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.0"
+  }
+}

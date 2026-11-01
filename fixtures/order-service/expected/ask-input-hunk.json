@@ -1,0 +1,91 @@
+{
+  "pr": {
+    "title": "main..feature/discount"
+  },
+  "courses": [
+    {
+      "id": 1,
+      "title": "orders テーブルに discount 列を足す",
+      "why": "割引額を行として保存できる置き場を作るため"
+    },
+    {
+      "id": 2,
+      "title": "DiscountCommand を追加する",
+      "why": "割引コードをドメインへ渡す入力型を用意するため"
+    },
+    {
+      "id": 3,
+      "title": "Order に discount と applyDiscount を持たせる",
+      "why": "割引額の保持と合計計算を Order 側で行うため"
+    },
+    {
+      "id": 4,
+      "title": "discount を読み書きする SQL に変える",
+      "why": "Order の discount を行の列と往復させるため"
+    },
+    {
+      "id": 5,
+      "title": "execute にコードを受け取らせ保存する",
+      "why": "コードから割引適用と永続化までを繋ぐため"
+    },
+    {
+      "id": 6,
+      "title": "エンドポイントでコードを受け取る",
+      "why": "HTTP から割引コードを渡せるようにするため"
+    },
+    {
+      "id": 7,
+      "title": "レスポンスに discount を載せる",
+      "why": "割引額を API の出力に含めるため"
+    }
+  ],
+  "place": {
+    "kind": "code",
+    "about": "hunk",
+    "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+    "symbol": "com.example.promo.PromoService.apply",
+    "changed": true,
+    "courses": [
+      3
+    ],
+    "file": [
+      "h1   package com.example.promo",
+      "h2   ",
+      "h3   import com.example.order.domain.Money",
+      "h4   import com.example.order.domain.Order",
+      "h5   ",
+      "h6   class PromoService(",
+      "h7       private val legacy: LegacyPromoGateway,",
+      "h8   ) {",
+      "h9       fun apply(order: Order): Money {",
+      "h10           val d = order.discount.takeIf { it > Money.ZERO } ?: legacyPromo(order)",
+      "h11           return d",
+      "h12       }",
+      "h13   ",
+      "h14       private fun legacyPromo(order: Order): Money = legacy.amountFor(order.id)",
+      "h15   }"
+    ],
+    "hunks": [
+      {
+        "symbol": "com.example.promo.PromoService.apply",
+        "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+        "kind": "ripple",
+        "group": {
+          "pattern": "getDiscount() → discount",
+          "members": 22,
+          "role": "deviation"
+        },
+        "lines": [
+          "h9       fun apply(order: Order): Money {",
+          "b10 -         val d = order.getDiscount()",
+          "h10 +         val d = order.discount.takeIf { it > Money.ZERO } ?: legacyPromo(order)",
+          "h11           return d",
+          "h12       }"
+        ]
+      }
+    ],
+    "related": []
+  },
+  "history": [],
+  "question": "legacyPromo はいつ使われる？"
+}

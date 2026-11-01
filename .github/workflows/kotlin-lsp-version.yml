@@ -1,0 +1,49 @@
+name: kotlin-lsp version
+
+# kotlin-lsp の releases の最新を、毎日 scripts/kotlin-lsp-version に書いて main に積む（設計書 5.5）。
+# scripts/install-kotlin-lsp.sh は github.com に問い合わせず、ondina の clone が持つこのファイルの版を入れる。
+# GitHub Enterprise Server だけを使う環境では、PC から github.com の API やページに届かないことがあるため。
+on:
+  schedule:
+    - cron: '0 21 * * *' # 毎朝 6 時（日本時間）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 手で走らせた回と毎朝の回が重なると、両方が push して後の方が失敗する。1 回ずつ走らせる
+concurrency:
+  group: kotlin-lsp-version
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: releases の最新を scripts/kotlin-lsp-version に書く
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh api repos/Kotlin/kotlin-lsp/releases/latest --jq .tag_name)
+          ver=${tag#kotlin-lsp/v}
+          if ! printf '%s\n' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::releases の最新（$tag）から版の番号が読み取れません"
+            exit 1
+          fi
+          if [ "$ver" = "$(cat scripts/kotlin-lsp-version)" ]; then
+            echo "変わっていません（$ver）"
+            exit 0
+          fi
+          # scripts/install-kotlin-lsp.sh が落とす物（Apple シリコンと Intel の .sit と .sha256）が JetBrains に揃ってから書く
+          base="https://download.jetbrains.com/language-server/kotlin-server/$ver"
+          for f in "kotlin-server-$ver-aarch64.sit" "kotlin-server-$ver.sit"; do
+            for u in "$base/$f" "$base/$f.sha256"; do
+              curl -fsSIL -o /dev/null --max-time 60 "$u" || { echo "::error::JetBrains にまだありません: $u"; exit 1; }
+            done
+          done
+          printf '%s\n' "$ver" > scripts/kotlin-lsp-version
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore: bump kotlin-lsp to $ver"
+          git push

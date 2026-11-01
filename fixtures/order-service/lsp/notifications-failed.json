@@ -1,0 +1,101 @@
+[
+  {
+    "atMs": 2231,
+    "method": "$/progress",
+    "params": {
+      "token": "7b4crdd62ueriiqfi470",
+      "value": {
+        "kind": "begin",
+        "title": "Importing"
+      }
+    }
+  },
+  {
+    "atMs": 2246,
+    "method": "$/progress",
+    "params": {
+      "token": "7b4crdd62ueriiqfi470",
+      "value": {
+        "kind": "report",
+        "message": "Gradle"
+      }
+    }
+  },
+  {
+    "atMs": 5323,
+    "method": "intellij/importLog",
+    "params": {
+      "type": 1,
+      "message": "Unable to import a Gradle project: The supplied build action failed with an exception.",
+      "tool": "Gradle",
+      "failed": true,
+      "succeeded": false,
+      "started": false
+    }
+  },
+  {
+    "atMs": 5340,
+    "method": "$/progress",
+    "params": {
+      "token": "7b4crdd62ueriiqfi470",
+      "value": {
+        "kind": "report",
+        "message": "Workspace is not imported"
+      }
+    }
+  },
+  {
+    "atMs": 5384,
+    "method": "$/progress",
+    "params": {
+      "token": "t8r1bluqjgecjc2lnhqj",
+      "value": {
+        "kind": "begin",
+        "title": "Indexing"
+      }
+    }
+  },
+  {
+    "atMs": 5384,
+    "method": "$/progress",
+    "params": {
+      "token": "t8r1bluqjgecjc2lnhqj",
+      "value": {
+        "kind": "report",
+        "message": "Invalidating files"
+      }
+    }
+  },
+  {
+    "atMs": 5486,
+    "method": "$/progress",
+    "params": {
+      "token": "t8r1bluqjgecjc2lnhqj",
+      "value": {
+        "kind": "report",
+        "message": "Just a few more moments...",
+        "percentage": 100
+      }
+    }
+  },
+  {
+    "atMs": 5519,
+    "method": "$/progress",
+    "params": {
+      "token": "t8r1bluqjgecjc2lnhqj",
+      "value": {
+        "kind": "end"
+      }
+    }
+  },
+  {
+    "atMs": 5519,
+    "method": "$/progress",
+    "params": {
+      "token": "7b4crdd62ueriiqfi470",
+      "value": {
+        "kind": "end"
+      }
+    }
+  }
+]

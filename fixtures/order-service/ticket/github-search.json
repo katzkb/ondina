@@ -1,0 +1,25 @@
+{
+  "data": {
+    "k0": { "issueCount": 0, "nodes": [] },
+    "k1": {
+      "issueCount": 2,
+      "nodes": [
+        { "number": 47, "title": "注文に割引コードを適用する", "url": "https://ghe.example.com/shop/order-service/pull/47", "state": "OPEN", "isDraft": false, "headRefName": "feature/discount", "body": "SHOP-421\n\n割引コードを注文に適用する。", "repository": { "nameWithOwner": "shop/order-service" } },
+        { "number": 51, "title": "SHOP-4210 在庫の表示を直す", "url": "https://ghe.example.com/shop/order-service/pull/51", "state": "OPEN", "isDraft": false, "headRefName": "fix/stock", "body": "", "repository": { "nameWithOwner": "shop/order-service" } }
+      ]
+    },
+    "k2": {
+      "issueCount": 1,
+      "nodes": [
+        { "number": 40, "title": "割引率の表を足す", "url": "https://ghe.example.com/shop/order-service/pull/40", "state": "MERGED", "isDraft": false, "headRefName": "feature/shop-420-rates", "body": "チケット: SHOP-420", "repository": { "nameWithOwner": "shop/order-service" } }
+      ]
+    },
+    "k3": {
+      "issueCount": 2,
+      "nodes": [
+        { "number": 49, "title": "SHOP-422 キャンペーンのお知らせメール", "url": "https://ghe.example.com/shop/order-service/pull/49", "state": "OPEN", "isDraft": false, "headRefName": "feature/campaign-mail", "body": "", "repository": { "nameWithOwner": "shop/order-service" } },
+        { "number": 12, "title": "お知らせメールの文面", "url": "https://ghe.example.com/shop/mail-templates/pull/12", "state": "OPEN", "isDraft": true, "headRefName": "shop-422-text", "body": "SHOP-422 の文面", "repository": { "nameWithOwner": "shop/mail-templates" } }
+      ]
+    }
+  }
+}

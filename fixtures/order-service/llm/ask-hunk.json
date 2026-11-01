@@ -1,0 +1,7 @@
+{
+  "command": "claude -p --tools \"\" --max-turns 1 --model opus",
+  "stdout": "{\"lead\":\"order.discount が Money.ZERO より大きくないときに使われる。\",\"items\":[{\"text\":\"apply は order.discount に takeIf をかけ、ZERO より大きければそれを、そうでなければ legacyPromo(order) の結果を d にする\",\"cite\":{\"path\":\"src/main/kotlin/com/example/promo/PromoService.kt\",\"side\":\"head\",\"line\":10}},{\"text\":\"takeIf は条件を満たせば受け手を、満たさなければ null を返す。?: は左が null のときだけ右を評価する\",\"known\":true},{\"text\":\"legacyPromo は legacy.amountFor(order.id) を呼んで、その値を返す\",\"cite\":{\"path\":\"src/main/kotlin/com/example/promo/PromoService.kt\",\"side\":\"head\",\"line\":14}},{\"text\":\"変更前の 10 行目は order.getDiscount() をそのまま d にしていて、legacyPromo を呼んでいなかった\",\"cite\":{\"path\":\"src/main/kotlin/com/example/promo/PromoService.kt\",\"side\":\"base\",\"line\":10}}],\"tail\":\"Money の大小の比べ方と、discount が ZERO になる場合は材料にない。\"}\n",
+  "stderr": "",
+  "ms": 10177,
+  "recordedAt": "2026-10-15T07:04:07.970Z"
+}

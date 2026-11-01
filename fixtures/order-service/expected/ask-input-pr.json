@@ -1,0 +1,444 @@
+{
+  "pr": {
+    "title": "main..feature/discount"
+  },
+  "courses": [
+    {
+      "id": 1,
+      "title": "orders テーブルに discount 列を足す",
+      "why": "割引額を行として保存できる置き場を作るため"
+    },
+    {
+      "id": 2,
+      "title": "DiscountCommand を追加する",
+      "why": "割引コードをドメインへ渡す入力型を用意するため"
+    },
+    {
+      "id": 3,
+      "title": "Order に discount と applyDiscount を持たせる",
+      "why": "割引額の保持と合計計算を Order 側で行うため"
+    },
+    {
+      "id": 4,
+      "title": "discount を読み書きする SQL に変える",
+      "why": "Order の discount を行の列と往復させるため"
+    },
+    {
+      "id": 5,
+      "title": "execute にコードを受け取らせ保存する",
+      "why": "コードから割引適用と永続化までを繋ぐため"
+    },
+    {
+      "id": 6,
+      "title": "エンドポイントでコードを受け取る",
+      "why": "HTTP から割引コードを渡せるようにするため"
+    },
+    {
+      "id": 7,
+      "title": "レスポンスに discount を載せる",
+      "why": "割引額を API の出力に含めるため"
+    }
+  ],
+  "place": {
+    "kind": "pr",
+    "summary": {
+      "headline": "注文に割引コードを適用できるようにする。",
+      "flow": [
+        {
+          "title": "受け付け",
+          "before": "注文の id だけで割引を受け付ける。",
+          "after": "注文の id と割引コードを受け付ける（SPRING10）。",
+          "untouched": [
+            "エンドポイントの URL"
+          ]
+        },
+        {
+          "title": "割引の適用",
+          "before": "注文を読み込んで、そのまま返す。",
+          "after": "注文を読み込み、割引を適用して保存する。",
+          "untouched": [
+            "注文が見つからないときの扱い"
+          ]
+        },
+        {
+          "title": "割引額の計算",
+          "before": "割引額はプロモから取り、合計は小計のまま（1000）。",
+          "after": "コードの率で割引額を決め、合計から引く（1000 → 900）。",
+          "untouched": [
+            "割引率の決め方"
+          ]
+        },
+        {
+          "title": "保存",
+          "before": "小計だけを保存し、読み込む。",
+          "after": "割引額も保存し、読み込む（100）。",
+          "untouched": [
+            "リポジトリのインターフェース"
+          ]
+        },
+        {
+          "title": "応答",
+          "before": "応答に割引額は載らない。",
+          "after": "応答に割引額が載る（100）。",
+          "untouched": []
+        }
+      ]
+    },
+    "hunks": [
+      {
+        "symbol": "com.example.admin.OrderAdminView.discountField",
+        "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+        "kind": "ripple",
+        "group": {
+          "pattern": "getDiscount() → discount",
+          "members": 22,
+          "role": "representative"
+        },
+        "lines": [
+          "h7       fun discountField(order: Order): Money {",
+          "b8 -         return order.getDiscount()",
+          "h8 +         return order.discount",
+          "h9       }"
+        ]
+      },
+      {
+        "symbol": "src/main/kotlin/com/example/common/Logger.kt",
+        "path": "src/main/kotlin/com/example/common/Logger.kt",
+        "lines": [
+          "h3 + import java.time.Instant"
+        ]
+      },
+      {
+        "symbol": "com.example.common.Logger.format",
+        "path": "src/main/kotlin/com/example/common/Logger.kt",
+        "lines": [
+          "b6 -     fun format(level: Level, msg: String) = \"[$level] $msg\"",
+          "h8 +     fun format(level: Level, msg: String) = \"[$level] ${Instant.now()} $msg\""
+        ]
+      },
+      {
+        "symbol": "com.example.config.FeatureFlags.DISCOUNT_V2",
+        "path": "src/main/kotlin/com/example/config/FeatureFlags.kt",
+        "lines": [
+          "h5 +     const val DISCOUNT_V2 = true"
+        ]
+      },
+      {
+        "symbol": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+        "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+        "kind": "core",
+        "lines": [
+          "h1 + package com.example.order.api"
+        ]
+      },
+      {
+        "symbol": "com.example.order.api.ApplyDiscountRequest",
+        "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+        "kind": "core",
+        "lines": [
+          "h3 + data class ApplyDiscountRequest(val discountCode: String)"
+        ]
+      },
+      {
+        "symbol": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "kind": "core",
+        "lines": [
+          "h8 + import org.springframework.web.bind.annotation.RequestBody"
+        ]
+      },
+      {
+        "symbol": "com.example.order.api.OrderController.apply",
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "kind": "core",
+        "lines": [
+          "h16       @PostMapping(\"/orders/{id}/discount\")",
+          "b16 -     fun apply(@PathVariable id: String): OrderResponse {",
+          "b17 -         val order = useCase.execute(OrderId(id))",
+          "h17 +     fun apply(@PathVariable id: String, @RequestBody body: ApplyDiscountRequest): OrderResponse {",
+          "h18 +         val order = useCase.execute(OrderId(id), body.discountCode)",
+          "h19 +         repository.save(order)",
+          "h20           return OrderResponse.from(order)",
+          "h21       }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.api.OrderDetailResponse",
+        "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+        "kind": "core",
+        "lines": [
+          "h5   data class OrderDetailResponse(",
+          "h6       val id: String,",
+          "h7       val subtotal: Long,",
+          "h8       val total: Long,",
+          "h9 +     val discount: Long,",
+          "h10   ) {",
+          "h11       companion object {",
+          "h12           fun from(o: Order) = OrderDetailResponse(",
+          "h13               id = o.id.value,",
+          "h14               subtotal = o.subtotal.amount,",
+          "h15               total = o.total().amount,",
+          "h16 +             discount = o.discount.amount,",
+          "h17           )",
+          "h18       }",
+          "h19   }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.api.OrderResponse",
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "kind": "core",
+        "lines": [
+          "h5   data class OrderResponse(",
+          "h6       val id: String,",
+          "h7       val subtotal: Long,",
+          "h8 +     val discount: Long,",
+          "h9   ) {",
+          "h10       companion object {",
+          "h11           fun from(o: Order) = OrderResponse(",
+          "h12               id = o.id.value,",
+          "h13               subtotal = o.subtotal.amount,",
+          "h14 +             discount = o.discount.amount,",
+          "h15           )",
+          "h16       }",
+          "h17   }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.api.OrderSummaryResponse",
+        "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+        "kind": "core",
+        "lines": [
+          "h5   data class OrderSummaryResponse(",
+          "h6       val id: String,",
+          "h7       val total: Long,",
+          "h8 +     val discount: Long,",
+          "h9   ) {",
+          "h10       companion object {",
+          "h11           fun from(o: Order) = OrderSummaryResponse(",
+          "h12               id = o.id.value,",
+          "h13               total = o.total().amount,",
+          "h14 +             discount = o.discount.amount,",
+          "h15           )",
+          "h16       }",
+          "h17   }"
+        ]
+      },
+      {
+        "symbol": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "kind": "core",
+        "lines": [
+          "h3 + import com.example.order.domain.DiscountCommand"
+        ]
+      },
+      {
+        "symbol": "com.example.order.application.ApplyDiscountUseCase.execute",
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "kind": "core",
+        "lines": [
+          "b14 -     fun execute(id: OrderId): Order {",
+          "h15 +     fun execute(id: OrderId, code: String): Order {",
+          "h16           val order = repository.find(id) ?: throw OrderNotFound(id)",
+          "h17 +         order.applyDiscount(DiscountCommand(code))",
+          "h18 +         repository.save(order)",
+          "h19           return order",
+          "h20       }"
+        ]
+      },
+      {
+        "symbol": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+        "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+        "kind": "core",
+        "lines": [
+          "h1 + package com.example.order.domain"
+        ]
+      },
+      {
+        "symbol": "com.example.order.domain.DiscountCommand",
+        "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+        "kind": "core",
+        "lines": [
+          "h3 + data class DiscountCommand(val code: String)"
+        ]
+      },
+      {
+        "symbol": "com.example.order.domain.Order",
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "kind": "core",
+        "lines": [
+          "h3   class Order(",
+          "h4       val id: OrderId,",
+          "h5       val subtotal: Money,",
+          "b6 -     val promo: Promo? = null,",
+          "h6 +     var discount: Money = Money.ZERO,",
+          "h7   ) {",
+          "b8 -     fun getDiscount(): Money = promo?.amount ?: Money.ZERO",
+          "h8 +     fun applyDiscount(cmd: DiscountCommand) {",
+          "h9 +         val rate = DiscountPolicy.rateFor(cmd.code)",
+          "h10 +         discount = subtotal * rate",
+          "h11 +     }",
+          "h12   ",
+          "b10 -     fun total(): Money = subtotal",
+          "h13 +     fun total(): Money = subtotal - discount",
+          "h14   }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.infra.OrderRepositoryImpl.save",
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "kind": "core",
+        "lines": [
+          "h14       override fun save(order: Order) {",
+          "h15           jdbc.update(",
+          "b16 -             \"update orders set subtotal = :subtotal where id = :id\",",
+          "b17 -             mapOf(\"id\" to order.id.value, \"subtotal\" to order.subtotal.amount),",
+          "h16 +             \"update orders set subtotal = :subtotal, discount = :discount where id = :id\",",
+          "h17 +             mapOf(",
+          "h18 +                 \"id\" to order.id.value,",
+          "h19 +                 \"subtotal\" to order.subtotal.amount,",
+          "h20 +                 \"discount\" to order.discount.amount,",
+          "h21 +             ),",
+          "h22           )",
+          "h23       }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.infra.OrderRepositoryImpl.find",
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "kind": "core",
+        "lines": [
+          "h25       override fun find(id: OrderId): Order? =",
+          "h26           jdbc.query(",
+          "b23 -             \"select id, subtotal from orders where id = :id\",",
+          "h27 +             \"select id, subtotal, discount from orders where id = :id\",",
+          "h28               mapOf(\"id\" to id.value),",
+          "h29           ) { rs, _ ->",
+          "h30               Order(",
+          "h31                   id = OrderId(rs.getString(\"id\")),",
+          "h32                   subtotal = Money(rs.getLong(\"subtotal\")),",
+          "h33 +                 discount = Money(rs.getLong(\"discount\")),",
+          "h34               )",
+          "h35           }.firstOrNull()"
+        ]
+      },
+      {
+        "symbol": "com.example.promo.PromoService.apply",
+        "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+        "kind": "ripple",
+        "group": {
+          "pattern": "getDiscount() → discount",
+          "members": 22,
+          "role": "deviation"
+        },
+        "lines": [
+          "h9       fun apply(order: Order): Money {",
+          "b10 -         val d = order.getDiscount()",
+          "h10 +         val d = order.discount.takeIf { it > Money.ZERO } ?: legacyPromo(order)",
+          "h11           return d",
+          "h12       }"
+        ]
+      },
+      {
+        "symbol": "src/main/resources/db/migration/V421__discount.sql",
+        "path": "src/main/resources/db/migration/V421__discount.sql",
+        "kind": "core",
+        "lines": [
+          "h1 + ALTER TABLE orders",
+          "h2 +   ADD COLUMN discount BIGINT NOT NULL DEFAULT 0;"
+        ]
+      },
+      {
+        "symbol": "com.example.order.application.ApplyDiscountUseCaseTest.`throws when order is missing`",
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "kind": "test",
+        "lines": [
+          "h16       @Test",
+          "h17       fun `throws when order is missing`() {",
+          "h18           every { repository.find(any()) } returns null",
+          "b19 -         assertFailsWith<OrderNotFound> { useCase.execute(OrderId(\"nope\")) }",
+          "h19 +         assertFailsWith<OrderNotFound> { useCase.execute(OrderId(\"nope\"), \"SPRING10\") }",
+          "h20       }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.application.ApplyDiscountUseCaseTest.`saves the order after applying`",
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "kind": "test",
+        "lines": [
+          "h22 +     @Test",
+          "h23 +     fun `saves the order after applying`() {",
+          "h24 +         useCase.execute(OrderId(\"o-1\"), \"SPRING10\")",
+          "h25 +         verify(exactly = 1) { repository.save(any()) }",
+          "h26 +     }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.domain.OrderTest.`applies the policy rate to subtotal`",
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "kind": "test",
+        "lines": [
+          "h13 +     @Test",
+          "h14 +     fun `applies the policy rate to subtotal`() {",
+          "h15 +         val order = Order(id = OrderId(\"o-1\"), subtotal = Money(1000))",
+          "h16 +         order.applyDiscount(DiscountCommand(\"SPRING10\"))",
+          "h17 +         assertEquals(Money(900), order.total())",
+          "h18 +     }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.domain.OrderTest.`keeps total when code is unknown`",
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "kind": "test",
+        "lines": [
+          "h20 +     @Test",
+          "h21 +     fun `keeps total when code is unknown`() {",
+          "h22 +         val order = Order(id = OrderId(\"o-1\"), subtotal = Money(1000))",
+          "h23 +         order.applyDiscount(DiscountCommand(\"NOPE\"))",
+          "h24 +         assertEquals(Money(1000), order.total())",
+          "h25 +     }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.infra.OrderRepositoryImplTest.`persists discount`",
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "kind": "test",
+        "lines": [
+          "h18 +     @Test",
+          "h19 +     fun `persists discount`() {",
+          "h20 +         repository.save(orderWithDiscount(100))",
+          "h21 +         assertEquals(Money(100), repository.find(OrderId(\"o-1\"))!!.discount)",
+          "h22 +     }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.infra.OrderRepositoryImplTest.`reads zero discount for rows saved before the column existed`",
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "kind": "test",
+        "lines": [
+          "h24 +     @Test",
+          "h25 +     fun `reads zero discount for rows saved before the column existed`() {",
+          "h26 +         repository.save(Order(id = OrderId(\"o-2\"), subtotal = Money(500)))",
+          "h27 +         assertEquals(Money.ZERO, repository.find(OrderId(\"o-2\"))!!.discount)",
+          "h28 +     }"
+        ]
+      },
+      {
+        "symbol": "com.example.order.infra.OrderRepositoryImplTest.orderWithDiscount",
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "kind": "test",
+        "lines": [
+          "h30 +     private fun orderWithDiscount(amount: Long) =",
+          "h31 +         Order(id = OrderId(\"o-1\"), subtotal = Money(1000), discount = Money(amount))"
+        ]
+      }
+    ],
+    "unassigned": [
+      "src/main/kotlin/com/example/common/Logger.kt",
+      "com.example.common.Logger.format",
+      "com.example.config.FeatureFlags.DISCOUNT_V2"
+    ]
+  },
+  "history": [],
+  "question": "割引コードを付けないとき、合計は前と変わる？"
+}

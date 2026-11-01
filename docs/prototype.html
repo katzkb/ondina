@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="ja" data-flavor="mocha" data-accent="mauve">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ondina — #4821 注文に割引を適用する</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--font-ui:"Inter","Noto Sans JP",system-ui,-apple-system,sans-serif;--font-code:"JetBrains Mono","Noto Sans JP",ui-monospace,Menlo,monospace}
+[data-flavor="latte"]{--rosewater:#dc8a78;--flamingo:#dd7878;--pink:#ea76cb;--mauve:#8839ef;--red:#d20f39;--maroon:#e64553;--peach:#fe640b;--yellow:#df8e1d;--green:#40a02b;--teal:#179299;--sky:#04a5e5;--sapphire:#209fb5;--blue:#1e66f5;--lavender:#7287fd;--text:#4c4f69;--subtext1:#5c5f77;--subtext0:#6c6f85;--overlay2:#7c7f93;--overlay1:#8c8fa1;--overlay0:#9ca0b0;--surface2:#acb0be;--surface1:#bcc0cc;--surface0:#ccd0da;--base:#eff1f5;--mantle:#e6e9ef;--crust:#dce0e8;color-scheme:light}
+[data-flavor="frappe"]{--rosewater:#f2d5cf;--flamingo:#eebebe;--pink:#f4b8e4;--mauve:#ca9ee6;--red:#e78284;--maroon:#ea999c;--peach:#ef9f76;--yellow:#e5c890;--green:#a6d189;--teal:#81c8be;--sky:#99d1db;--sapphire:#85c1dc;--blue:#8caaee;--lavender:#babbf1;--text:#c6d0f5;--subtext1:#b5bfe2;--subtext0:#a5adce;--overlay2:#949cbb;--overlay1:#838ba7;--overlay0:#737994;--surface2:#626880;--surface1:#51576d;--surface0:#414559;--base:#303446;--mantle:#292c3c;--crust:#232634;color-scheme:dark}
+[data-flavor="macchiato"]{--rosewater:#f4dbd6;--flamingo:#f0c6c6;--pink:#f5bde6;--mauve:#c6a0f6;--red:#ed8796;--maroon:#ee99a0;--peach:#f5a97f;--yellow:#eed49f;--green:#a6da95;--teal:#8bd5ca;--sky:#91d7e3;--sapphire:#7dc4e4;--blue:#8aadf4;--lavender:#b7bdf8;--text:#cad3f5;--subtext1:#b8c0e0;--subtext0:#a5adcb;--overlay2:#939ab7;--overlay1:#8087a2;--overlay0:#6e738d;--surface2:#5b6078;--surface1:#494d64;--surface0:#363a4f;--base:#24273a;--mantle:#1e2030;--crust:#181926;color-scheme:dark}
+[data-flavor="mocha"]{--rosewater:#f5e0dc;--flamingo:#f2cdcd;--pink:#f5c2e7;--mauve:#cba6f7;--red:#f38ba8;--maroon:#eba0ac;--peach:#fab387;--yellow:#f9e2af;--green:#a6e3a1;--teal:#94e2d5;--sky:#89dceb;--sapphire:#74c7ec;--blue:#89b4fa;--lavender:#b4befe;--text:#cdd6f4;--subtext1:#bac2de;--subtext0:#a6adc8;--overlay2:#9399b2;--overlay1:#7f849c;--overlay0:#6c7086;--surface2:#585b70;--surface1:#45475a;--surface0:#313244;--base:#1e1e2e;--mantle:#181825;--crust:#11111b;color-scheme:dark}
+[data-accent="mauve"]{--accent:var(--mauve)}[data-accent="blue"]{--accent:var(--blue)}[data-accent="lavender"]{--accent:var(--lavender)}[data-accent="teal"]{--accent:var(--teal)}[data-accent="peach"]{--accent:var(--peach)}[data-accent="pink"]{--accent:var(--pink)}
+:root{
+  --bg:var(--crust);--panel:var(--base);--panel-2:var(--mantle);--ink:var(--text);--muted:var(--subtext0);--faint:var(--overlay0);--line:var(--surface0);--line-2:var(--surface1);
+  --accent-soft:color-mix(in srgb,var(--accent) 16%,var(--base));--accent-ink:var(--accent);--accent-edge:color-mix(in srgb,var(--accent) 55%,var(--base));--on-accent:var(--crust);
+  --warn:var(--yellow);--warn-soft:color-mix(in srgb,var(--yellow) 16%,var(--base));
+  --danger:var(--red);--danger-soft:color-mix(in srgb,var(--red) 14%,var(--base));
+  --ok:var(--green);--ok-soft:color-mix(in srgb,var(--green) 16%,var(--base));
+  --add-bg:color-mix(in srgb,var(--green) 18%,var(--base));--del-bg:color-mix(in srgb,var(--red) 18%,var(--base));
+  --sans:var(--font-ui);--mono:var(--font-code);
+}
+.c-rosewater{color:var(--rosewater)}.c-flamingo{color:var(--flamingo)}.c-pink{color:var(--pink)}.c-mauve{color:var(--mauve)}.c-red{color:var(--red)}.c-maroon{color:var(--maroon)}.c-peach{color:var(--peach)}.c-yellow{color:var(--yellow)}.c-green{color:var(--green)}.c-teal{color:var(--teal)}.c-sky{color:var(--sky)}.c-sapphire{color:var(--sapphire)}.c-blue{color:var(--blue)}.c-lavender{color:var(--lavender)}.c-text{color:var(--text)}.c-subtext1{color:var(--subtext1)}.c-subtext0{color:var(--subtext0)}.c-overlay2{color:var(--overlay2)}.c-overlay1{color:var(--overlay1)}.c-overlay0{color:var(--overlay0)}
+.it{font-style:italic}.bd{font-weight:500}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:13px/1.5 var(--sans);color:var(--ink);background:var(--bg)}
+button{font:inherit}
+.app{display:grid;grid-template-columns:212px 1fr;grid-template-rows:52px 1fr;height:100vh;min-width:1180px}
+.top{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+.top .num{font:500 13px var(--mono);color:var(--muted)}
+.top .ttl{font-weight:500;font-size:15px}
+.top .br{font:12px var(--mono);color:var(--muted)}
+.meter{display:flex;gap:8px;margin-left:auto;align-items:center}
+.m{display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:4px;font-size:12px;background:var(--panel-2);color:var(--muted)}
+.m b{font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.m.done{border-color:#9FD3B4;background:var(--ok-soft);color:var(--ok)}.m.done b{color:var(--ok)}
+.m.warn{border-color:#E9CF86;background:var(--warn-soft);color:var(--warn)}.m.warn b{color:var(--warn)}
+.m.bad{border-color:#F0B3AE;background:var(--danger-soft);color:var(--danger)}.m.bad b{color:var(--danger)}
+.btn{padding:6px 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--panel);cursor:pointer;color:var(--ink)}
+.btn:hover{background:var(--panel-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn:focus-visible,.row:focus-visible,.how:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.rail{background:var(--panel);border-right:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column}
+.rail a{display:grid;grid-template-columns:24px 1fr;column-gap:10px;padding:11px 16px 11px 13px;border-left:3px solid transparent;color:var(--muted);cursor:pointer}
+.rail a:hover{background:var(--panel-2)}
+.rail a.on{border-left-color:var(--accent);color:var(--ink);background:var(--accent-soft)}
+.rail .k{font:500 15px var(--mono);line-height:20px}
+.rail .nm{font-weight:500;line-height:20px}
+.rail .st{grid-column:2;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rail .foot{margin-top:auto;padding:12px 16px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line)}
+.stage{position:relative;overflow:hidden}
+.view{position:absolute;inset:0;display:none}
+.view.on{display:grid}
+.col{overflow:auto;border-right:1px solid var(--line);background:var(--panel);min-width:0}
+.col:last-child{border-right:0}
+.hd{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);min-height:41px}
+.hd b{color:var(--ink);font-weight:500;font-size:13px;white-space:nowrap}
+.hd .sp{margin-left:auto}
+.chip{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;line-height:16px;background:var(--panel-2);color:var(--muted);white-space:nowrap;border:1px solid var(--line);vertical-align:middle}
+.chip.h{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent;font-family:var(--mono);font-weight:500}
+.chip.w{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.d{background:var(--danger-soft);color:var(--danger);border-color:transparent}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.q{border-style:dashed}
+/* view A */
+.va{padding:22px 28px;grid-template-columns:1.15fr 1fr;grid-template-rows:auto auto;gap:20px;overflow:auto;background:var(--bg);align-content:start}
+.box{background:var(--panel);border:1px solid var(--line);min-width:0}
+.box h3{margin:0;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:500;color:var(--muted);display:flex;gap:8px;align-items:center}
+.box .bd{padding:14px 16px}
+.box p{margin:0 0 10px}
+dl{display:grid;grid-template-columns:104px 1fr;gap:8px 12px;margin:0}
+dt{color:var(--muted);font-size:12.5px;padding-top:1px}
+dd{margin:0}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.k{font-family:var(--mono);font-size:12px}
+tr:last-child td{border-bottom:0}
+mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:2px}
+.flag{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:var(--warn-soft);border-radius:4px;font-size:12.5px;color:var(--warn);margin-top:8px}
+.flag .chip{flex:none;margin-top:1px}
+.spec{display:grid;grid-template-columns:22px 1fr auto;gap:8px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.spec:last-child{border-bottom:0}
+.spec .i{font:500 12px var(--mono);color:var(--muted)}
+.author{font-size:13px;color:var(--ink);line-height:1.7}
+/* view B */
+.vb{grid-template-columns:296px minmax(0,360px) minmax(430px,1fr)}
+.how{padding:12px 16px;border-bottom:1px solid var(--line);border-left:3px solid transparent;cursor:pointer}
+.how:hover{background:var(--panel-2)}
+.how.on{border-left-color:var(--accent);background:var(--accent-soft)}
+.how.lit{background:var(--accent-soft)}
+.how .t{display:flex;gap:10px;align-items:baseline;font-weight:500}
+.how .i{font:500 13px var(--mono);color:var(--accent-ink)}
+.how .why{font-size:12px;color:var(--muted);margin:4px 0 8px}
+.how .cnt{display:flex;gap:6px;flex-wrap:wrap}
+.bar{height:3px;background:var(--line);margin-top:9px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto auto 26px;gap:10px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
+.row:hover{background:var(--panel-2)}
+.row.on{background:var(--accent-soft)}
+.row.dim{opacity:.26}
+.row.bad{background:var(--danger-soft)}
+.row .p{font-family:var(--mono);font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .p small{color:var(--muted);font-size:12px}
+.row .p .sub{display:block;font:12px var(--sans);color:var(--muted);white-space:normal}
+.row .hs{display:flex;gap:4px}
+.eye{width:22px;height:22px;border-radius:3px;border:1px solid var(--line-2);background:var(--panel);display:grid;place-items:center;font-size:11px;color:var(--muted);cursor:pointer;padding:0}
+.eye.v{background:var(--ok);border-color:var(--ok);color:var(--crust)}
+.grp{padding:10px 16px 12px 24px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.grp .lbl{margin:8px 0 4px}.grp .lbl:first-child{margin-top:0}
+.grp .dev{display:flex;gap:8px;align-items:center;margin-top:10px}
+.diff{font:13px/1.6 var(--mono);margin:0;background:var(--panel);color:var(--text);overflow-x:auto}
+.diff .ln{color:var(--overlay0);text-align:right;padding:0 10px 0 6px;user-select:none;background:var(--panel-2);font-size:12px;white-space:nowrap}
+.diff .cd{white-space:pre;padding:0 14px}
+.diff .a{background:var(--add-bg)}.diff .r{background:var(--del-bg)}
+.diff .ln.a{background:color-mix(in srgb,var(--green) 28%,var(--mantle))}.diff .ln.r{background:color-mix(in srgb,var(--red) 28%,var(--mantle))}
+.diff .x{background:repeating-linear-gradient(-45deg,transparent 0 5px,var(--surface0) 5px 6px)}
+.diff.sbs{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content minmax(0,1fr)}
+.diff.sbs .cd{overflow:hidden;text-overflow:ellipsis;border-left:1px solid var(--line)}
+.diff.uni{display:grid;grid-template-columns:max-content max-content minmax(0,1fr)}
+.diff.mini{font-size:12px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.diff.mini .cd{padding:0 10px}
+.jump{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor;cursor:pointer}
+.jump:hover{background:var(--accent-soft)}
+.tsel{display:flex;flex-direction:column;gap:6px;padding:12px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.tsel .seg{display:grid;grid-template-columns:1fr 1fr}.tsel .seg button{padding:4px 8px;font-size:11.5px;border:0.5px solid var(--line)}
+.tsel select{font:12px var(--sans);padding:3px 6px;border:1px solid var(--line-2);border-radius:3px;background:var(--panel);color:var(--ink)}
+.prev-hd{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.prev-hd .p{font:500 14px var(--mono)}
+.prev-hd .meta{display:flex;gap:6px;align-items:center;margin-top:8px}
+.empty{padding:40px 24px;color:var(--muted);font-size:13px;text-align:center}
+/* view C */
+.vc{grid-template-columns:1fr 480px}
+.map{padding:18px 24px 8px}
+.map svg{width:100%;height:auto;display:block}
+.nd rect{fill:var(--surface0);stroke:var(--surface1);cursor:pointer}
+.nd.ch rect{fill:var(--accent-soft);stroke:var(--accent-edge)}
+.nd.cur rect{stroke:var(--accent);stroke-width:2}
+.nd.off{opacity:.4}
+.nd text{font:12px var(--sans);fill:var(--muted);pointer-events:none}
+.nd text.nm{font:500 13px var(--mono);fill:var(--ink)}
+.nd.ch text.nm{fill:var(--accent-ink)}
+.nd .tb rect{fill:var(--base);stroke:var(--line-2);stroke-width:1}
+.nd .tb text{font:10.5px var(--sans);fill:var(--muted)}
+.ed{fill:none;stroke:var(--surface2);stroke-width:1.5}
+.ed.on{stroke:var(--subtext0);stroke-width:1.8}
+.ed.skip{stroke:color-mix(in srgb,var(--red) 45%,var(--base));stroke-dasharray:5 4}
+.ed.skip.on{stroke:var(--danger)}
+.ed.dot{stroke-dasharray:2 3}
+.lb{font:11px var(--sans);fill:var(--muted)}
+.lb.off{opacity:.35}
+.band{font:11px var(--sans);fill:var(--muted)}
+.bline{stroke:var(--line);stroke-width:1}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:4px;overflow:hidden}
+.seg button{padding:4px 12px;border:0;background:var(--panel);cursor:pointer;color:var(--muted);font-size:12.5px}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+.legend{padding:6px 24px 16px;font-size:12px;color:var(--muted);display:flex;gap:18px}
+.legend i{display:inline-block;width:18px;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.step{padding:16px 20px}
+.step .sym{font:500 15px var(--mono);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.step .call{font-size:12px;color:var(--muted);margin:6px 0 12px}
+.fact{margin-top:12px;padding:8px 12px;border-left:3px solid var(--line-2);font-size:12.5px;color:var(--muted);background:var(--panel-2)}
+.ctl{display:flex;gap:8px;padding:12px 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ctl .btn{flex:1}
+.steps div{display:grid;grid-template-columns:18px 1fr auto;gap:10px;padding:7px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;align-items:center;border-bottom:1px solid var(--line)}
+.steps div:hover{background:var(--panel-2)}
+.steps div.on{color:var(--ink);font-weight:500;background:var(--accent-soft)}
+.steps .ck{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line-2)}
+.steps .ck.v{background:var(--ok);border-color:var(--ok)}
+.steps .nm{font-family:var(--mono);font-size:12px}
+/* view D */
+.vd{grid-template-columns:252px 1fr 300px}
+.file{display:grid;grid-template-columns:1fr auto 22px;gap:8px;align-items:center;padding:7px 14px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12.5px}
+.file:hover{background:var(--panel-2)}
+.file.on{background:var(--accent-soft)}
+.file .p{font-family:var(--mono);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file .p small{color:var(--muted)}
+.file .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+.file .dot.v{background:var(--ok)}
+.file.bad .p{color:var(--danger)}
+.hk{border-bottom:1px solid var(--line)}
+.hk .hh{display:flex;gap:8px;align-items:center;padding:8px 16px;background:var(--panel-2);border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--muted)}
+.hk .hh .sp{margin-left:auto;display:flex;gap:6px;align-items:center}
+.cm{padding:12px 16px;border-bottom:1px solid var(--line)}
+.cm .loc{font:12px var(--mono);color:var(--muted);display:flex;gap:8px;align-items:center}
+.cm p{margin:6px 0 8px;font-size:13px}
+.cm .act{display:flex;gap:6px}
+.cm.ad{border-left:3px solid var(--ok)}
+.cm.gone{opacity:.35}
+.cm textarea{width:100%;font:13px var(--sans);padding:6px 8px;border:1px solid var(--line-2);border-radius:3px;background:var(--panel-2);color:var(--ink);resize:vertical;min-height:56px;margin:6px 0}
+.send{padding:12px 16px;position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:no-preference){.row,.how,.file,.steps div{transition:background .12s}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="num">#4821</span>
+    <span class="ttl">注文に割引を適用する</span>
+    <span class="br">feat/order-discount → main</span><span class="chip">Kotlin</span>
+    <span class="chip">+1,214 −86</span>
+    <div class="meter" id="meter"></div>
+    <button class="btn primary" type="button">GitHub で承認</button>
+  </header>
+
+  <nav class="rail" id="rail">
+    <a data-v="a" class="on"><span class="k">A</span><span class="nm">説明</span><span class="st">差分から生成 · 仕様 2/3</span></a>
+    <a data-v="b"><span class="k">B</span><span class="nm">How 分解</span><span class="st" id="st-b"></span></a>
+    <a data-v="c"><span class="k">C</span><span class="nm">コース</span><span class="st" id="st-c"></span></a>
+    <a data-v="d"><span class="k">D</span><span class="nm">差分一覧</span><span class="st" id="st-d"></span></a>
+    <div class="foot"><b style="font-weight:500;color:var(--ink)">ondina</b> · 水路を示すが、舵は切らない。<br>閲覧状態は 4 つの画面で共有。</div>
+    <div class="tsel"><span>Catppuccin</span><span class="seg" id="flav"><button type="button" data-fl="latte">Latte</button><button type="button" data-fl="frappe">Frappé</button><button type="button" data-fl="macchiato">Macch.</button><button type="button" data-fl="mocha" class="on">Mocha</button></span><label style="display:flex;gap:8px;align-items:center">アクセント<select id="acc"><option>mauve</option><option>blue</option><option>lavender</option><option>teal</option><option>peach</option><option>pink</option></select></label></div>
+  </nav>
+
+  <main class="stage">
+
+  <section id="v-a" class="view va on">
+    <div class="box" style="grid-row:1/3">
+      <h3>差分から生成した説明 <span class="chip">PR の説明は使っていない</span></h3>
+      <div class="bd">
+        <dl>
+          <dt>問題</dt><dd>割引額は <code>Order.getDiscount()</code> が都度 <code>promo</code> から取得していて、<code>Order</code> 自身は割引を持たない。合計の計算は呼び出し側 22 か所に散っていた。</dd>
+          <dt>方針</dt><dd><code>getDiscount()</code> と <code>promo</code> を消し、<code>Order</code> が <code>discount</code> プロパティを持って <code>applyDiscount()</code> で計算する。呼び出し側は <code>order.discount</code> に追従。<code>orders</code> に列を追加し、<code>OrderResponse</code> で返す。</dd>
+          <dt>触らないもの</dt><dd>支払い、返金、割引コードのマスタ管理、既存の価格計算経路。</dd>
+        </dl>
+        <table style="margin-top:18px">
+          <thead><tr><th style="width:38%">対象</th><th>マージ前</th><th>マージ後</th></tr></thead>
+          <tbody>
+            <tr><td class="k">POST /orders/{id}/discount</td><td>404</td><td>割引適用後の注文を返す</td></tr>
+            <tr><td class="k">Order.getDiscount()</td><td>promo.amount を返す</td><td>削除。order.discount を読む</td></tr>
+            <tr><td class="k">Order.total()</td><td>subtotal</td><td>subtotal − discount</td></tr>
+            <tr><td class="k">orders テーブル</td><td>discount 列なし</td><td>discount BIGINT 追加（V421）</td></tr>
+            <tr><td class="k">無効な割引コード</td><td>—</td><td>変更なし（Rate.ZERO として通る）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>仕様 <span class="chip">ORD-882</span><span class="sp"></span></h3>
+      <div class="bd" style="padding-top:6px;padding-bottom:6px">
+        <div class="spec"><span class="i">1</span><span>割引コードを注文に適用できる</span><span><span class="chip h">How 1</span> <span class="chip h">How 3</span></span></div>
+        <div class="spec"><span class="i">2</span><span>割引額が保存され、再取得時に返される</span><span><span class="chip h">How 2</span> <span class="chip h">How 3</span></span></div>
+        <div class="spec"><span class="i">3</span><span>無効なコードはエラーを返す</span><span class="chip d">対応する How なし</span></div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>作者の説明 <span class="chip">主張として表示</span></h3>
+      <div class="bd">
+        <p class="author">この PR では、割引機能を包括的に実装しました。ドメインモデル、永続化層、API 層、<mark>キャッシュ層</mark>を横断的に更新し、堅牢でスケーラブルな設計を実現しています。<mark>無効なコードのバリデーションも追加しました</mark>。</p>
+        <div class="flag"><span class="chip w">差分なし</span><span>「キャッシュ層」に該当する変更は差分に見当たらない。</span></div>
+        <div class="flag"><span class="chip w">差分なし</span><span>バリデーションに相当する分岐やテストは差分に見当たらない。仕様 3 と同じ穴。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-b" class="view vb">
+    <div class="col">
+      <div class="hd"><b>How</b>依存順 · クリックで絞り込み</div>
+      <div id="hows"></div>
+    </div>
+    <div class="col">
+      <div class="hd" id="hunk-hd"></div>
+      <div id="hunks"></div>
+    </div>
+    <div class="col" id="preview"></div>
+  </section>
+
+  <section id="v-c" class="view vc">
+    <div class="col">
+      <div class="hd"><b>アーキテクチャ</b>変更シンボルを層に配置
+        <span class="sp"></span>
+        <span style="color:var(--muted)">コース</span>
+        <span class="seg" id="tour-seg"></span>
+      </div>
+      <div class="map">
+        <svg viewBox="0 0 760 384" role="img" aria-label="層別のシンボル配置図">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--subtext0)"/></marker>
+            <marker id="ar0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--surface2)"/></marker>
+            <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--red)"/></marker>
+          </defs>
+          <line class="bline" x1="0" y1="96" x2="760" y2="96"/><line class="bline" x1="0" y1="192" x2="760" y2="192"/><line class="bline" x1="0" y1="288" x2="760" y2="288"/>
+          <text class="band" x="752" y="16" text-anchor="end">API</text>
+          <text class="band" x="752" y="112" text-anchor="end">Application</text>
+          <text class="band" x="752" y="208" text-anchor="end">Domain</text>
+          <text class="band" x="752" y="304" text-anchor="end">Infrastructure</text>
+
+          <path id="e1" class="ed" d="M155 70 V122"/>
+          <text id="l1" class="lb" x="163" y="100">request → command</text>
+          <path id="e2" class="ed" d="M155 166 V218"/>
+          <text id="l2" class="lb" x="163" y="196">command → Order</text>
+          <path id="e3" class="ed" d="M250 240 H330"/>
+          <text id="l3" class="lb" x="254" y="234">code → Rate</text>
+          <path id="e4" class="ed" d="M60 148 H42 V346 H270"/>
+          <text id="l4" class="lb" x="110" y="341">Order → row</text>
+          <path id="e5" class="ed skip" d="M60 44 H26 V332 H270"/>
+          <path id="e6" class="ed dot" d="M460 336 H500"/>
+          <text id="l6" class="lb" x="462" y="328">schema</text>
+          <path id="e7" class="ed" d="M250 48 H480"/>
+          <text id="l7" class="lb" x="310" y="42">Order → OrderResponse</text>
+
+          <g class="nd ch" id="n1"><rect x="60" y="26" width="190" height="44" rx="4"/><text class="nm" x="72" y="45">OrderController</text><text x="72" y="61">apply()</text></g>
+          <g class="nd ch" id="n7"><rect x="480" y="26" width="190" height="44" rx="4"/><text class="nm" x="492" y="45">OrderResponse</text><text x="492" y="61">from() · discount: Long</text></g>
+          <g class="nd ch" id="n2"><rect x="60" y="122" width="190" height="44" rx="4"/><text class="nm" x="72" y="141">ApplyDiscountUseCase</text><text x="72" y="157">execute()</text><g class="tb"><rect x="196" y="144" width="48" height="16" rx="3"/><text x="204" y="156">テスト 1</text></g></g>
+          <g class="nd ch" id="n3"><rect x="60" y="218" width="190" height="44" rx="4"/><text class="nm" x="72" y="237">Order</text><text x="72" y="253">applyDiscount()</text><g class="tb"><rect x="196" y="240" width="48" height="16" rx="3"/><text x="204" y="252">テスト 2</text></g></g>
+          <g class="nd" id="n4"><rect x="330" y="218" width="190" height="44" rx="4"/><text class="nm" x="342" y="237">DiscountPolicy</text><text x="342" y="253">rateFor() · 未変更</text></g>
+          <g class="nd ch" id="n5"><rect x="270" y="314" width="190" height="44" rx="4"/><text class="nm" x="282" y="333">OrderRepositoryImpl</text><text x="282" y="349">save() · find()</text><g class="tb"><rect x="406" y="336" width="48" height="16" rx="3"/><text x="414" y="348">テスト 2</text></g></g>
+          <g class="nd ch" id="n6"><rect x="500" y="314" width="190" height="44" rx="4"/><text class="nm" x="512" y="333">V421__discount.sql</text><text x="512" y="349">ALTER TABLE orders</text></g>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><i style="border-color:var(--subtext0)"></i>このコースの経路</span>
+        <span><i style="border-color:var(--surface2)"></i>ほかの呼び出し</span>
+        <span><i style="border-color:var(--danger);border-top-style:dashed"></i>層を飛び越える呼び出し（事実のみ）</span>
+        <span>薄い枠 = 未変更</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="hd" id="step-hd"></div>
+      <div class="step" id="step"></div>
+      <div class="ctl">
+        <button class="btn" type="button" id="prev">前へ</button>
+        <button class="btn primary" type="button" id="seen">見た · 次へ</button>
+      </div>
+      <div class="steps" id="steps"></div>
+    </div>
+  </section>
+
+  <section id="v-d" class="view vd">
+    <div class="col">
+      <div class="hd"><b>ファイル</b><span id="file-cnt"></span></div>
+      <div id="files"></div>
+    </div>
+    <div class="col" id="dpane"></div>
+    <div class="col">
+      <div class="hd"><b>下書き</b>AI から受け取り、採用したものだけ送る</div>
+      <div id="comments"></div>
+      <div class="send"><button class="btn" type="button" id="sendbtn" style="width:100%"></button></div>
+    </div>
+  </section>
+
+  </main>
+</div>
+<script>
+const HOWS = [
+  {id:1, title:'ドメインに割引を追加', why:'割引額を Order 自身が持ち、計算をドメインの中で完結させる'},
+  {id:2, title:'永続化と移行', why:'discount 列を追加し、save / find で値が残る'},
+  {id:3, title:'API で返す', why:'コントローラで受け取り、OrderResponse で返す'},
+];
+const H = [
+  {id:'h1', ln:3, path:'order/domain/Order.kt', sym:'applyDiscount()', kind:'核', hows:[1,3], n:1, viewed:true, diff:[
+    ' class Order(','     val id: OrderId,','     val subtotal: Money,','-    val promo: Promo? = null,','+    var discount: Money = Money.ZERO,',' ) {','-    fun getDiscount(): Money = promo?.amount ?: Money.ZERO','+    fun applyDiscount(cmd: DiscountCommand) {','+        val rate = DiscountPolicy.rateFor(cmd.code)','+        discount = subtotal * rate','+    }','','-    fun total(): Money = subtotal','+    fun total(): Money = subtotal - discount',' }']},
+  {id:'h2', ln:1, path:'order/domain/DiscountCommand.kt', sym:'DiscountCommand', kind:'核', hows:[1], n:1, viewed:true, diff:[
+    '+data class DiscountCommand(val code: String)']},
+  {id:'h8', ln:14, path:'order/application/ApplyDiscountUseCase.kt', sym:'execute()', kind:'核', hows:[1], n:1, viewed:true, diff:[
+    '-    fun execute(id: OrderId): Order {','+    fun execute(id: OrderId, code: String): Order {','         val order = repository.find(id) ?: throw OrderNotFound(id)','+        order.applyDiscount(DiscountCommand(code))','+        repository.save(order)','         return order','     }']},
+  {id:'h3', path:'22 ファイル', sym:'追従 23 件', kind:'追従', hows:[1], n:23, viewed:false, group:true, pattern:'getDiscount() → discount', uniform:'AST',
+    rep:{ln:22, path:'cart/CartSummary.kt', sym:'total()', diff:['-        return items.sumOf { it.price } - order.getDiscount()','+        return items.sumOf { it.price } - order.discount']},
+    dev:{ln:29, path:'promo/PromoService.kt', sym:'apply()', diff:['-        val d = order.getDiscount()','+        val d = order.discount.takeIf { it > Money.ZERO } ?: legacyPromo(order)']}},
+  {id:'h11', ln:38, path:'order/domain/OrderTest.kt', sym:'applyDiscount', kind:'テスト', hows:[1], n:2, viewed:true, diff:[
+    '+    @Test','+    fun `applies the policy rate to subtotal`() {','+        val order = Order(id = OrderId("o-1"), subtotal = Money(1000))','+        order.applyDiscount(DiscountCommand("SPRING10"))','+        assertEquals(Money(900), order.total())','+    }','+','+    @Test','+    fun `keeps total when code is unknown`() {','+        val order = Order(id = OrderId("o-1"), subtotal = Money(1000))','+        order.applyDiscount(DiscountCommand("NOPE"))','+        assertEquals(Money(1000), order.total())','+    }']},
+  {id:'h12', ln:22, path:'order/application/ApplyDiscountUseCaseTest.kt', sym:'execute', kind:'テスト', hows:[1], n:1, viewed:false, diff:[
+    '+    @Test','+    fun `saves the order after applying`() {','+        useCase.execute(OrderId("o-1"), "SPRING10")','+        verify(exactly = 1) { repository.save(any()) }','+    }']},
+  {id:'h4', ln:27, path:'order/infra/OrderRepositoryImpl.kt', sym:'save()', kind:'核', hows:[2], n:1, viewed:false, diff:[
+    '     override fun save(order: Order) {','         jdbc.update(','-            "update orders set subtotal = :subtotal where id = :id",','-            mapOf("id" to order.id.value, "subtotal" to order.subtotal.amount),','+            "update orders set subtotal = :subtotal, discount = :discount where id = :id",','+            mapOf(','+                "id" to order.id.value,','+                "subtotal" to order.subtotal.amount,','+                "discount" to order.discount.amount,','+            ),','         )','     }']},
+  {id:'h14', ln:41, path:'order/infra/OrderRepositoryImpl.kt', sym:'find()', kind:'核', hows:[2], n:1, viewed:false, diff:[
+    '         Order(','             id = OrderId(rs.getString("id")),','             subtotal = Money(rs.getLong("subtotal")),','+            discount = Money(rs.getLong("discount")),','         )']},
+  {id:'h5', ln:1, path:'db/migration/V421__discount.sql', sym:'', kind:'核', hows:[2], n:1, viewed:false, diff:[
+    '+ALTER TABLE orders','+  ADD COLUMN discount BIGINT NOT NULL DEFAULT 0;']},
+  {id:'h13', ln:31, path:'order/infra/OrderRepositoryImplTest.kt', sym:'save', kind:'テスト', hows:[2], n:2, viewed:false, diff:[
+    '+    @Test','+    fun `persists discount`() {','+        repository.save(orderWithDiscount(100))','+        assertEquals(Money(100), repository.find(OrderId("o-1"))!!.discount)','+    }']},
+  {id:'h6', ln:18, path:'order/api/OrderController.kt', sym:'apply()', kind:'核', hows:[3], n:1, viewed:false, diff:[
+    '     @PostMapping("/orders/{id}/discount")','-    fun apply(@PathVariable id: String): OrderResponse {','-        val order = useCase.execute(OrderId(id))','+    fun apply(@PathVariable id: String, @RequestBody body: ApplyDiscountRequest): OrderResponse {','+        val order = useCase.execute(OrderId(id), body.discountCode)','+        repository.save(order)','         return OrderResponse.from(order)','     }']},
+  {id:'h7', path:'3 ファイル', sym:'追従 3 件', kind:'追従', hows:[3], n:3, viewed:false, group:true, pattern:'OrderResponse に discount を追加', uniform:'LLM',
+    rep:{ln:5, path:'order/api/OrderResponse.kt', sym:'OrderResponse', diff:[' data class OrderResponse(','     val id: String,','     val subtotal: Long,','+    val discount: Long,',' ) {','     companion object {','         fun from(o: Order) = OrderResponse(','             id = o.id.value,','             subtotal = o.subtotal.amount,','+            discount = o.discount.amount,','         )','     }',' }']}, dev:null},
+  {id:'h9', ln:8, path:'common/Logger.kt', sym:'format()', kind:'', hows:[], n:1, viewed:false, diff:[
+    '-    fun format(level: Level, msg: String) = "[$level] $msg"','+    fun format(level: Level, msg: String) = "[$level] ${Instant.now()} $msg"']},
+  {id:'h10', ln:3, path:'config/FeatureFlags.kt', sym:'FeatureFlags', kind:'', hows:[], n:1, viewed:false, diff:[
+    ' object FeatureFlags {','     const val NEW_CHECKOUT = true','+    const val DISCOUNT_V2 = true',' }']},
+];
+const T = {
+  1:{edges:['e1','e2','e3','e4'], steps:[
+    {node:'n1', hunk:'h6', name:'OrderController.apply', layer:'API', kind:'変更', call:'POST /orders/{id}/discount', fact:'OrderRepositoryImpl.save() も直接呼んでいる。Application 層を経由しない呼び出し。'},
+    {node:'n2', hunk:'h8', name:'ApplyDiscountUseCase.execute', layer:'Application', kind:'変更', call:'OrderController.apply → execute(id, code)'},
+    {node:'n3', hunk:'h1', name:'Order.applyDiscount', layer:'Domain', kind:'新規', call:'ApplyDiscountUseCase.execute → applyDiscount(cmd)'},
+    {node:'n4', hunk:null, name:'DiscountPolicy.rateFor', layer:'Domain', kind:'未変更', call:'Order.applyDiscount → rateFor(code)', same:['    fun rateFor(code: String): Rate =','        TABLE[code] ?: Rate.ZERO'], fact:'変更なし。経路上のベースラインとして表示。未知のコードは Rate.ZERO を返す。'},
+    {node:'n5', hunk:'h4', name:'OrderRepositoryImpl.save', layer:'Infrastructure', kind:'変更', call:'ApplyDiscountUseCase.execute → save(order)'},
+  ]},
+  2:{edges:['e4','e6'], steps:[
+    {node:'n5', hunk:'h4', name:'OrderRepositoryImpl.save', layer:'Infrastructure', kind:'変更', call:'ApplyDiscountUseCase.execute → save(order)'},
+    {node:'n5', hunk:'h14', name:'OrderRepositoryImpl.find', layer:'Infrastructure', kind:'変更', call:'find(id) が読む列'},
+    {node:'n6', hunk:'h5', name:'V421__discount.sql', layer:'Infrastructure', kind:'新規', call:'save() / find() が使う列の定義'},
+    {node:null, hunk:'h13', name:'OrderRepositoryImplTest', layer:'Tests', kind:'新規', call:'save → find の往復を検証'},
+  ]},
+  3:{edges:['e7','e1','e5'], steps:[
+    {node:'n1', hunk:'h6', name:'OrderController.apply', layer:'API', kind:'変更', call:'POST /orders/{id}/discount', fact:'OrderRepositoryImpl.save() も直接呼んでいる。execute 内の save() と合わせて 2 回保存される経路。'},
+    {node:'n7', hunk:'h7', name:'OrderResponse.from', layer:'API', kind:'変更', call:'OrderResponse.from(order)'},
+    {node:'n3', hunk:'h1', name:'Order.applyDiscount', layer:'Domain', kind:'新規', call:'OrderResponse が読む discount の出どころ'},
+  ]},
+};
+const C = [
+  {id:'c1', path:'order/api/OrderController.kt', line:21, src:'Claude Code', text:'repository.save() は ApplyDiscountUseCase.execute の中でも呼ばれるため、この経路では 2 回保存される。', state:'draft'},
+  {id:'c2', path:'promo/PromoService.kt', line:31, src:'Claude Code', text:'ほかの 22 か所と異なり legacyPromo() へのフォールバックが残っている。意図的か確認したい。', state:'draft'},
+  {id:'c3', path:'common/Logger.kt', line:8, src:'CodeRabbit', text:'この PR の目的と関係のない変更に見える。別の PR に分けられないか。', state:'draft'},
+];
+
+const TOK = {"h1":[[["class","mauve",0],[" ","text",0],["Order","yellow",1],["(","text",0]],[["    ","text",0],["val","mauve",0],[" id: ","text",0],["OrderId","yellow",1],[",","text",0]],[["    ","text",0],["val","mauve",0],[" subtotal: ","text",0],["Money","yellow",1],[",","text",0]],[["    ","text",0],["val","mauve",0],[" promo: ","text",0],["Promo","yellow",1],["? ","text",0],["=","teal",0],[" ","text",0],["null","red",0],[",","text",0]],[["    ","text",0],["var","mauve",0],[" discount: ","text",0],["Money","yellow",1],[" ","text",0],["=","teal",0],[" Money.ZERO,","text",0]],[[") {","text",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["getDiscount","blue",1],["(): ","text",0],["Money","yellow",1],[" ","text",0],["=","teal",0],[" promo?.amount ?: Money.ZERO","text",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["applyDiscount","blue",1],["(cmd: ","text",0],["DiscountCommand","yellow",1],[") {","text",0]],[["        ","text",0],["val","mauve",0],[" rate ","text",0],["=","teal",0],[" DiscountPolicy.","text",0],["rateFor","blue",1],["(cmd.code)","text",0]],[["        discount ","text",0],["=","teal",0],[" subtotal ","text",0],["*","teal",0],[" rate","text",0]],[["    }","text",0]],[],[["    ","text",0],["fun","mauve",0],[" ","text",0],["total","blue",1],["(): ","text",0],["Money","yellow",1],[" ","text",0],["=","teal",0],[" subtotal","text",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["total","blue",1],["(): ","text",0],["Money","yellow",1],[" ","text",0],["=","teal",0],[" subtotal ","text",0],["-","teal",0],[" discount","text",0]],[["}","text",0]]],"h2":[[["data","mauve",0],[" ","text",0],["class","mauve",0],[" ","text",0],["DiscountCommand","yellow",1],["(","text",0],["val","mauve",0],[" code: ","text",0],["String","yellow",1],[")","text",0]]],"h8":[[["    ","text",0],["fun","mauve",0],[" ","text",0],["execute","blue",1],["(id: ","text",0],["OrderId","yellow",1],["): ","text",0],["Order","yellow",1],[" {","text",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["execute","blue",1],["(id: ","text",0],["OrderId","yellow",1],[", code: ","text",0],["String","yellow",1],["): ","text",0],["Order","yellow",1],[" {","text",0]],[["        ","text",0],["val","mauve",0],[" order ","text",0],["=","teal",0],[" repository.","text",0],["find","blue",1],["(id) ?: ","text",0],["throw","mauve",0],[" ","text",0],["OrderNotFound","blue",1],["(id)","text",0]],[["        order.","text",0],["applyDiscount","blue",1],["(","text",0],["DiscountCommand","blue",1],["(code))","text",0]],[["        repository.","text",0],["save","blue",1],["(order)","text",0]],[["        ","text",0],["return","mauve",0],[" order","text",0]],[["    }","text",0]]],"h3:rep":[[["        ","text",0],["return","mauve",0],[" items.","text",0],["sumOf","blue",1],[" { it.price } ","text",0],["-","teal",0],[" order.","text",0],["getDiscount","blue",1],["()","text",0]],[["        ","text",0],["return","mauve",0],[" items.","text",0],["sumOf","blue",1],[" { it.price } ","text",0],["-","teal",0],[" order.discount","text",0]]],"h3:dev":[[["        ","text",0],["val","mauve",0],[" d ","text",0],["=","teal",0],[" order.","text",0],["getDiscount","blue",1],["()","text",0]],[["        ","text",0],["val","mauve",0],[" d ","text",0],["=","teal",0],[" order.discount.","text",0],["takeIf","blue",1],[" { it ","text",0],[">","teal",0],[" Money.ZERO } ?: ","text",0],["legacyPromo","blue",1],["(order)","text",0]]],"h11":[[["    ","text",0],["@Test","yellow",1]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["`applies the policy rate to subtotal`","blue",1],["() {","text",0]],[["        ","text",0],["val","mauve",0],[" order ","text",0],["=","teal",0],[" ","text",0],["Order","blue",1],["(id ","text",0],["=","teal",0],[" ","text",0],["OrderId","blue",1],["(","text",0],["\"o-1\"","green",0],["), subtotal ","text",0],["=","teal",0],[" ","text",0],["Money","blue",1],["(","text",0],["1000","peach",0],["))","text",0]],[["        order.","text",0],["applyDiscount","blue",1],["(","text",0],["DiscountCommand","blue",1],["(","text",0],["\"SPRING10\"","green",0],["))","text",0]],[["        ","text",0],["assertEquals","blue",1],["(","text",0],["Money","blue",1],["(","text",0],["900","peach",0],["), order.","text",0],["total","blue",1],["())","text",0]],[["    }","text",0]],[],[["    ","text",0],["@Test","yellow",1]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["`keeps total when code is unknown`","blue",1],["() {","text",0]],[["        ","text",0],["val","mauve",0],[" order ","text",0],["=","teal",0],[" ","text",0],["Order","blue",1],["(id ","text",0],["=","teal",0],[" ","text",0],["OrderId","blue",1],["(","text",0],["\"o-1\"","green",0],["), subtotal ","text",0],["=","teal",0],[" ","text",0],["Money","blue",1],["(","text",0],["1000","peach",0],["))","text",0]],[["        order.","text",0],["applyDiscount","blue",1],["(","text",0],["DiscountCommand","blue",1],["(","text",0],["\"NOPE\"","green",0],["))","text",0]],[["        ","text",0],["assertEquals","blue",1],["(","text",0],["Money","blue",1],["(","text",0],["1000","peach",0],["), order.","text",0],["total","blue",1],["())","text",0]],[["    }","text",0]]],"h12":[[["    ","text",0],["@Test","yellow",1]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["`saves the order after applying`","blue",1],["() {","text",0]],[["        useCase.","text",0],["execute","blue",1],["(","text",0],["OrderId","blue",1],["(","text",0],["\"o-1\"","green",0],["), ","text",0],["\"SPRING10\"","green",0],[")","text",0]],[["        ","text",0],["verify","blue",1],["(exactly ","text",0],["=","teal",0],[" ","text",0],["1","peach",0],[") { repository.","text",0],["save","blue",1],["(","text",0],["any","blue",1],["()) }","text",0]],[["    }","text",0]]],"h4":[[["    ","text",0],["override","mauve",0],[" ","text",0],["fun","mauve",0],[" ","text",0],["save","blue",1],["(order: ","text",0],["Order","yellow",1],[") {","text",0]],[["        jdbc.","text",0],["update","blue",1],["(","text",0]],[["            ","text",0],["\"update orders set subtotal = :subtotal where id = :id\"","green",0],[",","text",0]],[["            ","text",0],["mapOf","blue",1],["(","text",0],["\"id\"","green",0],[" to order.id.","text",0],["value","mauve",0],[", ","text",0],["\"subtotal\"","green",0],[" to order.subtotal.amount),","text",0]],[["            ","text",0],["\"update orders set subtotal = :subtotal, discount = :discount where id = :id\"","green",0],[",","text",0]],[["            ","text",0],["mapOf","blue",1],["(","text",0]],[["                ","text",0],["\"id\"","green",0],[" to order.id.","text",0],["value","mauve",0],[",","text",0]],[["                ","text",0],["\"subtotal\"","green",0],[" to order.subtotal.amount,","text",0]],[["                ","text",0],["\"discount\"","green",0],[" to order.discount.amount,","text",0]],[["            ),","text",0]],[["        )","text",0]],[["    }","text",0]]],"h14":[[["        ","text",0],["Order","blue",1],["(","text",0]],[["            id ","text",0],["=","teal",0],[" ","text",0],["OrderId","blue",1],["(rs.","text",0],["getString","blue",1],["(","text",0],["\"id\"","green",0],[")),","text",0]],[["            subtotal ","text",0],["=","teal",0],[" ","text",0],["Money","blue",1],["(rs.","text",0],["getLong","blue",1],["(","text",0],["\"subtotal\"","green",0],[")),","text",0]],[["            discount ","text",0],["=","teal",0],[" ","text",0],["Money","blue",1],["(rs.","text",0],["getLong","blue",1],["(","text",0],["\"discount\"","green",0],[")),","text",0]],[["        )","text",0]]],"h5":[[["ALTER","mauve",0],[" ","text",0],["TABLE","mauve",0],[" orders","text",0]],[["  ","text",0],["ADD","mauve",0],[" COLUMN discount ","text",0],["BIGINT","mauve",0],[" ","text",0],["NOT NULL","mauve",0],[" ","text",0],["DEFAULT","mauve",0],[" ","text",0],["0","peach",0],[";","text",0]]],"h13":[[["    ","text",0],["@Test","yellow",1]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["`persists discount`","blue",1],["() {","text",0]],[["        repository.","text",0],["save","blue",1],["(","text",0],["orderWithDiscount","blue",1],["(","text",0],["100","peach",0],["))","text",0]],[["        ","text",0],["assertEquals","blue",1],["(","text",0],["Money","blue",1],["(","text",0],["100","peach",0],["), repository.","text",0],["find","blue",1],["(","text",0],["OrderId","blue",1],["(","text",0],["\"o-1\"","green",0],["))","text",0],["!!","teal",0],[".discount)","text",0]],[["    }","text",0]]],"h6":[[["    ","text",0],["@PostMapping","yellow",1],["(","text",0],["\"/orders/{id}/discount\"","green",0],[")","text",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["apply","blue",1],["(","text",0],["@PathVariable","yellow",1],[" id: ","text",0],["String","yellow",1],["): ","text",0],["OrderResponse","yellow",1],[" {","text",0]],[["        ","text",0],["val","mauve",0],[" order ","text",0],["=","teal",0],[" useCase.","text",0],["execute","blue",1],["(","text",0],["OrderId","blue",1],["(id))","text",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["apply","blue",1],["(","text",0],["@PathVariable","yellow",1],[" id: ","text",0],["String","yellow",1],[", ","text",0],["@RequestBody","yellow",1],[" body: ","text",0],["ApplyDiscountRequest","yellow",1],["): ","text",0],["OrderResponse","yellow",1],[" {","text",0]],[["        ","text",0],["val","mauve",0],[" order ","text",0],["=","teal",0],[" useCase.","text",0],["execute","blue",1],["(","text",0],["OrderId","blue",1],["(id), body.discountCode)","text",0]],[["        repository.","text",0],["save","blue",1],["(order)","text",0]],[["        ","text",0],["return","mauve",0],[" OrderResponse.","text",0],["from","blue",1],["(order)","text",0]],[["    }","text",0]]],"h7:rep":[[["data","mauve",0],[" ","text",0],["class","mauve",0],[" ","text",0],["OrderResponse","yellow",1],["(","text",0]],[["    ","text",0],["val","mauve",0],[" id: ","text",0],["String","yellow",1],[",","text",0]],[["    ","text",0],["val","mauve",0],[" subtotal: ","text",0],["Long","yellow",1],[",","text",0]],[["    ","text",0],["val","mauve",0],[" discount: ","text",0],["Long","yellow",1],[",","text",0]],[[") {","text",0]],[["    ","text",0],["companion","mauve",0],[" ","text",0],["object","mauve",0],[" {","text",0]],[["        ","text",0],["fun","mauve",0],[" ","text",0],["from","blue",1],["(o: ","text",0],["Order","yellow",1],[") ","text",0],["=","teal",0],[" ","text",0],["OrderResponse","blue",1],["(","text",0]],[["            id ","text",0],["=","teal",0],[" o.id.","text",0],["value","mauve",0],[",","text",0]],[["            subtotal ","text",0],["=","teal",0],[" o.subtotal.amount,","text",0]],[["            discount ","text",0],["=","teal",0],[" o.discount.amount,","text",0]],[["        )","text",0]],[["    }","text",0]],[["}","text",0]]],"h9":[[["    ","text",0],["fun","mauve",0],[" ","text",0],["format","blue",1],["(level: ","text",0],["Level","yellow",1],[", msg: ","text",0],["String","yellow",1],[") ","text",0],["=","teal",0],[" ","text",0],["\"[","green",0],["$level","text",0],["] ","green",0],["$msg","text",0],["\"","green",0]],[["    ","text",0],["fun","mauve",0],[" ","text",0],["format","blue",1],["(level: ","text",0],["Level","yellow",1],[", msg: ","text",0],["String","yellow",1],[") ","text",0],["=","teal",0],[" ","text",0],["\"[","green",0],["$level","text",0],["] ","green",0],["${","overlay2",0],["Instant.","green",0],["now","blue",1],["()","green",0],["}","overlay2",0],[" ","green",0],["$msg","text",0],["\"","green",0]]],"h10":[[["object","mauve",0],[" ","text",0],["FeatureFlags","yellow",1],[" {","text",0]],[["    ","text",0],["const","mauve",0],[" ","text",0],["val","mauve",0],[" NEW_CHECKOUT ","text",0],["=","teal",0],[" ","text",0],["true","peach",0]],[["    ","text",0],["const","mauve",0],[" ","text",0],["val","mauve",0],[" DISCOUNT_V2 ","text",0],["=","teal",0],[" ","text",0],["true","peach",0]],[["}","text",0]]],"same:1:3":[[["    ","text",0],["fun","mauve",0],[" ","text",0],["rateFor","blue",1],["(code: ","text",0],["String","yellow",1],["): ","text",0],["Rate","yellow",1],[" ","text",0],["=","teal",0]],[["        TABLE[code] ?: Rate.ZERO","text",0]]]};
+const state = {view:'a', selHow:null, selHunk:'h1', openGrp:{}, tour:1, step:2, selFile:'order/domain/Order.kt', mode:{b:'uni', d:'sbs'}};
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const hunk = id => H.find(h => h.id === id);
+const TOTAL = H.reduce((a,h)=>a+h.n,0);
+const JUMP = {Order:'h1', applyDiscount:'h1', DiscountCommand:'h2', DiscountPolicy:'n4', rateFor:'n4', ApplyDiscountUseCase:'h8', execute:'h8', OrderRepositoryImpl:'h4', save:'h4', find:'h14', OrderResponse:'h7', OrderController:'h6'};
+function ideaPath(path){ if(path.endsWith('.sql')) return 'src/main/resources/db/migration/'+path.split('/').pop(); return (path.includes('Test')?'src/test/kotlin/com/example/':'src/main/kotlin/com/example/')+path; }
+function ideaLink(path, ln){ return '<a class="btn sm" href="jetbrains://idea/navigate/reference?project=order-service&path='+encodeURIComponent(ideaPath(path)+':'+(ln||1))+'">IDEA で開く</a>'; }
+function tokHtml(tokens){
+  return tokens.map(([txt,role,st])=>{
+    const m = txt.match(/^(\s*)([A-Za-z_][A-Za-z0-9_]*)(.*)$/s);
+    const cls = (role?'c-'+role:'')+(st&1?' it':'')+(st&2?' bd':'');
+    if(m && JUMP[m[2]]) return '<span class="'+cls+'">'+esc(m[1])+'<a class="jump" data-j="'+JUMP[m[2]]+'">'+esc(m[2])+'</a>'+esc(m[3])+'</span>';
+    return '<span class="'+cls+'">'+esc(txt)+'</span>';
+  }).join('');
+}
+function lineHtml(key, lines, i){ const t = TOK[key] && TOK[key][i]; return t ? tokHtml(t) : esc(lines[i].slice(1)||' '); }
+function alignRows(lines, o, n){
+  const rows=[]; let i=0;
+  while(i<lines.length){
+    const c=lines[i][0];
+    if(c==='-'){ const d=[],a=[]; while(i<lines.length&&lines[i][0]==='-') d.push(i++); while(i<lines.length&&lines[i][0]==='+') a.push(i++);
+      for(let k=0;k<Math.max(d.length,a.length);k++) rows.push({o:k<d.length?{i:d[k],t:'r',ln:o++}:null, n:k<a.length?{i:a[k],t:'a',ln:n++}:null}); }
+    else if(c==='+'){ rows.push({o:null,n:{i,t:'a',ln:n++}}); i++; }
+    else { rows.push({o:{i,t:'c',ln:o++},n:{i,t:'c',ln:n++}}); i++; }
+  }
+  return rows;
+}
+function diffHtml(lines, key, opts){
+  opts = opts||{}; const ln = opts.ln||1;
+  const mode = opts.mini ? 'uni' : state.mode[opts.view||'d'];
+  const rows = alignRows(lines, ln, ln);
+  if(mode==='sbs'){
+    return '<div class="diff sbs'+(opts.mini?' mini':'')+'">'+rows.map(r=>{
+      const cell = side => side ? '<div class="ln '+side.t+'">'+side.ln+'</div><div class="cd '+side.t+'">'+lineHtml(key,lines,side.i)+'</div>' : '<div class="ln x"></div><div class="cd x"></div>';
+      return cell(r.o)+cell(r.n);
+    }).join('')+'</div>';
+  }
+  return '<div class="diff uni'+(opts.mini?' mini':'')+'">'+rows.flatMap(r=>{
+    const out=[]; const one = (side, other) => '<div class="ln '+side.t+'">'+(side.t==='a'?'':side.ln)+'</div><div class="ln '+side.t+'">'+(side.t==='r'?'':(other?other.ln:side.ln))+'</div><div class="cd '+side.t+'">'+lineHtml(key,lines,side.i)+'</div>';
+    if(r.o&&r.n&&r.o.i===r.n.i) out.push(one(r.o,r.n)); else { if(r.o) out.push(one(r.o,null)); if(r.n) out.push(one(r.n,null)); }
+    return out;
+  }).join('')+'</div>';
+}
+function modeSeg(v){ return '<span class="seg" style="margin-left:8px"><button type="button" data-mode="sbs" data-mv="'+v+'" class="'+(state.mode[v]==='sbs'?'on':'')+'">左右</button><button type="button" data-mode="uni" data-mv="'+v+'" class="'+(state.mode[v]==='uni'?'on':'')+'">統合</button></span>'; }
+function howChips(hs){ return hs.map(i=>'<span class="chip h">'+i+'</span>').join(''); }
+function kindChip(h){
+  if(!h.kind) return '<span class="chip d">未帰属</span>';
+  if(h.kind==='追従') return '<span class="chip">追従</span>';
+  if(h.kind==='テスト') return '<span class="chip">テスト</span>';
+  return '<span class="chip">核</span>';
+}
+function eyeBtn(h){ return '<button class="eye'+(h.viewed?' v':'')+'" type="button" data-eye="'+h.id+'" aria-label="見た印を付ける">'+(h.viewed?'✓':'')+'</button>'; }
+
+function stats(){
+  const viewed = H.filter(h=>h.viewed).reduce((a,h)=>a+h.n,0);
+  const assigned = H.filter(h=>h.hows.length).reduce((a,h)=>a+h.n,0);
+  const tangled = H.filter(h=>h.hows.length>1).length;
+  const tours = Object.values(T).filter(t=>t.steps.every(s=>!s.hunk||hunk(s.hunk).viewed)).length;
+  return {viewed, assigned, tangled, tours};
+}
+function renderMeter(){
+  const s = stats();
+  $('#meter').innerHTML =
+    '<span class="m '+(s.assigned===TOTAL?'done':'bad')+'">帰属 <b>'+s.assigned+' / '+TOTAL+'</b></span>'+
+    '<span class="m '+(s.viewed===TOTAL?'done':'')+'">閲覧 <b>'+s.viewed+' / '+TOTAL+'</b></span>'+
+    '<span class="m '+(s.tangled?'warn':'done')+'">絡み <b>'+s.tangled+'</b></span>'+
+    '<span class="m '+(s.tours===3?'done':'')+'">コース <b>'+s.tours+' / 3</b></span>'+
+    '<span class="m bad">仕様 <b>2 / 3</b></span>';
+  $('#st-b').textContent = '帰属 '+s.assigned+'/'+TOTAL+' · 絡み '+s.tangled;
+  $('#st-c').textContent = 'コース '+s.tours+'/3';
+  $('#st-d').textContent = '閲覧 '+s.viewed+'/'+TOTAL;
+}
+
+function renderB(){
+  $('#hows').innerHTML = HOWS.map(w=>{
+    const mine = H.filter(h=>h.hows.includes(w.id));
+    const core = mine.filter(h=>h.kind==='核').reduce((a,h)=>a+h.n,0);
+    const rip = mine.filter(h=>h.kind==='追従').reduce((a,h)=>a+h.n,0);
+    const tst = mine.filter(h=>h.kind==='テスト').reduce((a,h)=>a+h.n,0);
+    const tot = mine.reduce((a,h)=>a+h.n,0), v = mine.filter(h=>h.viewed).reduce((a,h)=>a+h.n,0);
+    const pct = tot?Math.round(v/tot*100):0;
+    const lit = state.selHunk && hunk(state.selHunk).hows.includes(w.id);
+    return '<div class="how'+(state.selHow===w.id?' on':'')+(lit&&state.selHow===null?' lit':'')+'" data-how="'+w.id+'" tabindex="0">'+
+      '<div class="t"><span class="i">'+w.id+'</span><span>'+w.title+'</span></div>'+
+      '<div class="why">'+w.why+'</div>'+
+      '<div class="cnt"><span class="chip">核 '+core+'</span><span class="chip">追従 '+rip+'</span><span class="chip">テスト '+tst+'</span><span class="chip'+(pct===100?' ok':'')+'">見た '+pct+'%</span></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+  }).join('');
+
+  const shown = H.filter(h=>!state.selHow||h.hows.includes(state.selHow));
+  const shownN = shown.reduce((a,h)=>a+h.n,0);
+  const bad = H.filter(h=>!h.hows.length).reduce((a,h)=>a+h.n,0);
+  $('#hunk-hd').innerHTML = '<b>差分</b>'+(state.selHow?('How '+state.selHow+' · '+shownN+' / '+TOTAL+' hunk'):(TOTAL+' hunk'))+
+    '<span class="sp"></span><span class="chip d">未帰属 '+bad+'</span>';
+
+  $('#hunks').innerHTML = H.map(h=>{
+    const dim = state.selHow && !h.hows.includes(state.selHow);
+    const cls = 'row'+(dim?' dim':'')+(state.selHunk===h.id?' on':'')+(!h.hows.length?' bad':'');
+    let sub = '';
+    if(h.group) sub = '<span class="sub">'+esc(h.pattern)+' · '+(h.uniform==='AST'?'一様（AST 判定）':'たぶん一様（LLM 判定）')+(h.dev?' · 逸脱 1':'')+'</span>';
+    let html = '<div class="'+cls+'" data-hunk="'+h.id+'" tabindex="0"><span class="p">'+esc(h.path)+(h.sym?' <small>› '+esc(h.sym)+'</small>':'')+sub+'</span>'+
+      '<span class="hs">'+howChips(h.hows)+(h.hows.length>1?'<span class="chip w">絡み</span>':'')+'</span>'+kindChip(h)+eyeBtn(h)+'</div>';
+    if(h.group && state.openGrp[h.id] && !dim){
+      html += '<div class="grp"><div class="lbl">サンプル · <span style="font-family:var(--mono)">'+esc(h.rep.path)+' › '+esc(h.rep.sym)+'</span></div>'+diffHtml(h.rep.diff,h.id+':rep',{mini:true,ln:h.rep.ln})+
+        '<div class="lbl">残り '+(h.n-1-(h.dev?1:0))+' 件は同じパターン。開いて抜き打ち確認できる。</div>'+
+        (h.dev?('<div class="dev"><span class="chip d">逸脱 1</span><span style="font-family:var(--mono)">'+esc(h.dev.path)+' › '+esc(h.dev.sym)+'</span></div>'+diffHtml(h.dev.diff,h.id+':dev',{mini:true,ln:h.dev.ln})):'')+'</div>';
+    }
+    return html;
+  }).join('');
+
+  const p = state.selHunk ? hunk(state.selHunk) : null;
+  if(!p){ $('#preview').innerHTML = '<div class="hd"><b>プレビュー</b></div><div class="empty">左の hunk を選ぶとここにコードが出る</div>'; }
+  else {
+    const body = p.group ? ('<div class="hd" style="position:static"><b>サンプル</b>'+esc(p.rep.path)+'<span class="sp"></span>'+ideaLink(p.rep.path,p.rep.ln)+'</div>'+diffHtml(p.rep.diff,p.id+':rep',{ln:p.rep.ln,view:'b'})+(p.dev?('<div class="hd" style="position:static"><b>逸脱</b>'+esc(p.dev.path)+'<span class="chip d">パターン外</span><span class="sp"></span>'+ideaLink(p.dev.path,p.dev.ln)+'</div>'+diffHtml(p.dev.diff,p.id+':dev',{ln:p.dev.ln,view:'b'})):'')) : diffHtml(p.diff,p.id,{ln:p.ln,view:'b'});
+    $('#preview').innerHTML = '<div class="hd"><b>プレビュー</b>'+modeSeg('b')+'<span class="sp"></span>'+(p.group?'':ideaLink(p.path,p.ln))+'<button class="btn sm'+(p.viewed?'':' primary')+'" type="button" data-eye="'+p.id+'">'+(p.viewed?'見た ✓':'見た')+'</button></div>'+
+      '<div class="prev-hd"><div class="p">'+esc(p.path)+(p.sym?' › '+esc(p.sym):'')+'</div>'+
+      '<div class="meta">'+howChips(p.hows)+kindChip(p)+(p.hows.length>1?'<span class="chip w">絡み · How '+p.hows.join(' と ')+' の両方が触る</span>':'')+(!p.hows.length?'<span style="font-size:12px;color:var(--danger)">どの How にも属しません。作者に聞くか、別の PR に分けるかを考えるときに見ます。</span>':'')+'</div></div>'+body;
+  }
+}
+
+function renderC(){
+  const t = T[state.tour];
+  $('#tour-seg').innerHTML = HOWS.map(w=>'<button type="button" data-tour="'+w.id+'" class="'+(state.tour===w.id?'on':'')+'">How '+w.id+'</button>').join('');
+  document.querySelectorAll('.ed').forEach(e=>{
+    const on = t.edges.includes(e.id);
+    e.classList.toggle('on', on);
+    e.setAttribute('marker-end', e.classList.contains('skip') ? 'url(#ard)' : (on?'url(#ar)':'url(#ar0)'));
+    const lb = $('#l'+e.id.slice(1)); if(lb) lb.classList.toggle('off', !on);
+  });
+  const nodes = new Set(t.steps.map(s=>s.node).filter(Boolean));
+  const st = t.steps[state.step];
+  document.querySelectorAll('.nd').forEach(n=>{ n.classList.toggle('off', !nodes.has(n.id)); n.classList.toggle('cur', st.node===n.id); });
+  $('#step-hd').innerHTML = '<b>How '+state.tour+'</b>'+HOWS[state.tour-1].title+'<span class="sp"></span><span class="chip">'+(state.step+1)+' / '+t.steps.length+'</span>';
+  const hk = st.hunk ? hunk(st.hunk) : null;
+  let html = '<div class="sym">'+esc(st.name)+'<span class="chip">'+st.layer+'</span><span class="chip'+(st.kind==='未変更'?'':' h')+'">'+st.kind+'</span>'+(hk&&hk.viewed?'<span class="chip ok">見た</span>':'')+'</div>'+
+    '<div class="call">'+esc(st.call)+'</div>';
+  if(st.same) html += diffHtml(st.same.map(l=>' '+l), 'same:'+state.tour+':'+state.step, {mini:true,ln:5});
+  else if(hk) html += diffHtml(hk.group?hk.rep.diff:hk.diff, hk.group?hk.id+':rep':hk.id, {mini:true,ln:hk.group?hk.rep.ln:hk.ln});
+  if(hk) html += '<div style="margin-top:10px">'+ideaLink(hk.group?hk.rep.path:hk.path, hk.group?hk.rep.ln:hk.ln)+'</div>';
+  if(st.fact) html += '<div class="fact">'+esc(st.fact)+'</div>';
+  $('#step').innerHTML = html;
+  $('#seen').textContent = st.hunk ? '見た · 次へ' : '次へ';
+  $('#steps').innerHTML = t.steps.map((s,i)=>{
+    const v = !s.hunk || hunk(s.hunk).viewed;
+    return '<div class="'+(i===state.step?'on':'')+'" data-step="'+i+'"><span class="ck'+(v?' v':'')+'"></span><span class="nm">'+esc(s.name)+'</span><span class="chip">'+s.layer+'</span></div>';
+  }).join('');
+}
+
+function renderD(){
+  const files = [];
+  H.forEach(h=>{ if(h.group) return; let f = files.find(f=>f.path===h.path); if(!f){ f={path:h.path,hunks:[]}; files.push(f);} f.hunks.push(h); });
+  H.filter(h=>h.group).forEach(g=>{ files.push({path:g.rep.path, hunks:[g], grp:true}); if(g.dev) files.push({path:g.dev.path, hunks:[g], grp:true, dev:true}); });
+  $('#file-cnt').textContent = files.length+' ファイル · com.example 以下 · 追従は畳んで表示';
+  $('#files').innerHTML = files.map(f=>{
+    const v = f.hunks.every(h=>h.viewed);
+    const hs = [...new Set(f.hunks.flatMap(h=>h.hows))];
+    const bad = f.hunks.some(h=>!h.hows.length);
+    const dir = f.path.slice(0, f.path.lastIndexOf('/')+1), base = f.path.slice(dir.length);
+    return '<div class="file'+(state.selFile===f.path?' on':'')+(bad?' bad':'')+'" data-file="'+esc(f.path)+'"><span class="p"><small>'+esc(dir)+'</small>'+esc(base)+'</span><span>'+howChips(hs)+(bad?'<span class="chip d">未帰属</span>':'')+(f.dev?'<span class="chip d">逸脱</span>':'')+'</span><span class="dot'+(v?' v':'')+'"></span></div>';
+  }).join('');
+  const f = files.find(f=>f.path===state.selFile) || files[0];
+  let html = '<div class="hd"><b>'+esc(f.path)+'</b>'+modeSeg('d')+'<span class="sp"></span>'+(f.grp?'<span class="chip">追従グループの一部</span>':'')+ideaLink(f.path, f.hunks[0].ln||(f.grp?(f.dev?f.hunks[0].dev.ln:f.hunks[0].rep.ln):1))+'</div>';
+  f.hunks.forEach(h=>{
+    const lines = f.grp ? (f.dev ? h.dev.diff : h.rep.diff) : h.diff;
+    const key = f.grp ? (f.dev ? h.id+':dev' : h.id+':rep') : h.id; const lno = f.grp ? (f.dev ? h.dev.ln : h.rep.ln) : h.ln;
+    html += '<div class="hk"><div class="hh">@@ '+esc(h.sym||f.path)+'<span class="sp">'+howChips(h.hows)+kindChip(h)+eyeBtn(h)+'</span></div>'+diffHtml(lines,key,{ln:lno,view:'d'})+'</div>';
+  });
+  $('#dpane').innerHTML = html;
+  const adopted = C.filter(c=>c.state==='adopted').length;
+  $('#comments').innerHTML = C.map(c=>'<div class="cm'+(c.state==='adopted'?' ad':c.state==='gone'?' gone':'')+'">'+
+    '<div class="loc">'+esc(c.path)+':'+c.line+'<span class="chip">'+c.src+'</span>'+(c.state==='adopted'?'<span class="chip ok">採用</span>':c.state==='gone'?'<span class="chip">破棄</span>':'')+'</div>'+
+    (c.state==='edit' ? '<textarea data-ta="'+c.id+'">'+esc(c.text)+'</textarea>' : '<p>'+esc(c.text)+'</p>')+
+    (c.state==='draft' ? '<div class="act"><button class="btn sm" type="button" data-c="adopt" data-id="'+c.id+'">採用</button><button class="btn sm" type="button" data-c="edit" data-id="'+c.id+'">編集</button><button class="btn sm" type="button" data-c="gone" data-id="'+c.id+'">破棄</button></div>' :
+     c.state==='edit' ? '<div class="act"><button class="btn sm primary" type="button" data-c="save" data-id="'+c.id+'">この文で採用</button><button class="btn sm" type="button" data-c="draft" data-id="'+c.id+'">戻す</button></div>' :
+     '<div class="act"><button class="btn sm" type="button" data-c="draft" data-id="'+c.id+'">戻す</button></div>')+'</div>').join('');
+  $('#sendbtn').textContent = adopted ? 'GitHub にコメントを送る（'+adopted+' 件）' : '採用したコメントはまだない';
+}
+
+function renderAll(){ renderMeter(); renderB(); renderC(); renderD(); }
+function toggleView(hk){ hk.viewed = !hk.viewed; renderAll(); }
+
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-v],[data-how],[data-eye],[data-hunk],[data-tour],[data-step],.nd,[data-file],[data-c],[data-mode],[data-j],[data-fl]');
+  if(!t) return;
+  if(t.dataset.mode){ state.mode[t.dataset.mv]=t.dataset.mode; renderB(); renderD(); return; }
+  if(t.dataset.fl){ document.documentElement.dataset.flavor=t.dataset.fl; document.querySelectorAll('#flav button').forEach(b=>b.classList.toggle('on', b.dataset.fl===t.dataset.fl)); return; }
+  if(t.dataset.j){ e.stopPropagation(); const j=t.dataset.j;
+    if(state.view==='c'){ const i=T[state.tour].steps.findIndex(s=>s.hunk===j||s.node===j); if(i>=0){ state.step=i; renderC(); return; } }
+    if(j==='n4'){ state.view='c'; state.tour=1; state.step=3; } else { state.view='b'; state.selHunk=j; state.selHow=null; }
+    document.querySelectorAll('.rail a').forEach(a=>a.classList.toggle('on', a.dataset.v===state.view)); document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+state.view)); renderB(); renderC(); return; }
+  if(t.dataset.v){ state.view = t.dataset.v; document.querySelectorAll('.rail a').forEach(a=>a.classList.toggle('on', a.dataset.v===state.view)); document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+state.view)); return; }
+  if(t.dataset.eye){ e.stopPropagation(); toggleView(hunk(t.dataset.eye)); return; }
+  if(t.dataset.how){ const id=+t.dataset.how; state.selHow = state.selHow===id?null:id; renderB(); return; }
+  if(t.dataset.hunk){ const h=hunk(t.dataset.hunk); if(h.group) state.openGrp[h.id]=!state.openGrp[h.id]; state.selHunk=h.id; renderB(); return; }
+  if(t.dataset.tour){ state.tour=+t.dataset.tour; state.step=0; renderC(); return; }
+  if(t.dataset.step){ state.step=+t.dataset.step; renderC(); return; }
+  if(t.classList.contains('nd')){ const i=T[state.tour].steps.findIndex(s=>s.node===t.id); if(i>=0){ state.step=i; renderC(); } return; }
+  if(t.dataset.file){ state.selFile=t.dataset.file; renderD(); return; }
+  if(t.dataset.c){ const c=C.find(c=>c.id===t.dataset.id); const a=t.dataset.c;
+    if(a==='save'){ c.text=$('[data-ta="'+c.id+'"]').value; c.state='adopted'; }
+    else if(a==='adopt') c.state='adopted'; else c.state=a; renderD(); return; }
+});
+$('#prev').addEventListener('click', ()=>{ const n=T[state.tour].steps.length; state.step=(state.step+n-1)%n; renderC(); });
+$('#seen').addEventListener('click', ()=>{ const s=T[state.tour].steps[state.step]; if(s.hunk) hunk(s.hunk).viewed=true; const n=T[state.tour].steps.length; state.step=(state.step+1)%n; renderAll(); });
+document.addEventListener('keydown', e=>{ if(e.target.tagName==='TEXTAREA') return; if(state.view==='c'){ if(e.key==='ArrowRight'||e.key==='j') $('#seen').click(); if(e.key==='ArrowLeft'||e.key==='k') $('#prev').click(); } });
+$('#acc').addEventListener('change', e=>{ document.documentElement.dataset.accent=e.target.value; });
+renderAll();
+</script>
+</body>
+</html>

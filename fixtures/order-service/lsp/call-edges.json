@@ -1,0 +1,2035 @@
+{
+  "probes": [
+    {
+      "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c"
+    },
+    {
+      "hunkId": "7c3620df39b9ef5cf954a62175bf0def4361cf79"
+    },
+    {
+      "hunkId": "7d1f264e32ec64a4a8e87582280d3c51c0e9beca"
+    },
+    {
+      "hunkId": "079cc62bead02b816f5900d3da3accddb6cfc225"
+    },
+    {
+      "hunkId": "78b5e2fce82e915e87d96f07a36f818d0f441d27"
+    },
+    {
+      "hunkId": "3fe1dde4f7eced5e63034f751a8d7c51185a3395"
+    },
+    {
+      "hunkId": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+      "item": {
+        "name": "Logger.format(Logger.Level, String)",
+        "detail": "com.example.common",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/common/Logger.kt",
+        "line": 7
+      }
+    },
+    {
+      "hunkId": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c"
+    },
+    {
+      "hunkId": "18ada3da5f913983c4b5036e21e96b3f03fb3a22"
+    },
+    {
+      "hunkId": "0ce459a50c74ffd6bb848b193e6801134ddd471d"
+    },
+    {
+      "hunkId": "34572795b5d3947558d3dffb3f15fcc32a885a0e"
+    },
+    {
+      "hunkId": "b6f9e151047a59c46732bb8dce91c63d9aab47ea"
+    },
+    {
+      "hunkId": "c44dfbbec354bf0fe7baa0e88955218093477d7b"
+    },
+    {
+      "hunkId": "60e94e42327d58a58d4908e5cd433da84e76966a"
+    },
+    {
+      "hunkId": "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9"
+    },
+    {
+      "hunkId": "89802175d3898bded24a787f90beee1a5312f3a7"
+    },
+    {
+      "hunkId": "130e7d62f211839eec7c68582ae3565629d8c673",
+      "item": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      }
+    },
+    {
+      "hunkId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+      "item": {
+        "name": "OrderDetailResponse.Companion.from(Order)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+        "line": 11
+      }
+    },
+    {
+      "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+      "item": {
+        "name": "OrderResponse.Companion.from(Order)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "line": 10
+      }
+    },
+    {
+      "hunkId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+      "item": {
+        "name": "OrderSummaryResponse.Companion.from(Order)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+        "line": 10
+      }
+    },
+    {
+      "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99",
+      "item": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      }
+    },
+    {
+      "hunkId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a"
+    },
+    {
+      "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+      "item": {
+        "name": "Order.applyDiscount(DiscountCommand)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      }
+    },
+    {
+      "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+      "item": {
+        "name": "OrderRepositoryImpl.save(Order)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 13
+      }
+    },
+    {
+      "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed",
+      "item": {
+        "name": "OrderRepositoryImpl.find(OrderId)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 24
+      }
+    },
+    {
+      "hunkId": "cabe82f14a82b677e5ca8078b7b90f15609371e3"
+    },
+    {
+      "hunkId": "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3"
+    },
+    {
+      "hunkId": "47dc9545806ff578b57ab0793821f2cc2c1b3a49"
+    },
+    {
+      "hunkId": "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7"
+    },
+    {
+      "hunkId": "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c"
+    },
+    {
+      "hunkId": "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506"
+    },
+    {
+      "hunkId": "9cfdbdf61c4a956c952939696c72096aa265c4bd"
+    },
+    {
+      "hunkId": "d4ebe4338bbc4cc8e92947fd0262f50bf585797a"
+    },
+    {
+      "hunkId": "9d6e9f791f8b693d7758aa240592b444cbf5e084"
+    },
+    {
+      "hunkId": "fc611ea6e00d7be77f29312964dd5facc0b2dccf"
+    },
+    {
+      "hunkId": "d81273406425493877cce76b6a078c2f3b98944f",
+      "item": {
+        "name": "ApplyDiscountUseCaseTest.throws when order is missing()",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 16
+      }
+    },
+    {
+      "hunkId": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+      "item": {
+        "name": "ApplyDiscountUseCaseTest.saves the order after applying()",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 22
+      }
+    },
+    {
+      "hunkId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+      "item": {
+        "name": "OrderTest.applies the policy rate to subtotal()",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 13
+      }
+    },
+    {
+      "hunkId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+      "item": {
+        "name": "OrderTest.keeps total when code is unknown()",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 20
+      }
+    },
+    {
+      "hunkId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+      "item": {
+        "name": "OrderRepositoryImplTest.persists discount()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 18
+      }
+    },
+    {
+      "hunkId": "7826f5464b504df32d03817b1421873bc12479bd",
+      "item": {
+        "name": "OrderRepositoryImplTest.reads zero discount for rows saved before the column existed()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 24
+      }
+    },
+    {
+      "hunkId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+      "item": {
+        "name": "OrderRepositoryImplTest.orderWithDiscount(Long)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 29
+      }
+    }
+  ],
+  "calls": [
+    {
+      "from": {
+        "name": "Logger.log(Logger.Level, String)",
+        "detail": "com.example.common",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/common/Logger.kt",
+        "line": 9
+      },
+      "to": {
+        "name": "Logger.format(Logger.Level, String)",
+        "detail": "com.example.common",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/common/Logger.kt",
+        "line": 7
+      },
+      "kind": "call",
+      "lines": [
+        9
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "kind": "call",
+      "lines": [
+        17
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "OrderRepository.save(Order)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 4
+      },
+      "kind": "call",
+      "lines": [
+        18
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "OrderResponse.Companion.from(Order)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "line": 10
+      },
+      "kind": "call",
+      "lines": [
+        19
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "OrderResponse.Companion.from(Order)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "line": 10
+      },
+      "kind": "call",
+      "lines": [
+        19
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "to": {
+        "name": "OrderRepository.find(OrderId)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 3
+      },
+      "kind": "call",
+      "lines": [
+        15
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "to": {
+        "name": "Order.applyDiscount(DiscountCommand)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      },
+      "kind": "call",
+      "lines": [
+        16
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "to": {
+        "name": "OrderRepository.save(Order)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 4
+      },
+      "kind": "call",
+      "lines": [
+        17
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "kind": "call",
+      "lines": [
+        17
+      ]
+    },
+    {
+      "from": {
+        "name": "Order.applyDiscount(DiscountCommand)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      },
+      "to": {
+        "name": "DiscountPolicy.rateFor(String)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/DiscountPolicy.kt",
+        "line": 8
+      },
+      "kind": "call",
+      "lines": [
+        8
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "to": {
+        "name": "Order.applyDiscount(DiscountCommand)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      },
+      "kind": "call",
+      "lines": [
+        16
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderController.apply(String, ApplyDiscountRequest)",
+        "detail": "com.example.order.api",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.save(Order)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 13
+      },
+      "kind": "call",
+      "lines": [
+        18
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.save(Order)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 13
+      },
+      "kind": "call",
+      "lines": [
+        17
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.find(OrderId)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 24
+      },
+      "kind": "call",
+      "lines": [
+        15
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCaseTest.throws when order is missing()",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "OrderRepository.find(OrderId)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 3
+      },
+      "kind": "test",
+      "lines": [
+        17
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCaseTest.throws when order is missing()",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 16
+      },
+      "to": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "kind": "test",
+      "lines": [
+        18
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCaseTest.saves the order after applying()",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 22
+      },
+      "to": {
+        "name": "ApplyDiscountUseCase.execute(OrderId, String)",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      "kind": "test",
+      "lines": [
+        23
+      ]
+    },
+    {
+      "from": {
+        "name": "ApplyDiscountUseCaseTest.saves the order after applying()",
+        "detail": "com.example.order.application",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 22
+      },
+      "to": {
+        "name": "OrderRepository.save(Order)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 4
+      },
+      "kind": "test",
+      "lines": [
+        24
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderTest.applies the policy rate to subtotal()",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 13
+      },
+      "to": {
+        "name": "Order.applyDiscount(DiscountCommand)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      },
+      "kind": "test",
+      "lines": [
+        15
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderTest.keeps total when code is unknown()",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 20
+      },
+      "to": {
+        "name": "Order.applyDiscount(DiscountCommand)",
+        "detail": "com.example.order.domain",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      },
+      "kind": "test",
+      "lines": [
+        22
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderRepositoryImplTest.persists discount()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 18
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.save(Order)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 13
+      },
+      "kind": "test",
+      "lines": [
+        19
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderRepositoryImplTest.persists discount()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 18
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.find(OrderId)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 24
+      },
+      "kind": "test",
+      "lines": [
+        20
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderRepositoryImplTest.reads zero discount for rows saved before the column existed()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 24
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.save(Order)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 13
+      },
+      "kind": "test",
+      "lines": [
+        25
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderRepositoryImplTest.reads zero discount for rows saved before the column existed()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 24
+      },
+      "to": {
+        "name": "Money.Companion.ZERO",
+        "detail": "com.example.order.domain",
+        "kind": 7,
+        "path": "src/main/kotlin/com/example/order/domain/Money.kt",
+        "line": 10
+      },
+      "kind": "test",
+      "lines": [
+        26
+      ]
+    },
+    {
+      "from": {
+        "name": "OrderRepositoryImplTest.reads zero discount for rows saved before the column existed()",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 24
+      },
+      "to": {
+        "name": "OrderRepositoryImpl.find(OrderId)",
+        "detail": "com.example.order.infra",
+        "kind": 6,
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 24
+      },
+      "kind": "test",
+      "lines": [
+        26
+      ]
+    }
+  ],
+  "signatures": {
+    "com.example.common.Logger.format": "fun format(level: Logger.Level, msg: String): String",
+    "com.example.common.Logger.log": "fun log(level: Logger.Level, msg: String)",
+    "com.example.order.api.OrderController.apply": "@PostMapping\nfun apply(@PathVariable id: String, @RequestBody body: ApplyDiscountRequest): OrderResponse",
+    "com.example.order.application.ApplyDiscountUseCase.execute": "fun execute(id: OrderId, code: String): Order",
+    "com.example.order.domain.OrderRepository.save": "fun save(order: Order)",
+    "com.example.order.api.OrderResponse.Companion.from": "fun from(o: Order): OrderResponse",
+    "com.example.order.api.OrderDetailResponse.Companion.from": "fun from(o: Order): OrderDetailResponse",
+    "com.example.order.api.OrderSummaryResponse.Companion.from": "fun from(o: Order): OrderSummaryResponse",
+    "com.example.order.domain.OrderRepository.find": "fun find(id: OrderId): Order?",
+    "com.example.order.domain.Order.applyDiscount": "fun applyDiscount(cmd: DiscountCommand)",
+    "com.example.order.domain.DiscountPolicy.rateFor": "fun rateFor(code: String): Rate",
+    "com.example.order.infra.OrderRepositoryImpl.save": "override fun save(order: Order)",
+    "com.example.order.infra.OrderRepositoryImpl.find": "override fun find(id: OrderId): Order?",
+    "com.example.order.application.ApplyDiscountUseCaseTest.throws when order is missing": "@Test\nfun `throws when order is missing`()",
+    "com.example.order.application.ApplyDiscountUseCaseTest.saves the order after applying": "@Test\nfun `saves the order after applying`()",
+    "com.example.order.domain.OrderTest.applies the policy rate to subtotal": "@Test\nfun `applies the policy rate to subtotal`()",
+    "com.example.order.domain.OrderTest.keeps total when code is unknown": "@Test\nfun `keeps total when code is unknown`()",
+    "com.example.order.infra.OrderRepositoryImplTest.persists discount": "@Test\nfun `persists discount`()",
+    "com.example.order.infra.OrderRepositoryImplTest.reads zero discount for rows saved before the column existed": "@Test\nfun `reads zero discount for rows saved before the column existed`()",
+    "com.example.order.domain.Money.Companion.ZERO": "val ZERO: Money",
+    "com.example.order.infra.OrderRepositoryImplTest.orderWithDiscount": "private fun orderWithDiscount(amount: Long): Order"
+  },
+  "testRefs": {
+    "64b251772fa1ec50d3343c65710a0f6634aad62c": [],
+    "7c3620df39b9ef5cf954a62175bf0def4361cf79": [],
+    "7d1f264e32ec64a4a8e87582280d3c51c0e9beca": [],
+    "079cc62bead02b816f5900d3da3accddb6cfc225": [],
+    "78b5e2fce82e915e87d96f07a36f818d0f441d27": [],
+    "3fe1dde4f7eced5e63034f751a8d7c51185a3395": [],
+    "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b": [],
+    "f04213b0d07c9a9cac6ddf2ab193a40840c0348c": [],
+    "18ada3da5f913983c4b5036e21e96b3f03fb3a22": [],
+    "0ce459a50c74ffd6bb848b193e6801134ddd471d": [],
+    "34572795b5d3947558d3dffb3f15fcc32a885a0e": [],
+    "b6f9e151047a59c46732bb8dce91c63d9aab47ea": [],
+    "c44dfbbec354bf0fe7baa0e88955218093477d7b": [],
+    "60e94e42327d58a58d4908e5cd433da84e76966a": [],
+    "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9": [],
+    "89802175d3898bded24a787f90beee1a5312f3a7": [],
+    "130e7d62f211839eec7c68582ae3565629d8c673": [],
+    "d50a6b62c81cb87db22faef4ab62bf9d5217e713": [],
+    "009b597cd765e85db0dcc7fb4619c29e2adf98b7": [],
+    "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5": [],
+    "a135ba90941c193b82bb22bc319e52347521ee99": [
+      "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt#saves the order after applying",
+      "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt#throws when order is missing"
+    ],
+    "6f8c1dd88a901bd7c59c469f1a09023246aff25a": [
+      "src/test/kotlin/com/example/order/domain/OrderTest.kt#applies the policy rate to subtotal",
+      "src/test/kotlin/com/example/order/domain/OrderTest.kt#keeps total when code is unknown"
+    ],
+    "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7": [
+      "src/test/kotlin/com/example/order/domain/OrderTest.kt#applies the policy rate to subtotal",
+      "src/test/kotlin/com/example/order/domain/OrderTest.kt#keeps total when code is unknown",
+      "src/test/kotlin/com/example/order/domain/OrderTest.kt#total is the subtotal without promo",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#orderWithDiscount",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#reads zero discount for rows saved before the column existed",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#round trips subtotal"
+    ],
+    "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b": [
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#persists discount",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#reads zero discount for rows saved before the column existed",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#round trips subtotal"
+    ],
+    "3b823c2027bd0957f11251555393d73cee9318ed": [
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#persists discount",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#reads zero discount for rows saved before the column existed",
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#round trips subtotal"
+    ],
+    "cabe82f14a82b677e5ca8078b7b90f15609371e3": [],
+    "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3": [],
+    "47dc9545806ff578b57ab0793821f2cc2c1b3a49": [],
+    "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7": [],
+    "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c": [],
+    "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506": [],
+    "9cfdbdf61c4a956c952939696c72096aa265c4bd": [],
+    "d4ebe4338bbc4cc8e92947fd0262f50bf585797a": [],
+    "9d6e9f791f8b693d7758aa240592b444cbf5e084": [],
+    "fc611ea6e00d7be77f29312964dd5facc0b2dccf": [],
+    "d81273406425493877cce76b6a078c2f3b98944f": [],
+    "b89e25202d679c348f253ed8b3ab49f2833eedb5": [],
+    "a22e9a886a2fefed19df83983b21f8e1b09098ab": [],
+    "3c10228566fa653f9ff458cace7a9fea95c16ea9": [],
+    "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839": [],
+    "7826f5464b504df32d03817b1421873bc12479bd": [],
+    "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3": [
+      "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt#persists discount"
+    ]
+  },
+  "refs": {
+    "64b251772fa1ec50d3343c65710a0f6634aad62c": [],
+    "7c3620df39b9ef5cf954a62175bf0def4361cf79": [],
+    "7d1f264e32ec64a4a8e87582280d3c51c0e9beca": [],
+    "079cc62bead02b816f5900d3da3accddb6cfc225": [],
+    "78b5e2fce82e915e87d96f07a36f818d0f441d27": [],
+    "3fe1dde4f7eced5e63034f751a8d7c51185a3395": [],
+    "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b": [
+      {
+        "path": "src/main/kotlin/com/example/common/Logger.kt",
+        "line": 9
+      }
+    ],
+    "f04213b0d07c9a9cac6ddf2ab193a40840c0348c": [],
+    "18ada3da5f913983c4b5036e21e96b3f03fb3a22": [],
+    "0ce459a50c74ffd6bb848b193e6801134ddd471d": [],
+    "34572795b5d3947558d3dffb3f15fcc32a885a0e": [],
+    "b6f9e151047a59c46732bb8dce91c63d9aab47ea": [],
+    "c44dfbbec354bf0fe7baa0e88955218093477d7b": [],
+    "60e94e42327d58a58d4908e5cd433da84e76966a": [],
+    "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9": [],
+    "89802175d3898bded24a787f90beee1a5312f3a7": [
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      }
+    ],
+    "130e7d62f211839eec7c68582ae3565629d8c673": [],
+    "d50a6b62c81cb87db22faef4ab62bf9d5217e713": [
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+        "line": 11
+      }
+    ],
+    "009b597cd765e85db0dcc7fb4619c29e2adf98b7": [
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "line": 10
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 16
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 19
+      }
+    ],
+    "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5": [
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+        "line": 10
+      }
+    ],
+    "a135ba90941c193b82bb22bc319e52347521ee99": [
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+        "line": 17
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 18
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+        "line": 23
+      }
+    ],
+    "6f8c1dd88a901bd7c59c469f1a09023246aff25a": [
+      {
+        "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+        "line": 7
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 15
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 22
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 2
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 16
+      }
+    ],
+    "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7": [
+      {
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+        "line": 4
+      },
+      {
+        "path": "src/main/kotlin/com/example/export/OrderCsvExporter.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/export/OrderCsvExporter.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+        "line": 8
+      },
+      {
+        "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+        "line": 13
+      },
+      {
+        "path": "src/main/kotlin/com/example/tax/TaxCalculator.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/tax/TaxCalculator.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/partner/PartnerFeed.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/partner/PartnerFeed.kt",
+        "line": 6
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 3
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 13
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 25
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 30
+      },
+      {
+        "path": "src/main/kotlin/com/example/batch/DailySettlement.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/batch/DailySettlement.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/checkout/CheckoutPresenter.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/checkout/CheckoutPresenter.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/analytics/OrderMetrics.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/analytics/OrderMetrics.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/report/SalesReport.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/report/SalesReport.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/shipping/FreeShippingRule.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/shipping/FreeShippingRule.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/legacy/LegacyOrderAdapter.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/legacy/LegacyOrderAdapter.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "line": 2
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+        "line": 10
+      },
+      {
+        "path": "src/main/kotlin/com/example/notification/OrderMailer.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/notification/OrderMailer.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+        "line": 14
+      },
+      {
+        "path": "src/main/kotlin/com/example/loyalty/PointCalculator.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/loyalty/PointCalculator.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/pricing/PriceBreakdown.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/pricing/PriceBreakdown.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/support/RefundEstimator.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/support/RefundEstimator.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/warehouse/PickingSlip.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/warehouse/PickingSlip.kt",
+        "line": 6
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 8
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 14
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+        "line": 21
+      },
+      {
+        "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/receipt/ReceiptPrinter.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/receipt/ReceiptPrinter.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/search/OrderDocument.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/search/OrderDocument.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/audit/OrderAuditLog.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/audit/OrderAuditLog.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+        "line": 10
+      },
+      {
+        "path": "src/main/kotlin/com/example/dashboard/DiscountWidget.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/dashboard/DiscountWidget.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/cart/CartSummary.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/cart/CartSummary.kt",
+        "line": 6
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 3
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 13
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 24
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+        "line": 29
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+        "line": 2
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+        "line": 10
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+        "line": 2
+      },
+      {
+        "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+        "line": 11
+      }
+    ],
+    "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b": [
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 13
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 19
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 25
+      }
+    ],
+    "3b823c2027bd0957f11251555393d73cee9318ed": [
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 14
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 20
+      },
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 26
+      }
+    ],
+    "cabe82f14a82b677e5ca8078b7b90f15609371e3": [],
+    "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3": [],
+    "47dc9545806ff578b57ab0793821f2cc2c1b3a49": [],
+    "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7": [],
+    "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c": [],
+    "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506": [],
+    "9cfdbdf61c4a956c952939696c72096aa265c4bd": [],
+    "d4ebe4338bbc4cc8e92947fd0262f50bf585797a": [],
+    "9d6e9f791f8b693d7758aa240592b444cbf5e084": [],
+    "fc611ea6e00d7be77f29312964dd5facc0b2dccf": [],
+    "d81273406425493877cce76b6a078c2f3b98944f": [],
+    "b89e25202d679c348f253ed8b3ab49f2833eedb5": [],
+    "a22e9a886a2fefed19df83983b21f8e1b09098ab": [],
+    "3c10228566fa653f9ff458cace7a9fea95c16ea9": [],
+    "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839": [],
+    "7826f5464b504df32d03817b1421873bc12479bd": [],
+    "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3": [
+      {
+        "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+        "line": 19
+      }
+    ]
+  },
+  "ranges": {
+    "src/main/kotlin/com/example/common/Logger.kt": [
+      {
+        "name": "Logger",
+        "kind": 19,
+        "start": 4,
+        "end": 10
+      },
+      {
+        "name": "Logger.Level",
+        "kind": 10,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "Logger.Level.INFO",
+        "kind": 22,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "Logger.Level.WARN",
+        "kind": 22,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "Logger.Level.ERROR",
+        "kind": 22,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "Logger.format",
+        "kind": 6,
+        "start": 7,
+        "end": 7
+      },
+      {
+        "name": "Logger.log",
+        "kind": 6,
+        "start": 9,
+        "end": 9
+      }
+    ],
+    "src/main/kotlin/com/example/order/api/OrderController.kt": [
+      {
+        "name": "OrderController",
+        "kind": 5,
+        "start": 10,
+        "end": 21
+      },
+      {
+        "name": "OrderController.useCase",
+        "kind": 13,
+        "start": 12,
+        "end": 12
+      },
+      {
+        "name": "OrderController.repository",
+        "kind": 13,
+        "start": 13,
+        "end": 13
+      },
+      {
+        "name": "OrderController.OrderController",
+        "kind": 9,
+        "start": 11,
+        "end": 14
+      },
+      {
+        "name": "OrderController.apply",
+        "kind": 6,
+        "start": 15,
+        "end": 20
+      }
+    ],
+    "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt": [
+      {
+        "name": "OrderDetailResponse",
+        "kind": 23,
+        "start": 4,
+        "end": 18
+      },
+      {
+        "name": "OrderDetailResponse.id",
+        "kind": 13,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "OrderDetailResponse.subtotal",
+        "kind": 13,
+        "start": 6,
+        "end": 6
+      },
+      {
+        "name": "OrderDetailResponse.total",
+        "kind": 13,
+        "start": 7,
+        "end": 7
+      },
+      {
+        "name": "OrderDetailResponse.discount",
+        "kind": 13,
+        "start": 8,
+        "end": 8
+      },
+      {
+        "name": "OrderDetailResponse.OrderDetailResponse",
+        "kind": 9,
+        "start": 4,
+        "end": 9
+      },
+      {
+        "name": "OrderDetailResponse.Companion",
+        "kind": 19,
+        "start": 10,
+        "end": 17
+      },
+      {
+        "name": "OrderDetailResponse.Companion.from",
+        "kind": 6,
+        "start": 11,
+        "end": 16
+      }
+    ],
+    "src/main/kotlin/com/example/order/api/OrderResponse.kt": [
+      {
+        "name": "OrderResponse",
+        "kind": 23,
+        "start": 4,
+        "end": 16
+      },
+      {
+        "name": "OrderResponse.id",
+        "kind": 13,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "OrderResponse.subtotal",
+        "kind": 13,
+        "start": 6,
+        "end": 6
+      },
+      {
+        "name": "OrderResponse.discount",
+        "kind": 13,
+        "start": 7,
+        "end": 7
+      },
+      {
+        "name": "OrderResponse.OrderResponse",
+        "kind": 9,
+        "start": 4,
+        "end": 8
+      },
+      {
+        "name": "OrderResponse.Companion",
+        "kind": 19,
+        "start": 9,
+        "end": 15
+      },
+      {
+        "name": "OrderResponse.Companion.from",
+        "kind": 6,
+        "start": 10,
+        "end": 14
+      }
+    ],
+    "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt": [
+      {
+        "name": "OrderSummaryResponse",
+        "kind": 23,
+        "start": 4,
+        "end": 16
+      },
+      {
+        "name": "OrderSummaryResponse.id",
+        "kind": 13,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "OrderSummaryResponse.total",
+        "kind": 13,
+        "start": 6,
+        "end": 6
+      },
+      {
+        "name": "OrderSummaryResponse.discount",
+        "kind": 13,
+        "start": 7,
+        "end": 7
+      },
+      {
+        "name": "OrderSummaryResponse.OrderSummaryResponse",
+        "kind": 9,
+        "start": 4,
+        "end": 8
+      },
+      {
+        "name": "OrderSummaryResponse.Companion",
+        "kind": 19,
+        "start": 9,
+        "end": 15
+      },
+      {
+        "name": "OrderSummaryResponse.Companion.from",
+        "kind": 6,
+        "start": 10,
+        "end": 14
+      }
+    ],
+    "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt": [
+      {
+        "name": "ApplyDiscountUseCaseTest",
+        "kind": 5,
+        "start": 11,
+        "end": 26
+      },
+      {
+        "name": "ApplyDiscountUseCaseTest.repository",
+        "kind": 7,
+        "start": 12,
+        "end": 12
+      },
+      {
+        "name": "ApplyDiscountUseCaseTest.useCase",
+        "kind": 7,
+        "start": 13,
+        "end": 13
+      },
+      {
+        "name": "ApplyDiscountUseCaseTest.throws when order is missing",
+        "kind": 6,
+        "start": 15,
+        "end": 19
+      },
+      {
+        "name": "ApplyDiscountUseCaseTest.saves the order after applying",
+        "kind": 6,
+        "start": 21,
+        "end": 25
+      }
+    ],
+    "src/main/kotlin/com/example/order/domain/Order.kt": [
+      {
+        "name": "Order",
+        "kind": 5,
+        "start": 2,
+        "end": 13
+      },
+      {
+        "name": "Order.id",
+        "kind": 13,
+        "start": 3,
+        "end": 3
+      },
+      {
+        "name": "Order.subtotal",
+        "kind": 13,
+        "start": 4,
+        "end": 4
+      },
+      {
+        "name": "Order.discount",
+        "kind": 13,
+        "start": 5,
+        "end": 5
+      },
+      {
+        "name": "Order.Order",
+        "kind": 9,
+        "start": 2,
+        "end": 6
+      },
+      {
+        "name": "Order.applyDiscount",
+        "kind": 6,
+        "start": 7,
+        "end": 10
+      },
+      {
+        "name": "Order.total",
+        "kind": 6,
+        "start": 12,
+        "end": 12
+      }
+    ],
+    "src/test/kotlin/com/example/order/domain/OrderTest.kt": [
+      {
+        "name": "OrderTest",
+        "kind": 5,
+        "start": 5,
+        "end": 25
+      },
+      {
+        "name": "OrderTest.total is the subtotal without promo",
+        "kind": 6,
+        "start": 6,
+        "end": 10
+      },
+      {
+        "name": "OrderTest.applies the policy rate to subtotal",
+        "kind": 6,
+        "start": 12,
+        "end": 17
+      },
+      {
+        "name": "OrderTest.keeps total when code is unknown",
+        "kind": 6,
+        "start": 19,
+        "end": 24
+      }
+    ],
+    "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt": [
+      {
+        "name": "ApplyDiscountUseCase",
+        "kind": 5,
+        "start": 8,
+        "end": 20
+      },
+      {
+        "name": "ApplyDiscountUseCase.repository",
+        "kind": 13,
+        "start": 12,
+        "end": 12
+      },
+      {
+        "name": "ApplyDiscountUseCase.ApplyDiscountUseCase",
+        "kind": 9,
+        "start": 11,
+        "end": 13
+      },
+      {
+        "name": "ApplyDiscountUseCase.execute",
+        "kind": 6,
+        "start": 14,
+        "end": 19
+      }
+    ],
+    "src/main/kotlin/com/example/order/domain/OrderRepository.kt": [
+      {
+        "name": "OrderRepository",
+        "kind": 11,
+        "start": 2,
+        "end": 5
+      },
+      {
+        "name": "OrderRepository.find",
+        "kind": 6,
+        "start": 3,
+        "end": 3
+      },
+      {
+        "name": "OrderRepository.save",
+        "kind": 6,
+        "start": 4,
+        "end": 4
+      }
+    ],
+    "src/main/kotlin/com/example/export/OrderCsvExporter.kt": [
+      {
+        "name": "OrderCsvExporter",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "OrderCsvExporter.discountColumn",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/promo/PromoService.kt": [
+      {
+        "name": "PromoService",
+        "kind": 5,
+        "start": 5,
+        "end": 14
+      },
+      {
+        "name": "PromoService.legacy",
+        "kind": 13,
+        "start": 6,
+        "end": 6
+      },
+      {
+        "name": "PromoService.PromoService",
+        "kind": 9,
+        "start": 5,
+        "end": 7
+      },
+      {
+        "name": "PromoService.apply",
+        "kind": 6,
+        "start": 8,
+        "end": 11
+      },
+      {
+        "name": "PromoService.legacyPromo",
+        "kind": 6,
+        "start": 13,
+        "end": 13
+      }
+    ],
+    "src/main/kotlin/com/example/tax/TaxCalculator.kt": [
+      {
+        "name": "TaxCalculator",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "TaxCalculator.taxable",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/partner/PartnerFeed.kt": [
+      {
+        "name": "PartnerFeed",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "PartnerFeed.discountPayload",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt": [
+      {
+        "name": "OrderRepositoryImplTest",
+        "kind": 5,
+        "start": 8,
+        "end": 31
+      },
+      {
+        "name": "OrderRepositoryImplTest.repository",
+        "kind": 7,
+        "start": 9,
+        "end": 9
+      },
+      {
+        "name": "OrderRepositoryImplTest.round trips subtotal",
+        "kind": 6,
+        "start": 11,
+        "end": 15
+      },
+      {
+        "name": "OrderRepositoryImplTest.persists discount",
+        "kind": 6,
+        "start": 17,
+        "end": 21
+      },
+      {
+        "name": "OrderRepositoryImplTest.reads zero discount for rows saved before the column existed",
+        "kind": 6,
+        "start": 23,
+        "end": 27
+      },
+      {
+        "name": "OrderRepositoryImplTest.orderWithDiscount",
+        "kind": 6,
+        "start": 29,
+        "end": 30
+      }
+    ],
+    "src/main/kotlin/com/example/batch/DailySettlement.kt": [
+      {
+        "name": "DailySettlement",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "DailySettlement.settledDiscount",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/checkout/CheckoutPresenter.kt": [
+      {
+        "name": "CheckoutPresenter",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "CheckoutPresenter.discountToShow",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/analytics/OrderMetrics.kt": [
+      {
+        "name": "OrderMetrics",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "OrderMetrics.discount",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/report/SalesReport.kt": [
+      {
+        "name": "SalesReport",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "SalesReport.discountOf",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/shipping/FreeShippingRule.kt": [
+      {
+        "name": "FreeShippingRule",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "FreeShippingRule.threshold",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/legacy/LegacyOrderAdapter.kt": [
+      {
+        "name": "LegacyOrderAdapter",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "LegacyOrderAdapter.legacyDiscount",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/notification/OrderMailer.kt": [
+      {
+        "name": "OrderMailer",
+        "kind": 5,
+        "start": 5,
+        "end": 10
+      },
+      {
+        "name": "OrderMailer.discountLine",
+        "kind": 6,
+        "start": 6,
+        "end": 9
+      }
+    ],
+    "src/main/kotlin/com/example/loyalty/PointCalculator.kt": [
+      {
+        "name": "PointCalculator",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "PointCalculator.base",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/pricing/PriceBreakdown.kt": [
+      {
+        "name": "PriceBreakdown",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "PriceBreakdown.discountPart",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/support/RefundEstimator.kt": [
+      {
+        "name": "RefundEstimator",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "RefundEstimator.refundable",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/warehouse/PickingSlip.kt": [
+      {
+        "name": "PickingSlip",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "PickingSlip.footerDiscount",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/admin/OrderAdminView.kt": [
+      {
+        "name": "OrderAdminView",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "OrderAdminView.discountField",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/receipt/ReceiptPrinter.kt": [
+      {
+        "name": "ReceiptPrinter",
+        "kind": 5,
+        "start": 5,
+        "end": 10
+      },
+      {
+        "name": "ReceiptPrinter.discountLine",
+        "kind": 6,
+        "start": 6,
+        "end": 9
+      }
+    ],
+    "src/main/kotlin/com/example/search/OrderDocument.kt": [
+      {
+        "name": "OrderDocument",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "OrderDocument.discount",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/audit/OrderAuditLog.kt": [
+      {
+        "name": "OrderAuditLog",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "OrderAuditLog.discountAtAudit",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt": [
+      {
+        "name": "InvoiceBuilder",
+        "kind": 5,
+        "start": 5,
+        "end": 13
+      },
+      {
+        "name": "InvoiceBuilder.discountLine",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      },
+      {
+        "name": "InvoiceBuilder.grandTotal",
+        "kind": 6,
+        "start": 10,
+        "end": 12
+      }
+    ],
+    "src/main/kotlin/com/example/dashboard/DiscountWidget.kt": [
+      {
+        "name": "DiscountWidget",
+        "kind": 5,
+        "start": 5,
+        "end": 9
+      },
+      {
+        "name": "DiscountWidget.value",
+        "kind": 6,
+        "start": 6,
+        "end": 8
+      }
+    ],
+    "src/main/kotlin/com/example/cart/CartSummary.kt": [
+      {
+        "name": "CartSummary",
+        "kind": 5,
+        "start": 5,
+        "end": 14
+      },
+      {
+        "name": "CartSummary.order",
+        "kind": 13,
+        "start": 6,
+        "end": 6
+      },
+      {
+        "name": "CartSummary.items",
+        "kind": 13,
+        "start": 7,
+        "end": 7
+      },
+      {
+        "name": "CartSummary.CartSummary",
+        "kind": 9,
+        "start": 5,
+        "end": 8
+      },
+      {
+        "name": "CartSummary.count",
+        "kind": 6,
+        "start": 9,
+        "end": 9
+      },
+      {
+        "name": "CartSummary.total",
+        "kind": 6,
+        "start": 11,
+        "end": 13
+      }
+    ],
+    "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt": [
+      {
+        "name": "OrderRepositoryImpl",
+        "kind": 5,
+        "start": 9,
+        "end": 35
+      },
+      {
+        "name": "OrderRepositoryImpl.jdbc",
+        "kind": 13,
+        "start": 11,
+        "end": 11
+      },
+      {
+        "name": "OrderRepositoryImpl.OrderRepositoryImpl",
+        "kind": 9,
+        "start": 10,
+        "end": 12
+      },
+      {
+        "name": "OrderRepositoryImpl.save",
+        "kind": 6,
+        "start": 13,
+        "end": 22
+      },
+      {
+        "name": "OrderRepositoryImpl.find",
+        "kind": 6,
+        "start": 24,
+        "end": 34
+      }
+    ]
+  }
+}

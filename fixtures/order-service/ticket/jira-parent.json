@@ -1,0 +1,15 @@
+{
+  "id": "10400",
+  "key": "SHOP-400",
+  "self": "https://example.atlassian.net/rest/api/2/issue/10400",
+  "fields": {
+    "summary": "春のキャンペーン",
+    "issuetype": { "name": "エピック" },
+    "status": { "name": "進行中" },
+    "description": "h4. 目的\n4 月の 1 か月、割引コードを配って初めての注文を増やす。コードは {{SPRING10}}（全員）と {{WELCOME5}}（新しい会員）。\n\nh4. やること\n* 割引率の表を足す（SHOP-420）\n* 注文に割引コードを適用できるようにする（SHOP-421）\n* キャンペーンのお知らせメール（SHOP-422）\n\nh4. 期日\n3 月 25 日にリリースする"
+  },
+  "renderedFields": {
+    "summary": null,
+    "description": "<h4><a name=\"目的\"></a>目的</h4>\n<p>4 月の 1 か月、割引コードを配って初めての注文を増やす。コードは <tt>SPRING10</tt>（全員）と <tt>WELCOME5</tt>（新しい会員）。</p>\n\n<h4><a name=\"やること\"></a>やること</h4>\n<ul>\n\t<li>割引率の表を足す（<a href=\"/browse/SHOP-420\" class=\"issue-link\" data-issue-key=\"SHOP-420\">SHOP-420</a>）</li>\n\t<li>注文に割引コードを適用できるようにする（<a href=\"/browse/SHOP-421\" class=\"issue-link\" data-issue-key=\"SHOP-421\">SHOP-421</a>）</li>\n\t<li>キャンペーンのお知らせメール（<a href=\"/browse/SHOP-422\" class=\"issue-link\" data-issue-key=\"SHOP-422\">SHOP-422</a>）</li>\n</ul>\n\n<h4><a name=\"期日\"></a>期日</h4>\n<p>3 月 25 日にリリースする</p>"
+  }
+}

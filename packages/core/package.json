@@ -1,0 +1,37 @@
+{
+  "name": "@ondina/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ondina の決定的パイプライン（Stage 1）。tree-sitter による意味的 hunk、安定ID、追従検出、ハイライト、LSP",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@catppuccin/palette": "1.8.0",
+    "@ondina/model": "workspace:*",
+    "@tree-sitter-grammars/tree-sitter-kotlin": "1.1.0",
+    "diff": "^9.0.0",
+    "mdast-util-from-markdown": "2.0.3",
+    "picomatch": "4.0.7",
+    "shiki": "4.4.3",
+    "web-tree-sitter": "^0.27.0",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/mdast": "4.0.4",
+    "@types/picomatch": "4.0.3"
+  }
+}

@@ -1,0 +1,36 @@
+project: order-service
+language: kotlin
+sourceRoots: [src/main/kotlin, src/test/kotlin, src/main/resources]
+packagePrefix: com.example          # UI でのパス短縮表示に使う
+
+layers:                            # 上から順に見て、最初に当たった層を付ける（5.2 の 4）
+  - name: Tests                    # テストは domain/ や infra/ の下にも置くので、層より先に見る
+    match: ["src/test/**"]
+  - name: API
+    match: ["**/api/**"]
+  - name: Application
+    match: ["**/application/**", "**/usecase/**"]
+  - name: Domain
+    match: ["**/domain/**"]
+  - name: Infrastructure
+    match: ["**/infra/**", "src/main/resources/db/**"]
+
+allowedDependencies:               # 無い方向の辺を「層を飛び越える呼び出し」として描く（事実のみ）
+  API: [Application]
+  Application: [Domain, Infrastructure]
+  Infrastructure: [Domain]
+  Tests: [API, Application, Domain, Infrastructure]
+
+normalize:
+  kotlin: [safeCall, lambdaIt, trailingComma, namedArgOrder]
+
+lsp:                               # 9.1。2026-09-21 に実機で確認した形
+  kotlin:
+    command: kotlin-lsp            # 実体は bin/intellij-server（kotlin-lsp.sh は非推奨のラッパ）
+    # 既定が socket（127.0.0.1:9999）なので --stdio は必須。
+    # {cacheDir} は ondina が .ondina/lsp/workspace（リポジトリで 1 つ）に置換する。使い回すと冷 59 秒 → 温 7.2 秒
+    args: ["--stdio", "--system-path", "{cacheDir}"]
+    readyTimeoutSec: 600
+
+theme: { mode: system, light: latte, dark: mocha, accent: mauve }
+ide: { scheme: jetbrains, product: idea, project: order-service }

@@ -1,0 +1,6 @@
+#!/bin/sh
+# 偽の uname（kotlin-lsp-script.test.ts）。既定は Apple シリコンの Mac
+case "$1" in
+  -m) echo "${FAKE_UNAME_M:-arm64}" ;;
+  *) echo "${FAKE_UNAME_S:-Darwin}" ;;
+esac

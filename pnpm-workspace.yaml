@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+
+# tree-sitter-kotlin はネイティブアドオンのビルド（node-gyp）を持つが、同梱 wasm だけを使うので走らせない
+allowBuilds:
+  esbuild: true
+  '@tree-sitter-grammars/tree-sitter-kotlin': false

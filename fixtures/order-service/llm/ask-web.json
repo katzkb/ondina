@@ -1,0 +1,7 @@
+{
+  "command": "codex exec --skip-git-repo-check -s read-only -",
+  "stdout": "{\"lead\":\"?: は Kotlin のエルビス演算子だ。左側が null でなければその値を使い、null のときだけ右側を実行する。\",\"items\":[{\"text\":\"右側には値だけでなく、例外を投げる throw も書ける\",\"web\":{\"url\":\"https://kotlinlang.org/docs/null-safety.html\",\"title\":\"Null safety | Kotlin Documentation\"}},{\"text\":\"この行では repository.find(id) が null でなければ、取得した注文を order に代入する\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt\",\"side\":\"head\",\"line\":16}},{\"text\":\"null なら OrderNotFound(id) を投げ、後続の割引適用と保存には進まない\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt\",\"side\":\"head\",\"line\":16,\"endLine\":18}}]}\n",
+  "stderr": "web search: \nweb search: https://kotlinlang.org/docs/null-safety.html",
+  "ms": 19949,
+  "recordedAt": "2026-10-15T07:02:49.963Z"
+}

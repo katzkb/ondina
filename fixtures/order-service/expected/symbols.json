@@ -1,0 +1,430 @@
+[
+  {
+    "id": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+    "fqName": "com.example.admin.OrderAdminView.discountField",
+    "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c"
+  },
+  {
+    "id": "7c3620df39b9ef5cf954a62175bf0def4361cf79",
+    "fqName": "com.example.analytics.OrderMetrics.discount",
+    "path": "src/main/kotlin/com/example/analytics/OrderMetrics.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "7c3620df39b9ef5cf954a62175bf0def4361cf79"
+  },
+  {
+    "id": "7d1f264e32ec64a4a8e87582280d3c51c0e9beca",
+    "fqName": "com.example.audit.OrderAuditLog.discountAtAudit",
+    "path": "src/main/kotlin/com/example/audit/OrderAuditLog.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "7d1f264e32ec64a4a8e87582280d3c51c0e9beca"
+  },
+  {
+    "id": "079cc62bead02b816f5900d3da3accddb6cfc225",
+    "fqName": "com.example.batch.DailySettlement.settledDiscount",
+    "path": "src/main/kotlin/com/example/batch/DailySettlement.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "079cc62bead02b816f5900d3da3accddb6cfc225"
+  },
+  {
+    "id": "78b5e2fce82e915e87d96f07a36f818d0f441d27",
+    "fqName": "com.example.cart.CartSummary.total",
+    "path": "src/main/kotlin/com/example/cart/CartSummary.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "78b5e2fce82e915e87d96f07a36f818d0f441d27"
+  },
+  {
+    "id": "3fe1dde4f7eced5e63034f751a8d7c51185a3395",
+    "fqName": "com.example.checkout.CheckoutPresenter.discountToShow",
+    "path": "src/main/kotlin/com/example/checkout/CheckoutPresenter.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "3fe1dde4f7eced5e63034f751a8d7c51185a3395"
+  },
+  {
+    "id": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+    "fqName": "src/main/kotlin/com/example/common/Logger.kt",
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "kind": "file",
+    "changed": true,
+    "hunkId": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4"
+  },
+  {
+    "id": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+    "fqName": "com.example.common.Logger.format",
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b"
+  },
+  {
+    "id": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c",
+    "fqName": "com.example.config.FeatureFlags.DISCOUNT_V2",
+    "path": "src/main/kotlin/com/example/config/FeatureFlags.kt",
+    "kind": "property",
+    "changed": true,
+    "hunkId": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c"
+  },
+  {
+    "id": "18ada3da5f913983c4b5036e21e96b3f03fb3a22",
+    "fqName": "com.example.dashboard.DiscountWidget.value",
+    "path": "src/main/kotlin/com/example/dashboard/DiscountWidget.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "18ada3da5f913983c4b5036e21e96b3f03fb3a22"
+  },
+  {
+    "id": "0ce459a50c74ffd6bb848b193e6801134ddd471d",
+    "fqName": "com.example.export.OrderCsvExporter.discountColumn",
+    "path": "src/main/kotlin/com/example/export/OrderCsvExporter.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "0ce459a50c74ffd6bb848b193e6801134ddd471d"
+  },
+  {
+    "id": "34572795b5d3947558d3dffb3f15fcc32a885a0e",
+    "fqName": "com.example.invoice.InvoiceBuilder.discountLine",
+    "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "34572795b5d3947558d3dffb3f15fcc32a885a0e"
+  },
+  {
+    "id": "b6f9e151047a59c46732bb8dce91c63d9aab47ea",
+    "fqName": "com.example.invoice.InvoiceBuilder.grandTotal",
+    "path": "src/main/kotlin/com/example/invoice/InvoiceBuilder.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "b6f9e151047a59c46732bb8dce91c63d9aab47ea"
+  },
+  {
+    "id": "c44dfbbec354bf0fe7baa0e88955218093477d7b",
+    "fqName": "com.example.legacy.LegacyOrderAdapter.legacyDiscount",
+    "path": "src/main/kotlin/com/example/legacy/LegacyOrderAdapter.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "c44dfbbec354bf0fe7baa0e88955218093477d7b"
+  },
+  {
+    "id": "60e94e42327d58a58d4908e5cd433da84e76966a",
+    "fqName": "com.example.loyalty.PointCalculator.base",
+    "path": "src/main/kotlin/com/example/loyalty/PointCalculator.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "60e94e42327d58a58d4908e5cd433da84e76966a"
+  },
+  {
+    "id": "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9",
+    "fqName": "com.example.notification.OrderMailer.discountLine",
+    "path": "src/main/kotlin/com/example/notification/OrderMailer.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9"
+  },
+  {
+    "id": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
+    "fqName": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+    "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "file",
+    "changed": true,
+    "hunkId": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731"
+  },
+  {
+    "id": "89802175d3898bded24a787f90beee1a5312f3a7",
+    "fqName": "com.example.order.api.ApplyDiscountRequest",
+    "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "class",
+    "changed": true,
+    "hunkId": "89802175d3898bded24a787f90beee1a5312f3a7"
+  },
+  {
+    "id": "02e146608288f588fded777b8b37c3a6f5a00023",
+    "fqName": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "file",
+    "changed": true,
+    "hunkId": "02e146608288f588fded777b8b37c3a6f5a00023"
+  },
+  {
+    "id": "130e7d62f211839eec7c68582ae3565629d8c673",
+    "fqName": "com.example.order.api.OrderController.apply",
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "130e7d62f211839eec7c68582ae3565629d8c673"
+  },
+  {
+    "id": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+    "fqName": "com.example.order.api.OrderDetailResponse",
+    "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "class",
+    "changed": true,
+    "hunkId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713"
+  },
+  {
+    "id": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+    "fqName": "com.example.order.api.OrderResponse",
+    "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "class",
+    "changed": true,
+    "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7"
+  },
+  {
+    "id": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+    "fqName": "com.example.order.api.OrderSummaryResponse",
+    "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+    "layer": "API",
+    "layerProvenance": "config",
+    "kind": "class",
+    "changed": true,
+    "hunkId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5"
+  },
+  {
+    "id": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
+    "fqName": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "layer": "Application",
+    "layerProvenance": "config",
+    "kind": "file",
+    "changed": true,
+    "hunkId": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960"
+  },
+  {
+    "id": "a135ba90941c193b82bb22bc319e52347521ee99",
+    "fqName": "com.example.order.application.ApplyDiscountUseCase.execute",
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "layer": "Application",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99"
+  },
+  {
+    "id": "08620bbd277424422d535274fc7a98e037583e4c",
+    "fqName": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+    "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+    "layer": "Domain",
+    "layerProvenance": "config",
+    "kind": "file",
+    "changed": true,
+    "hunkId": "08620bbd277424422d535274fc7a98e037583e4c"
+  },
+  {
+    "id": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
+    "fqName": "com.example.order.domain.DiscountCommand",
+    "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+    "layer": "Domain",
+    "layerProvenance": "config",
+    "kind": "class",
+    "changed": true,
+    "hunkId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a"
+  },
+  {
+    "id": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+    "fqName": "com.example.order.domain.Order",
+    "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+    "layer": "Domain",
+    "layerProvenance": "config",
+    "kind": "class",
+    "changed": true,
+    "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7"
+  },
+  {
+    "id": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+    "fqName": "com.example.order.infra.OrderRepositoryImpl.save",
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "layer": "Infrastructure",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b"
+  },
+  {
+    "id": "3b823c2027bd0957f11251555393d73cee9318ed",
+    "fqName": "com.example.order.infra.OrderRepositoryImpl.find",
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "layer": "Infrastructure",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed"
+  },
+  {
+    "id": "cabe82f14a82b677e5ca8078b7b90f15609371e3",
+    "fqName": "com.example.partner.PartnerFeed.discountPayload",
+    "path": "src/main/kotlin/com/example/partner/PartnerFeed.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "cabe82f14a82b677e5ca8078b7b90f15609371e3"
+  },
+  {
+    "id": "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3",
+    "fqName": "com.example.pricing.PriceBreakdown.discountPart",
+    "path": "src/main/kotlin/com/example/pricing/PriceBreakdown.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3"
+  },
+  {
+    "id": "47dc9545806ff578b57ab0793821f2cc2c1b3a49",
+    "fqName": "com.example.promo.PromoService.apply",
+    "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "47dc9545806ff578b57ab0793821f2cc2c1b3a49"
+  },
+  {
+    "id": "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7",
+    "fqName": "com.example.receipt.ReceiptPrinter.discountLine",
+    "path": "src/main/kotlin/com/example/receipt/ReceiptPrinter.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7"
+  },
+  {
+    "id": "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c",
+    "fqName": "com.example.report.SalesReport.discountOf",
+    "path": "src/main/kotlin/com/example/report/SalesReport.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c"
+  },
+  {
+    "id": "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506",
+    "fqName": "com.example.search.OrderDocument.discount",
+    "path": "src/main/kotlin/com/example/search/OrderDocument.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506"
+  },
+  {
+    "id": "9cfdbdf61c4a956c952939696c72096aa265c4bd",
+    "fqName": "com.example.shipping.FreeShippingRule.threshold",
+    "path": "src/main/kotlin/com/example/shipping/FreeShippingRule.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "9cfdbdf61c4a956c952939696c72096aa265c4bd"
+  },
+  {
+    "id": "d4ebe4338bbc4cc8e92947fd0262f50bf585797a",
+    "fqName": "com.example.support.RefundEstimator.refundable",
+    "path": "src/main/kotlin/com/example/support/RefundEstimator.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "d4ebe4338bbc4cc8e92947fd0262f50bf585797a"
+  },
+  {
+    "id": "9d6e9f791f8b693d7758aa240592b444cbf5e084",
+    "fqName": "com.example.tax.TaxCalculator.taxable",
+    "path": "src/main/kotlin/com/example/tax/TaxCalculator.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "9d6e9f791f8b693d7758aa240592b444cbf5e084"
+  },
+  {
+    "id": "fc611ea6e00d7be77f29312964dd5facc0b2dccf",
+    "fqName": "com.example.warehouse.PickingSlip.footerDiscount",
+    "path": "src/main/kotlin/com/example/warehouse/PickingSlip.kt",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "fc611ea6e00d7be77f29312964dd5facc0b2dccf"
+  },
+  {
+    "id": "40e1361cdc0e10bdf58a3323c633e282a8902036",
+    "fqName": "src/main/resources/db/migration/V421__discount.sql",
+    "path": "src/main/resources/db/migration/V421__discount.sql",
+    "layer": "Infrastructure",
+    "layerProvenance": "config",
+    "kind": "file",
+    "changed": true,
+    "hunkId": "40e1361cdc0e10bdf58a3323c633e282a8902036"
+  },
+  {
+    "id": "d81273406425493877cce76b6a078c2f3b98944f",
+    "fqName": "com.example.order.application.ApplyDiscountUseCaseTest.`throws when order is missing`",
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "d81273406425493877cce76b6a078c2f3b98944f"
+  },
+  {
+    "id": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+    "fqName": "com.example.order.application.ApplyDiscountUseCaseTest.`saves the order after applying`",
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "b89e25202d679c348f253ed8b3ab49f2833eedb5"
+  },
+  {
+    "id": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+    "fqName": "com.example.order.domain.OrderTest.`applies the policy rate to subtotal`",
+    "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "a22e9a886a2fefed19df83983b21f8e1b09098ab"
+  },
+  {
+    "id": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+    "fqName": "com.example.order.domain.OrderTest.`keeps total when code is unknown`",
+    "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "3c10228566fa653f9ff458cace7a9fea95c16ea9"
+  },
+  {
+    "id": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+    "fqName": "com.example.order.infra.OrderRepositoryImplTest.`persists discount`",
+    "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839"
+  },
+  {
+    "id": "7826f5464b504df32d03817b1421873bc12479bd",
+    "fqName": "com.example.order.infra.OrderRepositoryImplTest.`reads zero discount for rows saved before the column existed`",
+    "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "7826f5464b504df32d03817b1421873bc12479bd"
+  },
+  {
+    "id": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+    "fqName": "com.example.order.infra.OrderRepositoryImplTest.orderWithDiscount",
+    "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+    "layer": "Tests",
+    "layerProvenance": "config",
+    "kind": "function",
+    "changed": true,
+    "hunkId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3"
+  }
+]

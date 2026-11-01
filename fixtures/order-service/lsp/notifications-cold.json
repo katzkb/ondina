@@ -1,0 +1,401 @@
+[
+  {
+    "atMs": 1725,
+    "method": "$/progress",
+    "params": {
+      "token": "u48koqa3kslv1v05o1hk",
+      "value": {
+        "kind": "begin",
+        "title": "Importing"
+      }
+    }
+  },
+  {
+    "atMs": 1733,
+    "method": "$/progress",
+    "params": {
+      "token": "u48koqa3kslv1v05o1hk",
+      "value": {
+        "kind": "report",
+        "message": "Gradle"
+      }
+    }
+  },
+  {
+    "atMs": 3238,
+    "method": "intellij/importLog",
+    "params": {
+      "type": 3,
+      "message": "Workspace imported successfully",
+      "failed": false,
+      "succeeded": true,
+      "started": false
+    }
+  },
+  {
+    "atMs": 3436,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "begin",
+        "title": "Indexing"
+      }
+    }
+  },
+  {
+    "atMs": 3437,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "Invalidating files"
+      }
+    }
+  },
+  {
+    "atMs": 3542,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "3%",
+        "percentage": 3
+      }
+    }
+  },
+  {
+    "atMs": 3646,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "7%",
+        "percentage": 7
+      }
+    }
+  },
+  {
+    "atMs": 3751,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "9%",
+        "percentage": 9
+      }
+    }
+  },
+  {
+    "atMs": 4265,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "11%",
+        "percentage": 11
+      }
+    }
+  },
+  {
+    "atMs": 4815,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "13%",
+        "percentage": 13
+      }
+    }
+  },
+  {
+    "atMs": 4968,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "15%",
+        "percentage": 15
+      }
+    }
+  },
+  {
+    "atMs": 5832,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "17%",
+        "percentage": 17
+      }
+    }
+  },
+  {
+    "atMs": 5933,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "19%",
+        "percentage": 19
+      }
+    }
+  },
+  {
+    "atMs": 6035,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "23%",
+        "percentage": 23
+      }
+    }
+  },
+  {
+    "atMs": 6175,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "25%",
+        "percentage": 25
+      }
+    }
+  },
+  {
+    "atMs": 6276,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "42%",
+        "percentage": 42
+      }
+    }
+  },
+  {
+    "atMs": 6377,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "48%",
+        "percentage": 48
+      }
+    }
+  },
+  {
+    "atMs": 6478,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "55%",
+        "percentage": 55
+      }
+    }
+  },
+  {
+    "atMs": 6584,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "61%",
+        "percentage": 61
+      }
+    }
+  },
+  {
+    "atMs": 6685,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "67%",
+        "percentage": 67
+      }
+    }
+  },
+  {
+    "atMs": 6837,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "69%",
+        "percentage": 69
+      }
+    }
+  },
+  {
+    "atMs": 6941,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "73%",
+        "percentage": 73
+      }
+    }
+  },
+  {
+    "atMs": 7044,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "80%",
+        "percentage": 80
+      }
+    }
+  },
+  {
+    "atMs": 7149,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "82%",
+        "percentage": 82
+      }
+    }
+  },
+  {
+    "atMs": 7254,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "84%",
+        "percentage": 84
+      }
+    }
+  },
+  {
+    "atMs": 7353,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "88%",
+        "percentage": 88
+      }
+    }
+  },
+  {
+    "atMs": 7459,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "90%",
+        "percentage": 90
+      }
+    }
+  },
+  {
+    "atMs": 7569,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "92%",
+        "percentage": 92
+      }
+    }
+  },
+  {
+    "atMs": 7682,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "94%",
+        "percentage": 94
+      }
+    }
+  },
+  {
+    "atMs": 7788,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "96%",
+        "percentage": 96
+      }
+    }
+  },
+  {
+    "atMs": 8007,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "98%",
+        "percentage": 98
+      }
+    }
+  },
+  {
+    "atMs": 8112,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "report",
+        "message": "Just a few more moments...",
+        "percentage": 100
+      }
+    }
+  },
+  {
+    "atMs": 10600,
+    "method": "$/progress",
+    "params": {
+      "token": "1vvkr1til5tqa0km1qsb",
+      "value": {
+        "kind": "end"
+      }
+    }
+  },
+  {
+    "atMs": 10600,
+    "method": "$/progress",
+    "params": {
+      "token": "u48koqa3kslv1v05o1hk",
+      "value": {
+        "kind": "end"
+      }
+    }
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "startAt": 0,
+  "maxResults": 100,
+  "total": 3,
+  "issues": [
+    { "id": "10422", "key": "SHOP-422", "fields": { "summary": "キャンペーンのお知らせメール" } },
+    { "id": "10420", "key": "SHOP-420", "fields": { "summary": "割引率の表を足す" } },
+    { "id": "10421", "key": "SHOP-421", "fields": { "summary": "注文に割引コードを適用できるようにする" } }
+  ]
+}

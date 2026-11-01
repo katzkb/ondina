@@ -1,0 +1,7 @@
+{
+  "command": "claude -p --tools \"\" --max-turns 1 --model opus",
+  "stdout": "{\"lead\":\"2 回目に呼ぶと、discount は上書きされる。1 回目の値には足されない。同じコードなら同じ計算をもう一度し、違うコードなら後のコードの率で決まる。\",\"items\":[{\"text\":\"applyDiscount は subtotal に率を掛けた値を discount に代入し、それまでの discount を計算に使わない\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":10}},{\"text\":\"subtotal は val で、applyDiscount を呼んでも変わらない\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":5}},{\"text\":\"率は、呼ぶたびに cmd.code から DiscountPolicy.rateFor で引き直す\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":9}},{\"text\":\"rateFor は TABLE にないコードには Rate.ZERO を返す\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/DiscountPolicy.kt\",\"side\":\"head\",\"line\":10}}],\"tail\":\"材料にあるテストは、どれも applyDiscount を 1 回だけ呼んでいる。\"}\n",
+  "stderr": "",
+  "ms": 32301,
+  "recordedAt": "2026-10-15T07:04:40.272Z"
+}

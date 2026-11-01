@@ -1,0 +1,341 @@
+{
+  "hunks": [
+    {
+      "id": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+      "symbolFqName": "com.example.admin.OrderAdminView.discountField",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "7c3620df39b9ef5cf954a62175bf0def4361cf79",
+      "symbolFqName": "com.example.analytics.OrderMetrics.discount",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "7d1f264e32ec64a4a8e87582280d3c51c0e9beca",
+      "symbolFqName": "com.example.audit.OrderAuditLog.discountAtAudit",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "079cc62bead02b816f5900d3da3accddb6cfc225",
+      "symbolFqName": "com.example.batch.DailySettlement.settledDiscount",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "78b5e2fce82e915e87d96f07a36f818d0f441d27",
+      "symbolFqName": "com.example.cart.CartSummary.total",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "3fe1dde4f7eced5e63034f751a8d7c51185a3395",
+      "symbolFqName": "com.example.checkout.CheckoutPresenter.discountToShow",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+      "symbolFqName": "src/main/kotlin/com/example/common/Logger.kt",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+      "symbolFqName": "com.example.common.Logger.format",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c",
+      "symbolFqName": "com.example.config.FeatureFlags.DISCOUNT_V2",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "18ada3da5f913983c4b5036e21e96b3f03fb3a22",
+      "symbolFqName": "com.example.dashboard.DiscountWidget.value",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "0ce459a50c74ffd6bb848b193e6801134ddd471d",
+      "symbolFqName": "com.example.export.OrderCsvExporter.discountColumn",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "34572795b5d3947558d3dffb3f15fcc32a885a0e",
+      "symbolFqName": "com.example.invoice.InvoiceBuilder.discountLine",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "b6f9e151047a59c46732bb8dce91c63d9aab47ea",
+      "symbolFqName": "com.example.invoice.InvoiceBuilder.grandTotal",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "c44dfbbec354bf0fe7baa0e88955218093477d7b",
+      "symbolFqName": "com.example.legacy.LegacyOrderAdapter.legacyDiscount",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "60e94e42327d58a58d4908e5cd433da84e76966a",
+      "symbolFqName": "com.example.loyalty.PointCalculator.base",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9",
+      "symbolFqName": "com.example.notification.OrderMailer.discountLine",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
+      "symbolFqName": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "89802175d3898bded24a787f90beee1a5312f3a7",
+      "symbolFqName": "com.example.order.api.ApplyDiscountRequest",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "02e146608288f588fded777b8b37c3a6f5a00023",
+      "symbolFqName": "src/main/kotlin/com/example/order/api/OrderController.kt",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "130e7d62f211839eec7c68582ae3565629d8c673",
+      "symbolFqName": "com.example.order.api.OrderController.apply",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+      "symbolFqName": "com.example.order.api.OrderDetailResponse",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+      "symbolFqName": "com.example.order.api.OrderResponse",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+      "symbolFqName": "com.example.order.api.OrderSummaryResponse",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
+      "symbolFqName": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "a135ba90941c193b82bb22bc319e52347521ee99",
+      "symbolFqName": "com.example.order.application.ApplyDiscountUseCase.execute",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "08620bbd277424422d535274fc7a98e037583e4c",
+      "symbolFqName": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
+      "symbolFqName": "com.example.order.domain.DiscountCommand",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+      "symbolFqName": "com.example.order.domain.Order",
+      "kind": "core",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+      "symbolFqName": "com.example.order.infra.OrderRepositoryImpl.save",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "3b823c2027bd0957f11251555393d73cee9318ed",
+      "symbolFqName": "com.example.order.infra.OrderRepositoryImpl.find",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "cabe82f14a82b677e5ca8078b7b90f15609371e3",
+      "symbolFqName": "com.example.partner.PartnerFeed.discountPayload",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3",
+      "symbolFqName": "com.example.pricing.PriceBreakdown.discountPart",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "47dc9545806ff578b57ab0793821f2cc2c1b3a49",
+      "symbolFqName": "com.example.promo.PromoService.apply",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7",
+      "symbolFqName": "com.example.receipt.ReceiptPrinter.discountLine",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c",
+      "symbolFqName": "com.example.report.SalesReport.discountOf",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506",
+      "symbolFqName": "com.example.search.OrderDocument.discount",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "9cfdbdf61c4a956c952939696c72096aa265c4bd",
+      "symbolFqName": "com.example.shipping.FreeShippingRule.threshold",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "d4ebe4338bbc4cc8e92947fd0262f50bf585797a",
+      "symbolFqName": "com.example.support.RefundEstimator.refundable",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "9d6e9f791f8b693d7758aa240592b444cbf5e084",
+      "symbolFqName": "com.example.tax.TaxCalculator.taxable",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "fc611ea6e00d7be77f29312964dd5facc0b2dccf",
+      "symbolFqName": "com.example.warehouse.PickingSlip.footerDiscount",
+      "kind": "ripple",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "40e1361cdc0e10bdf58a3323c633e282a8902036",
+      "symbolFqName": "src/main/resources/db/migration/V421__discount.sql",
+      "kind": "none",
+      "kindProvenance": "ast"
+    },
+    {
+      "id": "d81273406425493877cce76b6a078c2f3b98944f",
+      "symbolFqName": "com.example.order.application.ApplyDiscountUseCaseTest.`throws when order is missing`",
+      "kind": "test",
+      "kindProvenance": "config"
+    },
+    {
+      "id": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+      "symbolFqName": "com.example.order.application.ApplyDiscountUseCaseTest.`saves the order after applying`",
+      "kind": "test",
+      "kindProvenance": "config"
+    },
+    {
+      "id": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+      "symbolFqName": "com.example.order.domain.OrderTest.`applies the policy rate to subtotal`",
+      "kind": "test",
+      "kindProvenance": "config"
+    },
+    {
+      "id": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+      "symbolFqName": "com.example.order.domain.OrderTest.`keeps total when code is unknown`",
+      "kind": "test",
+      "kindProvenance": "config"
+    },
+    {
+      "id": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+      "symbolFqName": "com.example.order.infra.OrderRepositoryImplTest.`persists discount`",
+      "kind": "test",
+      "kindProvenance": "config"
+    },
+    {
+      "id": "7826f5464b504df32d03817b1421873bc12479bd",
+      "symbolFqName": "com.example.order.infra.OrderRepositoryImplTest.`reads zero discount for rows saved before the column existed`",
+      "kind": "test",
+      "kindProvenance": "config"
+    },
+    {
+      "id": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+      "symbolFqName": "com.example.order.infra.OrderRepositoryImplTest.orderWithDiscount",
+      "kind": "test",
+      "kindProvenance": "config"
+    }
+  ],
+  "groups": [
+    {
+      "pattern": "getDiscount() → discount",
+      "derivedFrom": {
+        "coreHunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+        "removed": [
+          "promo",
+          "getDiscount"
+        ],
+        "added": [
+          "discount",
+          "applyDiscount"
+        ]
+      },
+      "uniform": "ast",
+      "representative": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+      "members": [
+        "64b251772fa1ec50d3343c65710a0f6634aad62c",
+        "7c3620df39b9ef5cf954a62175bf0def4361cf79",
+        "7d1f264e32ec64a4a8e87582280d3c51c0e9beca",
+        "079cc62bead02b816f5900d3da3accddb6cfc225",
+        "78b5e2fce82e915e87d96f07a36f818d0f441d27",
+        "3fe1dde4f7eced5e63034f751a8d7c51185a3395",
+        "18ada3da5f913983c4b5036e21e96b3f03fb3a22",
+        "0ce459a50c74ffd6bb848b193e6801134ddd471d",
+        "34572795b5d3947558d3dffb3f15fcc32a885a0e",
+        "b6f9e151047a59c46732bb8dce91c63d9aab47ea",
+        "c44dfbbec354bf0fe7baa0e88955218093477d7b",
+        "60e94e42327d58a58d4908e5cd433da84e76966a",
+        "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9",
+        "cabe82f14a82b677e5ca8078b7b90f15609371e3",
+        "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3",
+        "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7",
+        "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c",
+        "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506",
+        "9cfdbdf61c4a956c952939696c72096aa265c4bd",
+        "d4ebe4338bbc4cc8e92947fd0262f50bf585797a",
+        "9d6e9f791f8b693d7758aa240592b444cbf5e084",
+        "fc611ea6e00d7be77f29312964dd5facc0b2dccf"
+      ],
+      "deviations": [
+        "47dc9545806ff578b57ab0793821f2cc2c1b3a49"
+      ],
+      "distance": {
+        "47dc9545806ff578b57ab0793821f2cc2c1b3a49": 13
+      },
+      "near": []
+    }
+  ]
+}

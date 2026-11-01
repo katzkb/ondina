@@ -1,0 +1,43 @@
+{
+  "name": "@ondina/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ondina の Web UI。Analysis.json と ReviewState を読んで描くだけ（設計書 18.1）。serve が dist を配信する",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@ondina/model": "workspace:*",
+    "@tanstack/react-virtual": "3.14.13",
+    "elkjs": "0.9.3",
+    "hast-util-to-jsx-runtime": "2.3.6",
+    "mermaid": "11.17.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "rehype-parse": "9.0.1",
+    "rehype-raw": "7.0.0",
+    "rehype-sanitize": "6.0.0",
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "remark-rehype": "11.1.2",
+    "unified": "11.0.5"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/hast": "3.0.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "30.0.1",
+    "vite": "8.3.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

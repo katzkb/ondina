@@ -1,0 +1,15 @@
+{
+  "id": "10421",
+  "key": "SHOP-421",
+  "self": "https://example.atlassian.net/rest/api/2/issue/10421",
+  "fields": {
+    "summary": "注文に割引コードを適用できるようにする",
+    "issuetype": { "name": "ストーリー" },
+    "status": { "name": "進行中" },
+    "description": "h4. 背景\n春のキャンペーン（[SHOP-400|https://example.atlassian.net/browse/SHOP-400]）で割引コードを配る。今は注文に割引を付ける手段が無い。\n\nh4. やること\n* 注文に割引コードを 1 つ適用できる（{{POST /orders/\\{id\\}/discount}}）\n* 割引額は小計にコードの率を掛けた額。{{SPRING10}} は 10%、{{WELCOME5}} は 5%\n* 知らないコードは割引しない（小計のまま）\n* 割引額は注文と一緒に保存し、注文の応答に含める\n* 期限切れのコードは 400 を返す\n\nh4. 完了条件\n* 既にある注文は割引額 0 として読める"
+  },
+  "renderedFields": {
+    "summary": null,
+    "description": "<h4><a name=\"背景\"></a>背景</h4>\n<p>春のキャンペーン（<a href=\"/browse/SHOP-400\" class=\"issue-link\" data-issue-key=\"SHOP-400\">SHOP-400</a>）で割引コードを配る。今は注文に割引を付ける手段が無い。</p>\n\n<h4><a name=\"やること\"></a>やること</h4>\n<ul>\n\t<li>注文に割引コードを 1 つ適用できる（<tt>POST /orders/{id}/discount</tt>）</li>\n\t<li>割引額は小計にコードの率を掛けた額。<tt>SPRING10</tt> は 10%、<tt>WELCOME5</tt> は 5%</li>\n\t<li>知らないコードは割引しない（小計のまま）</li>\n\t<li>割引額は注文と一緒に保存し、注文の応答に含める</li>\n\t<li>期限切れのコードは 400 を返す</li>\n</ul>\n\n<h4><a name=\"完了条件\"></a>完了条件</h4>\n<ul>\n\t<li>既にある注文は割引額 0 として読める</li>\n</ul>\n<p><span class=\"image-wrap\"><img src=\"/secure/attachment/10001/discount.png\" alt=\"discount.png\" /></span></p>"
+  }
+}

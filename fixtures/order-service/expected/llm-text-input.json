@@ -1,0 +1,734 @@
+{
+  "pr": {
+    "title": "main..feature/discount"
+  },
+  "hunks": [
+    {
+      "id": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+      "path": "src/main/kotlin/com/example/common/Logger.kt",
+      "symbol": "Logger.kt",
+      "lines": [
+        "3|+import java.time.Instant"
+      ]
+    },
+    {
+      "id": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+      "path": "src/main/kotlin/com/example/common/Logger.kt",
+      "symbol": "format()",
+      "lines": [
+        " |-    fun format(level: Level, msg: String) = \"[$level] $msg\"",
+        "8|+    fun format(level: Level, msg: String) = \"[$level] ${Instant.now()} $msg\""
+      ]
+    },
+    {
+      "id": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c",
+      "path": "src/main/kotlin/com/example/config/FeatureFlags.kt",
+      "symbol": "DISCOUNT_V2",
+      "kindHint": "candidate",
+      "lines": [
+        "5|+    const val DISCOUNT_V2 = true"
+      ]
+    },
+    {
+      "id": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
+      "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+      "symbol": "ApplyDiscountRequest.kt",
+      "layer": "API",
+      "lines": [
+        "1|+package com.example.order.api"
+      ]
+    },
+    {
+      "id": "89802175d3898bded24a787f90beee1a5312f3a7",
+      "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+      "symbol": "ApplyDiscountRequest",
+      "kindHint": "candidate",
+      "layer": "API",
+      "lines": [
+        "3|+data class ApplyDiscountRequest(val discountCode: String)"
+      ]
+    },
+    {
+      "id": "02e146608288f588fded777b8b37c3a6f5a00023",
+      "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+      "symbol": "OrderController.kt",
+      "layer": "API",
+      "lines": [
+        "8|+import org.springframework.web.bind.annotation.RequestBody"
+      ]
+    },
+    {
+      "id": "130e7d62f211839eec7c68582ae3565629d8c673",
+      "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+      "symbol": "apply()",
+      "kindHint": "candidate",
+      "layer": "API",
+      "lines": [
+        "16|     @PostMapping(\"/orders/{id}/discount\")",
+        "  |-    fun apply(@PathVariable id: String): OrderResponse {",
+        "  |-        val order = useCase.execute(OrderId(id))",
+        "17|+    fun apply(@PathVariable id: String, @RequestBody body: ApplyDiscountRequest): OrderResponse {",
+        "18|+        val order = useCase.execute(OrderId(id), body.discountCode)",
+        "19|+        repository.save(order)",
+        "20|         return OrderResponse.from(order)",
+        "21|     }"
+      ]
+    },
+    {
+      "id": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+      "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+      "symbol": "OrderDetailResponse",
+      "kindHint": "candidate",
+      "layer": "API",
+      "lines": [
+        " 5| data class OrderDetailResponse(",
+        " 6|     val id: String,",
+        " 7|     val subtotal: Long,",
+        " 8|     val total: Long,",
+        " 9|+    val discount: Long,",
+        "10| ) {",
+        "11|     companion object {",
+        "12|         fun from(o: Order) = OrderDetailResponse(",
+        "13|             id = o.id.value,",
+        "14|             subtotal = o.subtotal.amount,",
+        "15|             total = o.total().amount,",
+        "16|+            discount = o.discount.amount,",
+        "17|         )",
+        "18|     }",
+        "19| }"
+      ]
+    },
+    {
+      "id": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+      "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+      "symbol": "OrderResponse",
+      "kindHint": "candidate",
+      "layer": "API",
+      "lines": [
+        " 5| data class OrderResponse(",
+        " 6|     val id: String,",
+        " 7|     val subtotal: Long,",
+        " 8|+    val discount: Long,",
+        " 9| ) {",
+        "10|     companion object {",
+        "11|         fun from(o: Order) = OrderResponse(",
+        "12|             id = o.id.value,",
+        "13|             subtotal = o.subtotal.amount,",
+        "14|+            discount = o.discount.amount,",
+        "15|         )",
+        "16|     }",
+        "17| }"
+      ]
+    },
+    {
+      "id": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+      "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+      "symbol": "OrderSummaryResponse",
+      "kindHint": "candidate",
+      "layer": "API",
+      "lines": [
+        " 5| data class OrderSummaryResponse(",
+        " 6|     val id: String,",
+        " 7|     val total: Long,",
+        " 8|+    val discount: Long,",
+        " 9| ) {",
+        "10|     companion object {",
+        "11|         fun from(o: Order) = OrderSummaryResponse(",
+        "12|             id = o.id.value,",
+        "13|             total = o.total().amount,",
+        "14|+            discount = o.discount.amount,",
+        "15|         )",
+        "16|     }",
+        "17| }"
+      ]
+    },
+    {
+      "id": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
+      "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+      "symbol": "ApplyDiscountUseCase.kt",
+      "layer": "Application",
+      "lines": [
+        "3|+import com.example.order.domain.DiscountCommand"
+      ]
+    },
+    {
+      "id": "a135ba90941c193b82bb22bc319e52347521ee99",
+      "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+      "symbol": "execute()",
+      "kindHint": "candidate",
+      "layer": "Application",
+      "lines": [
+        "  |-    fun execute(id: OrderId): Order {",
+        "15|+    fun execute(id: OrderId, code: String): Order {",
+        "16|         val order = repository.find(id) ?: throw OrderNotFound(id)",
+        "17|+        order.applyDiscount(DiscountCommand(code))",
+        "18|+        repository.save(order)",
+        "19|         return order",
+        "20|     }"
+      ]
+    },
+    {
+      "id": "08620bbd277424422d535274fc7a98e037583e4c",
+      "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+      "symbol": "DiscountCommand.kt",
+      "layer": "Domain",
+      "lines": [
+        "1|+package com.example.order.domain"
+      ]
+    },
+    {
+      "id": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
+      "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+      "symbol": "DiscountCommand",
+      "kindHint": "candidate",
+      "layer": "Domain",
+      "lines": [
+        "3|+data class DiscountCommand(val code: String)"
+      ]
+    },
+    {
+      "id": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+      "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+      "symbol": "Order",
+      "kindHint": "core",
+      "layer": "Domain",
+      "lines": [
+        " 3| class Order(",
+        " 4|     val id: OrderId,",
+        " 5|     val subtotal: Money,",
+        "  |-    val promo: Promo? = null,",
+        " 6|+    var discount: Money = Money.ZERO,",
+        " 7| ) {",
+        "  |-    fun getDiscount(): Money = promo?.amount ?: Money.ZERO",
+        " 8|+    fun applyDiscount(cmd: DiscountCommand) {",
+        " 9|+        val rate = DiscountPolicy.rateFor(cmd.code)",
+        "10|+        discount = subtotal * rate",
+        "11|+    }",
+        "12| ",
+        "  |-    fun total(): Money = subtotal",
+        "13|+    fun total(): Money = subtotal - discount",
+        "14| }"
+      ]
+    },
+    {
+      "id": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+      "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+      "symbol": "save()",
+      "layer": "Infrastructure",
+      "lines": [
+        "14|     override fun save(order: Order) {",
+        "15|         jdbc.update(",
+        "  |-            \"update orders set subtotal = :subtotal where id = :id\",",
+        "  |-            mapOf(\"id\" to order.id.value, \"subtotal\" to order.subtotal.amount),",
+        "16|+            \"update orders set subtotal = :subtotal, discount = :discount where id = :id\",",
+        "17|+            mapOf(",
+        "18|+                \"id\" to order.id.value,",
+        "19|+                \"subtotal\" to order.subtotal.amount,",
+        "20|+                \"discount\" to order.discount.amount,",
+        "21|+            ),",
+        "22|         )",
+        "23|     }"
+      ]
+    },
+    {
+      "id": "3b823c2027bd0957f11251555393d73cee9318ed",
+      "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+      "symbol": "find()",
+      "layer": "Infrastructure",
+      "lines": [
+        "25|     override fun find(id: OrderId): Order? =",
+        "26|         jdbc.query(",
+        "  |-            \"select id, subtotal from orders where id = :id\",",
+        "27|+            \"select id, subtotal, discount from orders where id = :id\",",
+        "28|             mapOf(\"id\" to id.value),",
+        "29|         ) { rs, _ ->",
+        "30|             Order(",
+        "31|                 id = OrderId(rs.getString(\"id\")),",
+        "32|                 subtotal = Money(rs.getLong(\"subtotal\")),",
+        "33|+                discount = Money(rs.getLong(\"discount\")),",
+        "34|             )",
+        "35|         }.firstOrNull()"
+      ]
+    },
+    {
+      "id": "40e1361cdc0e10bdf58a3323c633e282a8902036",
+      "path": "src/main/resources/db/migration/V421__discount.sql",
+      "symbol": "V421__discount.sql",
+      "layer": "Infrastructure",
+      "lines": [
+        "1|+ALTER TABLE orders",
+        "2|+  ADD COLUMN discount BIGINT NOT NULL DEFAULT 0;"
+      ]
+    },
+    {
+      "id": "d81273406425493877cce76b6a078c2f3b98944f",
+      "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+      "symbol": "`throws when order is missing`()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "16|     @Test",
+        "17|     fun `throws when order is missing`() {",
+        "18|         every { repository.find(any()) } returns null",
+        "  |-        assertFailsWith<OrderNotFound> { useCase.execute(OrderId(\"nope\")) }",
+        "19|+        assertFailsWith<OrderNotFound> { useCase.execute(OrderId(\"nope\"), \"SPRING10\") }",
+        "20|     }"
+      ]
+    },
+    {
+      "id": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+      "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+      "symbol": "`saves the order after applying`()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "22|+    @Test",
+        "23|+    fun `saves the order after applying`() {",
+        "24|+        useCase.execute(OrderId(\"o-1\"), \"SPRING10\")",
+        "25|+        verify(exactly = 1) { repository.save(any()) }",
+        "26|+    }"
+      ]
+    },
+    {
+      "id": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+      "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+      "symbol": "`applies the policy rate to subtotal`()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "13|+    @Test",
+        "14|+    fun `applies the policy rate to subtotal`() {",
+        "15|+        val order = Order(id = OrderId(\"o-1\"), subtotal = Money(1000))",
+        "16|+        order.applyDiscount(DiscountCommand(\"SPRING10\"))",
+        "17|+        assertEquals(Money(900), order.total())",
+        "18|+    }"
+      ]
+    },
+    {
+      "id": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+      "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+      "symbol": "`keeps total when code is unknown`()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "20|+    @Test",
+        "21|+    fun `keeps total when code is unknown`() {",
+        "22|+        val order = Order(id = OrderId(\"o-1\"), subtotal = Money(1000))",
+        "23|+        order.applyDiscount(DiscountCommand(\"NOPE\"))",
+        "24|+        assertEquals(Money(1000), order.total())",
+        "25|+    }"
+      ]
+    },
+    {
+      "id": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+      "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+      "symbol": "`persists discount`()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "18|+    @Test",
+        "19|+    fun `persists discount`() {",
+        "20|+        repository.save(orderWithDiscount(100))",
+        "21|+        assertEquals(Money(100), repository.find(OrderId(\"o-1\"))!!.discount)",
+        "22|+    }"
+      ]
+    },
+    {
+      "id": "7826f5464b504df32d03817b1421873bc12479bd",
+      "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+      "symbol": "`reads zero discount for rows saved before the column existed`()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "24|+    @Test",
+        "25|+    fun `reads zero discount for rows saved before the column existed`() {",
+        "26|+        repository.save(Order(id = OrderId(\"o-2\"), subtotal = Money(500)))",
+        "27|+        assertEquals(Money.ZERO, repository.find(OrderId(\"o-2\"))!!.discount)",
+        "28|+    }"
+      ]
+    },
+    {
+      "id": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+      "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+      "symbol": "orderWithDiscount()",
+      "kindHint": "test",
+      "layer": "Tests",
+      "lines": [
+        "30|+    private fun orderWithDiscount(amount: Long) =",
+        "31|+        Order(id = OrderId(\"o-1\"), subtotal = Money(1000), discount = Money(amount))"
+      ]
+    }
+  ],
+  "rippleGroups": [
+    {
+      "id": "g1",
+      "pattern": "getDiscount() → discount",
+      "coreHunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+      "members": 22,
+      "representative": {
+        "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+        "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+        "symbol": "discountField()",
+        "lines": [
+          "7|     fun discountField(order: Order): Money {",
+          " |-        return order.getDiscount()",
+          "8|+        return order.discount",
+          "9|     }"
+        ]
+      },
+      "deviations": [
+        {
+          "hunkId": "47dc9545806ff578b57ab0793821f2cc2c1b3a49",
+          "path": "src/main/kotlin/com/example/promo/PromoService.kt",
+          "symbol": "apply()",
+          "lines": [
+            " 9|     fun apply(order: Order): Money {",
+            "  |-        val d = order.getDiscount()",
+            "10|+        val d = order.discount.takeIf { it > Money.ZERO } ?: legacyPromo(order)",
+            "11|         return d",
+            "12|     }"
+          ]
+        }
+      ]
+    }
+  ],
+  "courses": [
+    {
+      "howId": 1,
+      "title": "orders テーブルに discount 列を足す",
+      "why": "割引額を行として保存できる置き場を作るため",
+      "stops": [
+        {
+          "symbolId": "40e1361cdc0e10bdf58a3323c633e282a8902036",
+          "symbol": "src/main/resources/db/migration/V421__discount.sql",
+          "path": "src/main/resources/db/migration/V421__discount.sql",
+          "test": false,
+          "hunkId": "40e1361cdc0e10bdf58a3323c633e282a8902036"
+        }
+      ],
+      "related": []
+    },
+    {
+      "howId": 2,
+      "title": "DiscountCommand を追加する",
+      "why": "割引コードをドメインへ渡す入力型を用意するため",
+      "stops": [
+        {
+          "symbolId": "08620bbd277424422d535274fc7a98e037583e4c",
+          "symbol": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+          "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+          "test": false,
+          "hunkId": "08620bbd277424422d535274fc7a98e037583e4c"
+        },
+        {
+          "symbolId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
+          "symbol": "com.example.order.domain.DiscountCommand",
+          "path": "src/main/kotlin/com/example/order/domain/DiscountCommand.kt",
+          "test": false,
+          "hunkId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a"
+        }
+      ],
+      "related": []
+    },
+    {
+      "howId": 3,
+      "title": "Order に discount と applyDiscount を持たせる",
+      "why": "割引額の保持と合計計算を Order 側で行うため",
+      "stops": [
+        {
+          "symbolId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+          "symbol": "com.example.order.domain.Order",
+          "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+          "test": false,
+          "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7"
+        },
+        {
+          "symbolId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+          "symbol": "com.example.admin.OrderAdminView.discountField",
+          "path": "src/main/kotlin/com/example/admin/OrderAdminView.kt",
+          "test": false,
+          "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+          "groupId": "g1"
+        },
+        {
+          "symbolId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+          "symbol": "com.example.order.domain.OrderTest.`applies the policy rate to subtotal`",
+          "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+          "test": true,
+          "hunkId": "a22e9a886a2fefed19df83983b21f8e1b09098ab"
+        },
+        {
+          "symbolId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+          "symbol": "com.example.order.domain.OrderTest.`keeps total when code is unknown`",
+          "path": "src/test/kotlin/com/example/order/domain/OrderTest.kt",
+          "test": true,
+          "hunkId": "3c10228566fa653f9ff458cace7a9fea95c16ea9"
+        }
+      ],
+      "related": [
+        {
+          "of": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+          "dir": "out",
+          "symbol": "com.example.order.domain.DiscountPolicy.rateFor",
+          "path": "src/main/kotlin/com/example/order/domain/DiscountPolicy.kt"
+        }
+      ]
+    },
+    {
+      "howId": 4,
+      "title": "discount を読み書きする SQL に変える",
+      "why": "Order の discount を行の列と往復させるため",
+      "stops": [
+        {
+          "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+          "symbol": "com.example.order.infra.OrderRepositoryImpl.save",
+          "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+          "test": false,
+          "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b"
+        },
+        {
+          "symbolId": "3b823c2027bd0957f11251555393d73cee9318ed",
+          "symbol": "com.example.order.infra.OrderRepositoryImpl.find",
+          "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+          "test": false,
+          "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed"
+        },
+        {
+          "symbolId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+          "symbol": "com.example.order.infra.OrderRepositoryImplTest.`persists discount`",
+          "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+          "test": true,
+          "hunkId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839"
+        },
+        {
+          "symbolId": "7826f5464b504df32d03817b1421873bc12479bd",
+          "symbol": "com.example.order.infra.OrderRepositoryImplTest.`reads zero discount for rows saved before the column existed`",
+          "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+          "test": true,
+          "hunkId": "7826f5464b504df32d03817b1421873bc12479bd"
+        },
+        {
+          "symbolId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+          "symbol": "com.example.order.infra.OrderRepositoryImplTest.orderWithDiscount",
+          "path": "src/test/kotlin/com/example/order/infra/OrderRepositoryImplTest.kt",
+          "test": true,
+          "hunkId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3"
+        }
+      ],
+      "related": [
+        {
+          "of": "7826f5464b504df32d03817b1421873bc12479bd",
+          "dir": "out",
+          "symbol": "com.example.order.domain.Money.Companion.ZERO",
+          "path": "src/main/kotlin/com/example/order/domain/Money.kt"
+        }
+      ]
+    },
+    {
+      "howId": 5,
+      "title": "execute にコードを受け取らせ保存する",
+      "why": "コードから割引適用と永続化までを繋ぐため",
+      "stops": [
+        {
+          "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
+          "symbol": "com.example.order.application.ApplyDiscountUseCase.execute",
+          "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+          "test": false,
+          "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99"
+        },
+        {
+          "symbolId": "3b823c2027bd0957f11251555393d73cee9318ed",
+          "symbol": "com.example.order.infra.OrderRepositoryImpl.find",
+          "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+          "test": false,
+          "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed",
+          "call": "ApplyDiscountUseCase.execute → OrderRepositoryImpl.find(OrderId)"
+        },
+        {
+          "symbolId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+          "symbol": "com.example.order.domain.Order",
+          "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+          "test": false,
+          "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+          "call": "ApplyDiscountUseCase.execute → domain.Order(DiscountCommand)"
+        },
+        {
+          "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+          "symbol": "com.example.order.infra.OrderRepositoryImpl.save",
+          "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+          "test": false,
+          "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+          "call": "ApplyDiscountUseCase.execute → OrderRepositoryImpl.save(Order)"
+        },
+        {
+          "symbolId": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
+          "symbol": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+          "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+          "test": false,
+          "hunkId": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960"
+        },
+        {
+          "symbolId": "d81273406425493877cce76b6a078c2f3b98944f",
+          "symbol": "com.example.order.application.ApplyDiscountUseCaseTest.`throws when order is missing`",
+          "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+          "test": true,
+          "hunkId": "d81273406425493877cce76b6a078c2f3b98944f"
+        },
+        {
+          "symbolId": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+          "symbol": "com.example.order.application.ApplyDiscountUseCaseTest.`saves the order after applying`",
+          "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+          "test": true,
+          "hunkId": "b89e25202d679c348f253ed8b3ab49f2833eedb5"
+        }
+      ],
+      "related": [
+        {
+          "of": "a135ba90941c193b82bb22bc319e52347521ee99",
+          "dir": "out",
+          "symbol": "com.example.order.domain.OrderRepository.save",
+          "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt"
+        },
+        {
+          "of": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+          "dir": "out",
+          "symbol": "com.example.order.domain.DiscountPolicy.rateFor",
+          "path": "src/main/kotlin/com/example/order/domain/DiscountPolicy.kt"
+        }
+      ]
+    },
+    {
+      "howId": 6,
+      "title": "エンドポイントでコードを受け取る",
+      "why": "HTTP から割引コードを渡せるようにするため",
+      "stops": [
+        {
+          "symbolId": "130e7d62f211839eec7c68582ae3565629d8c673",
+          "symbol": "com.example.order.api.OrderController.apply",
+          "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+          "test": false,
+          "hunkId": "130e7d62f211839eec7c68582ae3565629d8c673"
+        },
+        {
+          "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
+          "symbol": "com.example.order.application.ApplyDiscountUseCase.execute",
+          "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+          "test": false,
+          "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99",
+          "call": "OrderController.apply → ApplyDiscountUseCase.execute(OrderId, String)"
+        },
+        {
+          "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+          "symbol": "com.example.order.infra.OrderRepositoryImpl.save",
+          "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+          "test": false,
+          "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+          "call": "OrderController.apply → OrderRepositoryImpl.save(Order)"
+        },
+        {
+          "symbolId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+          "symbol": "com.example.order.api.OrderResponse",
+          "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+          "test": false,
+          "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+          "call": "OrderController.apply → api.OrderResponse(Order)"
+        },
+        {
+          "symbolId": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
+          "symbol": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+          "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+          "test": false,
+          "hunkId": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731"
+        },
+        {
+          "symbolId": "89802175d3898bded24a787f90beee1a5312f3a7",
+          "symbol": "com.example.order.api.ApplyDiscountRequest",
+          "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",
+          "test": false,
+          "hunkId": "89802175d3898bded24a787f90beee1a5312f3a7"
+        },
+        {
+          "symbolId": "02e146608288f588fded777b8b37c3a6f5a00023",
+          "symbol": "src/main/kotlin/com/example/order/api/OrderController.kt",
+          "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+          "test": false,
+          "hunkId": "02e146608288f588fded777b8b37c3a6f5a00023"
+        }
+      ],
+      "related": [
+        {
+          "of": "130e7d62f211839eec7c68582ae3565629d8c673",
+          "dir": "out",
+          "symbol": "com.example.order.domain.OrderRepository.save",
+          "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt"
+        }
+      ]
+    },
+    {
+      "howId": 7,
+      "title": "レスポンスに discount を載せる",
+      "why": "割引額を API の出力に含めるため",
+      "stops": [
+        {
+          "symbolId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+          "symbol": "com.example.order.api.OrderDetailResponse",
+          "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+          "test": false,
+          "hunkId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713"
+        },
+        {
+          "symbolId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+          "symbol": "com.example.order.api.OrderResponse",
+          "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+          "test": false,
+          "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7"
+        },
+        {
+          "symbolId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+          "symbol": "com.example.order.api.OrderSummaryResponse",
+          "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+          "test": false,
+          "hunkId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5"
+        }
+      ],
+      "related": []
+    }
+  ],
+  "unassigned": [
+    "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+    "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+    "f04213b0d07c9a9cac6ddf2ab193a40840c0348c"
+  ],
+  "existing": [
+    {
+      "symbol": "com.example.order.domain.DiscountPolicy.rateFor",
+      "path": "src/main/kotlin/com/example/order/domain/DiscountPolicy.kt",
+      "kind": "function",
+      "removed": false
+    },
+    {
+      "symbol": "com.example.order.domain.Money.Companion.ZERO",
+      "path": "src/main/kotlin/com/example/order/domain/Money.kt",
+      "kind": "property",
+      "removed": false
+    },
+    {
+      "symbol": "com.example.order.domain.OrderRepository.save",
+      "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+      "kind": "function",
+      "removed": false
+    },
+    {
+      "symbol": "com.example.order.domain.Order.promo",
+      "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+      "kind": "property",
+      "removed": true
+    },
+    {
+      "symbol": "com.example.order.domain.Order.getDiscount",
+      "path": "src/main/kotlin/com/example/order/domain/Order.kt",
+      "kind": "function",
+      "removed": true
+    }
+  ]
+}

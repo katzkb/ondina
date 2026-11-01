@@ -1,0 +1,335 @@
+{
+  "64b251772fa1ec50d3343c65710a0f6634aad62c": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountField","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "7c3620df39b9ef5cf954a62175bf0def4361cf79": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discount","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "7d1f264e32ec64a4a8e87582280d3c51c0e9beca": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountAtAudit","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "079cc62bead02b816f5900d3da3accddb6cfc225": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["settledDiscount","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "78b5e2fce82e915e87d96f07a36f818d0f441d27": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["total","blue",1],["(): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["items","text",0],[".",null,0],["sumOf","blue",1],[" { ",null,0],["it","maroon",1],[".",null,0],["price","text",0],[" } ",null,0],["-","teal",0],[" ",null,0],["order","text",0],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["items","text",0],[".",null,0],["sumOf","blue",1],[" { ",null,0],["it","maroon",1],[".",null,0],["price","text",0],[" } ",null,0],["-","teal",0],[" ",null,0],["order","text",0],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "3fe1dde4f7eced5e63034f751a8d7c51185a3395": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountToShow","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "84cd93f6631a05f2093e55ee5ac9d5afefca75e4": [
+    [["import","mauve",0],[" ",null,0],["java",null,0],[".",null,0],["time",null,0],[".",null,0],["Instant","yellow",0]]
+  ],
+  "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["format","blue",1],["(",null,0],["level","maroon",1],[": ",null,0],["Level","yellow",1],[", ",null,0],["msg","maroon",1],[": ",null,0],["String","yellow",1],[") ",null,0],["=","teal",0],[" ",null,0],["\"[","green",0],["$",null,0],["level","maroon",1],["] ","green",0],["$",null,0],["msg","maroon",1],["\"","green",0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["format","blue",1],["(",null,0],["level","maroon",1],[": ",null,0],["Level","yellow",1],[", ",null,0],["msg","maroon",1],[": ",null,0],["String","yellow",1],[") ",null,0],["=","teal",0],[" ",null,0],["\"[","green",0],["$",null,0],["level","maroon",1],["] ","green",0],["${","overlay2",0],["Instant","yellow",0],[".","green",0],["now","blue",1],["()","green",0],["}","overlay2",0],[" ","green",0],["$",null,0],["msg","maroon",1],["\"","green",0]]
+  ],
+  "f04213b0d07c9a9cac6ddf2ab193a40840c0348c": [
+    [["    ",null,0],["const","mauve",0],[" ",null,0],["val","mauve",0],[" ",null,0],["DISCOUNT_V2","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["true","peach",0]]
+  ],
+  "18ada3da5f913983c4b5036e21e96b3f03fb3a22": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["value","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "0ce459a50c74ffd6bb848b193e6801134ddd471d": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountColumn","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "34572795b5d3947558d3dffb3f15fcc32a885a0e": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountLine","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "b6f9e151047a59c46732bb8dce91c63d9aab47ea": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["grandTotal","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "c44dfbbec354bf0fe7baa0e88955218093477d7b": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["legacyDiscount","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "60e94e42327d58a58d4908e5cd433da84e76966a": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["base","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountLine","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["d","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["d","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["d","text",0]],
+    [["    }",null,0]]
+  ],
+  "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731": [
+    [["package","mauve",0],[" ",null,0],["com",null,0],[".",null,0],["example",null,0],[".",null,0],["order",null,0],[".",null,0],["api",null,0]]
+  ],
+  "89802175d3898bded24a787f90beee1a5312f3a7": [
+    [["data","mauve",0],[" ",null,0],["class","mauve",0],[" ",null,0],["ApplyDiscountRequest","yellow",1],["(",null,0],["val","mauve",0],[" ",null,0],["discountCode","maroon",1],[": ",null,0],["String","yellow",1],[")",null,0]]
+  ],
+  "02e146608288f588fded777b8b37c3a6f5a00023": [
+    [["import","mauve",0],[" ",null,0],["org",null,0],[".",null,0],["springframework",null,0],[".",null,0],["web",null,0],[".",null,0],["bind",null,0],[".",null,0],["annotation",null,0],[".",null,0],["RequestBody","yellow",1]]
+  ],
+  "130e7d62f211839eec7c68582ae3565629d8c673": [
+    [["    ",null,0],["@","yellow",1],["PostMapping","yellow",1],["(",null,0],["\"/orders/{id}/discount\"","green",0],[")",null,0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["apply","blue",1],["(",null,0],["@","yellow",1],["PathVariable","yellow",1],[" ",null,0],["id","maroon",1],[": ",null,0],["String","yellow",1],["): ",null,0],["OrderResponse","yellow",1],[" {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["order","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["useCase","text",0],[".",null,0],["execute","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["id","maroon",1],["))",null,0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["apply","blue",1],["(",null,0],["@","yellow",1],["PathVariable","yellow",1],[" ",null,0],["id","maroon",1],[": ",null,0],["String","yellow",1],[", ",null,0],["@","yellow",1],["RequestBody","yellow",1],[" ",null,0],["body","maroon",1],[": ",null,0],["ApplyDiscountRequest","yellow",1],["): ",null,0],["OrderResponse","yellow",1],[" {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["order","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["useCase","text",0],[".",null,0],["execute","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["id","maroon",1],["), ",null,0],["body","maroon",1],[".",null,0],["discountCode","text",0],[")",null,0]],
+    [["        ",null,0],["repository","text",0],[".",null,0],["save","blue",1],["(",null,0],["order","text",0],[")",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["OrderResponse","yellow",0],[".",null,0],["from","blue",1],["(",null,0],["order","text",0],[")",null,0]],
+    [["    }",null,0]]
+  ],
+  "d50a6b62c81cb87db22faef4ab62bf9d5217e713": [
+    [["data","mauve",0],[" ",null,0],["class","mauve",0],[" ",null,0],["OrderDetailResponse","yellow",1],["(",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["id","maroon",1],[": ",null,0],["String","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["subtotal","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["total","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["discount","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [[") {",null,0]],
+    [["    ",null,0],["companion","mauve",0],[" ",null,0],["object","mauve",0],[" {",null,0]],
+    [["        ",null,0],["fun","mauve",0],[" ",null,0],["from","blue",1],["(",null,0],["o","maroon",1],[": ",null,0],["Order","yellow",1],[") ",null,0],["=","teal",0],[" ",null,0],["OrderDetailResponse","blue",1],["(",null,0]],
+    [["            ",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["id","text",0],[".",null,0],["value","text",0],[",",null,0]],
+    [["            ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["subtotal","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["            ",null,0],["total","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["total","blue",1],["().",null,0],["amount","text",0],[",",null,0]],
+    [["            ",null,0],["discount","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["discount","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["        )",null,0]],
+    [["    }",null,0]],
+    [["}",null,0]]
+  ],
+  "009b597cd765e85db0dcc7fb4619c29e2adf98b7": [
+    [["data","mauve",0],[" ",null,0],["class","mauve",0],[" ",null,0],["OrderResponse","yellow",1],["(",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["id","maroon",1],[": ",null,0],["String","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["subtotal","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["discount","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [[") {",null,0]],
+    [["    ",null,0],["companion","mauve",0],[" ",null,0],["object","mauve",0],[" {",null,0]],
+    [["        ",null,0],["fun","mauve",0],[" ",null,0],["from","blue",1],["(",null,0],["o","maroon",1],[": ",null,0],["Order","yellow",1],[") ",null,0],["=","teal",0],[" ",null,0],["OrderResponse","blue",1],["(",null,0]],
+    [["            ",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["id","text",0],[".",null,0],["value","text",0],[",",null,0]],
+    [["            ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["subtotal","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["            ",null,0],["discount","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["discount","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["        )",null,0]],
+    [["    }",null,0]],
+    [["}",null,0]]
+  ],
+  "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5": [
+    [["data","mauve",0],[" ",null,0],["class","mauve",0],[" ",null,0],["OrderSummaryResponse","yellow",1],["(",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["id","maroon",1],[": ",null,0],["String","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["total","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["discount","maroon",1],[": ",null,0],["Long","yellow",1],[",",null,0]],
+    [[") {",null,0]],
+    [["    ",null,0],["companion","mauve",0],[" ",null,0],["object","mauve",0],[" {",null,0]],
+    [["        ",null,0],["fun","mauve",0],[" ",null,0],["from","blue",1],["(",null,0],["o","maroon",1],[": ",null,0],["Order","yellow",1],[") ",null,0],["=","teal",0],[" ",null,0],["OrderSummaryResponse","blue",1],["(",null,0]],
+    [["            ",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["id","text",0],[".",null,0],["value","text",0],[",",null,0]],
+    [["            ",null,0],["total","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["total","blue",1],["().",null,0],["amount","text",0],[",",null,0]],
+    [["            ",null,0],["discount","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["o","maroon",1],[".",null,0],["discount","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["        )",null,0]],
+    [["    }",null,0]],
+    [["}",null,0]]
+  ],
+  "7ae997273f6f4dd35261fe64143a5b2ad7fc8960": [
+    [["import","mauve",0],[" ",null,0],["com",null,0],[".",null,0],["example",null,0],[".",null,0],["order",null,0],[".",null,0],["domain",null,0],[".",null,0],["DiscountCommand","yellow",0]]
+  ],
+  "a135ba90941c193b82bb22bc319e52347521ee99": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["execute","blue",1],["(",null,0],["id","maroon",1],[": ",null,0],["OrderId","yellow",1],["): ",null,0],["Order","yellow",1],[" {",null,0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["execute","blue",1],["(",null,0],["id","maroon",1],[": ",null,0],["OrderId","yellow",1],[", ",null,0],["code","maroon",1],[": ",null,0],["String","yellow",1],["): ",null,0],["Order","yellow",1],[" {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["order","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["repository","text",0],[".",null,0],["find","blue",1],["(",null,0],["id","maroon",1],[") ?: ",null,0],["throw","mauve",0],[" ",null,0],["OrderNotFound","blue",1],["(",null,0],["id","maroon",1],[")",null,0]],
+    [["        ",null,0],["order","text",0],[".",null,0],["applyDiscount","blue",1],["(",null,0],["DiscountCommand","blue",1],["(",null,0],["code","maroon",1],["))",null,0]],
+    [["        ",null,0],["repository","text",0],[".",null,0],["save","blue",1],["(",null,0],["order","text",0],[")",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","text",0]],
+    [["    }",null,0]]
+  ],
+  "08620bbd277424422d535274fc7a98e037583e4c": [
+    [["package","mauve",0],[" ",null,0],["com",null,0],[".",null,0],["example",null,0],[".",null,0],["order",null,0],[".",null,0],["domain",null,0]]
+  ],
+  "6f8c1dd88a901bd7c59c469f1a09023246aff25a": [
+    [["data","mauve",0],[" ",null,0],["class","mauve",0],[" ",null,0],["DiscountCommand","yellow",1],["(",null,0],["val","mauve",0],[" ",null,0],["code","maroon",1],[": ",null,0],["String","yellow",1],[")",null,0]]
+  ],
+  "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7": [
+    [["class","mauve",0],[" ",null,0],["Order","yellow",1],["(",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["id","maroon",1],[": ",null,0],["OrderId","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["subtotal","maroon",1],[": ",null,0],["Money","yellow",1],[",",null,0]],
+    [["    ",null,0],["val","mauve",0],[" ",null,0],["promo","maroon",1],[": ",null,0],["Promo","yellow",1],["? ",null,0],["=","teal",0],[" ",null,0],["null","red",0],[",",null,0]],
+    [["    ",null,0],["var","mauve",0],[" ",null,0],["discount","maroon",1],[": ",null,0],["Money","yellow",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","yellow",0],[".",null,0],["ZERO","text",0],[",",null,0]],
+    [[") {",null,0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["getDiscount","blue",1],["(): ",null,0],["Money","yellow",1],[" ",null,0],["=","teal",0],[" ",null,0],["promo","text",0],["?.",null,0],["amount","text",0],[" ?: ",null,0],["Money","yellow",0],[".",null,0],["ZERO","text",0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["applyDiscount","blue",1],["(",null,0],["cmd","maroon",1],[": ",null,0],["DiscountCommand","yellow",1],[") {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["rate","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["DiscountPolicy","yellow",0],[".",null,0],["rateFor","blue",1],["(",null,0],["cmd","maroon",1],[".",null,0],["code","text",0],[")",null,0]],
+    [["        ",null,0],["discount","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["subtotal","text",0],[" ",null,0],["*","teal",0],[" ",null,0],["rate","text",0]],
+    [["    }",null,0]],
+    [],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["total","blue",1],["(): ",null,0],["Money","yellow",1],[" ",null,0],["=","teal",0],[" ",null,0],["subtotal","text",0]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["total","blue",1],["(): ",null,0],["Money","yellow",1],[" ",null,0],["=","teal",0],[" ",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["discount","text",0]],
+    [["}",null,0]]
+  ],
+  "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b": [
+    [["    ",null,0],["override","mauve",0],[" ",null,0],["fun","mauve",0],[" ",null,0],["save","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],[") {",null,0]],
+    [["        ",null,0],["jdbc","text",0],[".",null,0],["update","blue",1],["(",null,0]],
+    [["            ",null,0],["\"update orders set subtotal = :subtotal where id = :id\"","green",0],[",",null,0]],
+    [["            ",null,0],["mapOf","blue",1],["(",null,0],["\"id\"","green",0],[" ",null,0],["to","blue",1],[" ",null,0],["order","maroon",1],[".",null,0],["id","text",0],[".",null,0],["value","text",0],[", ",null,0],["\"subtotal\"","green",0],[" ",null,0],["to","blue",1],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[".",null,0],["amount","text",0],["),",null,0]],
+    [["            ",null,0],["\"update orders set subtotal = :subtotal, discount = :discount where id = :id\"","green",0],[",",null,0]],
+    [["            ",null,0],["mapOf","blue",1],["(",null,0]],
+    [["                ",null,0],["\"id\"","green",0],[" ",null,0],["to","blue",1],[" ",null,0],["order","maroon",1],[".",null,0],["id","text",0],[".",null,0],["value","text",0],[",",null,0]],
+    [["                ",null,0],["\"subtotal\"","green",0],[" ",null,0],["to","blue",1],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["                ",null,0],["\"discount\"","green",0],[" ",null,0],["to","blue",1],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0],[".",null,0],["amount","text",0],[",",null,0]],
+    [["            ),",null,0]],
+    [["        )",null,0]],
+    [["    }",null,0]]
+  ],
+  "3b823c2027bd0957f11251555393d73cee9318ed": [
+    [["    ",null,0],["override","mauve",0],[" ",null,0],["fun","mauve",0],[" ",null,0],["find","blue",1],["(",null,0],["id","maroon",1],[": ",null,0],["OrderId","yellow",1],["): ",null,0],["Order","yellow",1],["? ",null,0],["=","teal",0]],
+    [["        ",null,0],["jdbc","text",0],[".",null,0],["query","blue",1],["(",null,0]],
+    [["            ",null,0],["\"select id, subtotal from orders where id = :id\"","green",0],[",",null,0]],
+    [["            ",null,0],["\"select id, subtotal, discount from orders where id = :id\"","green",0],[",",null,0]],
+    [["            ",null,0],["mapOf","blue",1],["(",null,0],["\"id\"","green",0],[" ",null,0],["to","blue",1],[" ",null,0],["id","maroon",1],[".",null,0],["value","text",0],["),",null,0]],
+    [["        ) { ",null,0],["rs","maroon",1],[", ",null,0],["_","maroon",1],[" ",null,0],["->","mauve",0]],
+    [["            ",null,0],["Order","blue",1],["(",null,0]],
+    [["                ",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["OrderId","blue",1],["(",null,0],["rs","maroon",1],[".",null,0],["getString","blue",1],["(",null,0],["\"id\"","green",0],[")),",null,0]],
+    [["                ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["rs","maroon",1],[".",null,0],["getLong","blue",1],["(",null,0],["\"subtotal\"","green",0],[")),",null,0]],
+    [["                ",null,0],["discount","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["rs","maroon",1],[".",null,0],["getLong","blue",1],["(",null,0],["\"discount\"","green",0],[")),",null,0]],
+    [["            )",null,0]],
+    [["        }.",null,0],["firstOrNull","blue",1],["()",null,0]]
+  ],
+  "cabe82f14a82b677e5ca8078b7b90f15609371e3": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountPayload","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountPart","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "47dc9545806ff578b57ab0793821f2cc2c1b3a49": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["apply","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["d","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["d","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0],[".",null,0],["takeIf","blue",1],[" { ",null,0],["it","maroon",1],[" ",null,0],[">","teal",0],[" ",null,0],["Money","yellow",0],[".",null,0],["ZERO","text",0],[" } ?: ",null,0],["legacyPromo","blue",1],["(",null,0],["order","maroon",1],[")",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["d","text",0]],
+    [["    }",null,0]]
+  ],
+  "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountLine","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["d","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["d","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["d","text",0]],
+    [["    }",null,0]]
+  ],
+  "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discountOf","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["discount","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "9cfdbdf61c4a956c952939696c72096aa265c4bd": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["threshold","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "d4ebe4338bbc4cc8e92947fd0262f50bf585797a": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["refundable","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "9d6e9f791f8b693d7758aa240592b444cbf5e084": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["taxable","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["subtotal","text",0],[" ",null,0],["-","teal",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "fc611ea6e00d7be77f29312964dd5facc0b2dccf": [
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["footerDiscount","blue",1],["(",null,0],["order","maroon",1],[": ",null,0],["Order","yellow",1],["): ",null,0],["Money","yellow",1],[" {",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["getDiscount","blue",1],["()",null,0]],
+    [["        ",null,0],["return","mauve",0],[" ",null,0],["order","maroon",1],[".",null,0],["discount","text",0]],
+    [["    }",null,0]]
+  ],
+  "40e1361cdc0e10bdf58a3323c633e282a8902036": [
+    [["ALTER","mauve",0],[" ",null,0],["TABLE","mauve",0],[" orders",null,0]],
+    [["  ",null,0],["ADD","mauve",0],[" COLUMN discount ",null,0],["BIGINT","mauve",0],[" ",null,0],["NOT NULL","mauve",0],[" ",null,0],["DEFAULT","mauve",0],[" ",null,0],["0","peach",0],[";",null,0]]
+  ],
+  "d81273406425493877cce76b6a078c2f3b98944f": [
+    [["    ",null,0],["@","yellow",1],["Test","yellow",1]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["`throws when order is missing`","blue",1],["() {",null,0]],
+    [["        ",null,0],["every","blue",1],[" { ",null,0],["repository","text",0],[".",null,0],["find","blue",1],["(",null,0],["any","blue",1],["()) } ",null,0],["returns","blue",1],[" ",null,0],["null","red",0]],
+    [["        ",null,0],["assertFailsWith","blue",1],["<",null,0],["OrderNotFound","yellow",1],["> { ",null,0],["useCase","text",0],[".",null,0],["execute","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["\"nope\"","green",0],[")) }",null,0]],
+    [["        ",null,0],["assertFailsWith","blue",1],["<",null,0],["OrderNotFound","yellow",1],["> { ",null,0],["useCase","text",0],[".",null,0],["execute","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["\"nope\"","green",0],["), ",null,0],["\"SPRING10\"","green",0],[") }",null,0]],
+    [["    }",null,0]]
+  ],
+  "b89e25202d679c348f253ed8b3ab49f2833eedb5": [
+    [["    ",null,0],["@","yellow",1],["Test","yellow",1]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["`saves the order after applying`","blue",1],["() {",null,0]],
+    [["        ",null,0],["useCase","text",0],[".",null,0],["execute","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["\"o-1\"","green",0],["), ",null,0],["\"SPRING10\"","green",0],[")",null,0]],
+    [["        ",null,0],["verify","blue",1],["(",null,0],["exactly","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["1","peach",0],[") { ",null,0],["repository","text",0],[".",null,0],["save","blue",1],["(",null,0],["any","blue",1],["()) }",null,0]],
+    [["    }",null,0]]
+  ],
+  "a22e9a886a2fefed19df83983b21f8e1b09098ab": [
+    [["    ",null,0],["@","yellow",1],["Test","yellow",1]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["`applies the policy rate to subtotal`","blue",1],["() {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["order","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["Order","blue",1],["(",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["OrderId","blue",1],["(",null,0],["\"o-1\"","green",0],["), ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["1000","peach",0],["))",null,0]],
+    [["        ",null,0],["order","text",0],[".",null,0],["applyDiscount","blue",1],["(",null,0],["DiscountCommand","blue",1],["(",null,0],["\"SPRING10\"","green",0],["))",null,0]],
+    [["        ",null,0],["assertEquals","blue",1],["(",null,0],["Money","blue",1],["(",null,0],["900","peach",0],["), ",null,0],["order","text",0],[".",null,0],["total","blue",1],["())",null,0]],
+    [["    }",null,0]]
+  ],
+  "3c10228566fa653f9ff458cace7a9fea95c16ea9": [
+    [["    ",null,0],["@","yellow",1],["Test","yellow",1]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["`keeps total when code is unknown`","blue",1],["() {",null,0]],
+    [["        ",null,0],["val","mauve",0],[" ",null,0],["order","text",0],[" ",null,0],["=","teal",0],[" ",null,0],["Order","blue",1],["(",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["OrderId","blue",1],["(",null,0],["\"o-1\"","green",0],["), ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["1000","peach",0],["))",null,0]],
+    [["        ",null,0],["order","text",0],[".",null,0],["applyDiscount","blue",1],["(",null,0],["DiscountCommand","blue",1],["(",null,0],["\"NOPE\"","green",0],["))",null,0]],
+    [["        ",null,0],["assertEquals","blue",1],["(",null,0],["Money","blue",1],["(",null,0],["1000","peach",0],["), ",null,0],["order","text",0],[".",null,0],["total","blue",1],["())",null,0]],
+    [["    }",null,0]]
+  ],
+  "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839": [
+    [["    ",null,0],["@","yellow",1],["Test","yellow",1]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["`persists discount`","blue",1],["() {",null,0]],
+    [["        ",null,0],["repository","text",0],[".",null,0],["save","blue",1],["(",null,0],["orderWithDiscount","blue",1],["(",null,0],["100","peach",0],["))",null,0]],
+    [["        ",null,0],["assertEquals","blue",1],["(",null,0],["Money","blue",1],["(",null,0],["100","peach",0],["), ",null,0],["repository","text",0],[".",null,0],["find","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["\"o-1\"","green",0],["))",null,0],["!!","teal",0],[".",null,0],["discount","text",0],[")",null,0]],
+    [["    }",null,0]]
+  ],
+  "7826f5464b504df32d03817b1421873bc12479bd": [
+    [["    ",null,0],["@","yellow",1],["Test","yellow",1]],
+    [["    ",null,0],["fun","mauve",0],[" ",null,0],["`reads zero discount for rows saved before the column existed`","blue",1],["() {",null,0]],
+    [["        ",null,0],["repository","text",0],[".",null,0],["save","blue",1],["(",null,0],["Order","blue",1],["(",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["OrderId","blue",1],["(",null,0],["\"o-2\"","green",0],["), ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["500","peach",0],[")))",null,0]],
+    [["        ",null,0],["assertEquals","blue",1],["(",null,0],["Money","yellow",0],[".",null,0],["ZERO","text",0],[", ",null,0],["repository","text",0],[".",null,0],["find","blue",1],["(",null,0],["OrderId","blue",1],["(",null,0],["\"o-2\"","green",0],["))",null,0],["!!","teal",0],[".",null,0],["discount","text",0],[")",null,0]],
+    [["    }",null,0]]
+  ],
+  "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3": [
+    [["    ",null,0],["private","mauve",0],[" ",null,0],["fun","mauve",0],[" ",null,0],["orderWithDiscount","blue",1],["(",null,0],["amount","maroon",1],[": ",null,0],["Long","yellow",1],[") ",null,0],["=","teal",0]],
+    [["        ",null,0],["Order","blue",1],["(",null,0],["id","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["OrderId","blue",1],["(",null,0],["\"o-1\"","green",0],["), ",null,0],["subtotal","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["1000","peach",0],["), ",null,0],["discount","maroon",1],[" ",null,0],["=","teal",0],[" ",null,0],["Money","blue",1],["(",null,0],["amount","maroon",1],["))",null,0]]
+  ]
+}

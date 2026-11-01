@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.ondina/
+*.log
+.DS_Store
+.env
+
+# fixtures (Gradle)
+fixtures/**/.gradle/
+fixtures/**/build/
+fixtures/**/.kotlin/

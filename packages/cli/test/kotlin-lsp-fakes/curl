@@ -1,0 +1,35 @@
+#!/bin/sh
+# 偽の curl（kotlin-lsp-script.test.ts）。呼ばれた URL を FAKE_LOG に記録し、URL ごとに決まった物を返す。ネットワークは使わない
+#   *.sit              本体の代わりの短い文。FAKE_SIT_FAIL があれば失敗する
+#   *.sit.sha256       上の文の SHA-256。FAKE_SHA_BAD があれば合わない値
+#   それ以外           失敗する（github.com などへは問い合わせない）
+out=''
+url=''
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -o) out=$2; shift ;;
+    http*) url=$1 ;;
+  esac
+  shift
+done
+echo "curl ${url}" >> "${FAKE_LOG}"
+case "${url}" in
+  *.sit)
+    if [ -n "${FAKE_SIT_FAIL:-}" ]; then echo "curl: (56) Recv failure: Connection reset by peer" >&2; exit 56; fi
+    printf 'fake sit %s\n' "${url##*/}" > "${out}"
+    ;;
+  *.sit.sha256)
+    name=${url##*/}
+    name=${name%.sha256}
+    if [ -n "${FAKE_SHA_BAD:-}" ]; then
+      h=0000000000000000000000000000000000000000000000000000000000000000
+    else
+      h=$(printf 'fake sit %s\n' "${name}" | LC_ALL=C shasum -a 256 | cut -d ' ' -f 1)
+    fi
+    printf '%s *%s\n' "${h}" "${name}" > "${out}"
+    ;;
+  *)
+    echo "fake curl: unexpected url ${url}" >&2
+    exit 2
+    ;;
+esac

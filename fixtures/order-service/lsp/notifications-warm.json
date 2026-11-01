@@ -1,0 +1,113 @@
+[
+  {
+    "atMs": 3246,
+    "method": "$/progress",
+    "params": {
+      "token": "5d80ngh34pr5duui6rfj",
+      "value": {
+        "kind": "begin",
+        "title": "Importing"
+      }
+    }
+  },
+  {
+    "atMs": 3272,
+    "method": "$/progress",
+    "params": {
+      "token": "5d80ngh34pr5duui6rfj",
+      "value": {
+        "kind": "report",
+        "message": "Gradle"
+      }
+    }
+  },
+  {
+    "atMs": 6280,
+    "method": "intellij/importLog",
+    "params": {
+      "type": 3,
+      "message": "Workspace imported successfully",
+      "failed": false,
+      "succeeded": true,
+      "started": false
+    }
+  },
+  {
+    "atMs": 6414,
+    "method": "$/progress",
+    "params": {
+      "token": "givjdo9lsevosueep0pa",
+      "value": {
+        "kind": "begin",
+        "title": "Indexing"
+      }
+    }
+  },
+  {
+    "atMs": 6416,
+    "method": "$/progress",
+    "params": {
+      "token": "givjdo9lsevosueep0pa",
+      "value": {
+        "kind": "report",
+        "message": "Invalidating files"
+      }
+    }
+  },
+  {
+    "atMs": 6524,
+    "method": "$/progress",
+    "params": {
+      "token": "givjdo9lsevosueep0pa",
+      "value": {
+        "kind": "report",
+        "message": "55%",
+        "percentage": 55
+      }
+    }
+  },
+  {
+    "atMs": 6621,
+    "method": "$/progress",
+    "params": {
+      "token": "givjdo9lsevosueep0pa",
+      "value": {
+        "kind": "report",
+        "message": "98%",
+        "percentage": 98
+      }
+    }
+  },
+  {
+    "atMs": 6722,
+    "method": "$/progress",
+    "params": {
+      "token": "givjdo9lsevosueep0pa",
+      "value": {
+        "kind": "report",
+        "message": "Just a few more moments...",
+        "percentage": 100
+      }
+    }
+  },
+  {
+    "atMs": 6819,
+    "method": "$/progress",
+    "params": {
+      "token": "5d80ngh34pr5duui6rfj",
+      "value": {
+        "kind": "end"
+      }
+    }
+  },
+  {
+    "atMs": 6820,
+    "method": "$/progress",
+    "params": {
+      "token": "givjdo9lsevosueep0pa",
+      "value": {
+        "kind": "end"
+      }
+    }
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "command": "claude -p --tools \"\" --max-turns 1 --model opus",
+  "stdout": "{\"lead\":\"discount が 0 のままなら、合計は小計と同じで、前と変わらない。\",\"items\":[{\"text\":\"変更前の total は小計をそのまま返していた\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"base\",\"line\":10}},{\"text\":\"変更後の total は小計から discount を引く\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":13}},{\"text\":\"discount の初期値は Money.ZERO\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":6}},{\"text\":\"存在しないコード NOPE を渡すテストでは、合計が小計の 1000 のままであることを確かめている\",\"cite\":{\"path\":\"src/test/kotlin/com/example/order/domain/OrderTest.kt\",\"side\":\"head\",\"line\":21,\"endLine\":24}}],\"tail\":\"コードのないリクエストをエンドポイントがどう扱うかは、材料からは分からない。\"}\n",
+  "stderr": "",
+  "ms": 26235,
+  "recordedAt": "2026-10-15T07:03:31.830Z"
+}

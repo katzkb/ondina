@@ -1,0 +1,18 @@
+#!/bin/sh
+# 偽の ditto（kotlin-lsp-script.test.ts）。ditto -x -k <archive> <dest> だけを受け、archive の名前の版で
+# <dest>/kotlin-server-<版>/ を作る（本物と同じ形: bin/intellij-server と product-info.json）。FAKE_DITTO_FAIL があれば失敗する
+if [ "$1" != -x ] || [ "$2" != -k ]; then
+  echo "fake ditto: unexpected args $*" >&2
+  exit 2
+fi
+echo "ditto ${3##*/}" >> "${FAKE_LOG}"
+if [ -n "${FAKE_DITTO_FAIL:-}" ]; then echo "ditto: Couldn't read PKZip signature" >&2; exit 1; fi
+name=${3##*/}
+ver=${name#kotlin-server-}
+ver=${ver%.sit}
+ver=${ver%-aarch64}
+d="$4/kotlin-server-${ver}"
+mkdir -p "${d}/bin"
+printf '#!/bin/sh\necho intellij-server %s\n' "${ver}" > "${d}/bin/intellij-server"
+chmod +x "${d}/bin/intellij-server"
+printf '{\n  "name": "kotlin-server",\n  "versionSuffix": "EAP",\n  "buildNumber": "%s",\n  "majorVersionReleaseDate": "%s"\n}\n' "${ver}" "${FAKE_RELEASE_DATE:-20260930}" > "${d}/product-info.json"
