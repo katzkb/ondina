@@ -15,7 +15,7 @@ import type { CommentDraft, FileText, GithubDiffFile, Hunk } from '@ondina/model
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { Command } from '../commands/commands.js';
-import { DraftBox, LineMark, MemoEditor, MemoSaved } from '../components/MemoBox.js';
+import { DraftBox, LineMark, MemoEditor, MemoHoldSpace, MemoSaved } from '../components/MemoBox.js';
 import { hunkAt } from '../files.js';
 import { composingKey } from '../commands/keymap.js';
 import { isMemo, pickRange, pickSpan } from '../memo.js';
@@ -120,8 +120,8 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
   const base = useMemo(() => (file ? buildFileRows(file, hunks, mode) : buildRows(hunks, mode, list)), [hunks, mode, file, list]);
   const comments = memo?.comments;
   const pick = memo?.ui.pick ?? null;
-  // なぞっている間は書く枠を差し込まない（差し込むと下の行がずれて、なぞる先がずれる）
-  const editAt = memo?.ui.drag ? null : pick;
+  // なぞっている間は書く枠を差し込まない（差し込むと下の行がずれて、なぞる先がずれる）。押したとき開いていた書く枠の場所には同じ高さの空きを出す（MemoUi.hold）
+  const editAt = memo?.ui.drag ? (memo.ui.hold?.pick ?? null) : pick;
   const opened = useMemo(() => new Set(open ?? []), [open]);
   // 検索は畳む前の行列から（帯の中の行も探す）。閉じている間は印を出さない
   const query = find?.open ? find.query : '';
@@ -475,13 +475,16 @@ function Line({
 /** メモの行（AI の下書きも）。統合は全幅、左右はその行の側の列の下 */
 function MemoRow({ row, mode, memo, dispatch }: { row: Extract<VirtualRow, { kind: 'memo' }>; mode: DiffMode; memo: DiffMemo; dispatch: (c: Command) => void }) {
   const item = (x: MemoItem) => {
+    const hold = memo.ui.drag ? memo.ui.hold : undefined;
     if (x.kind === 'new') {
+      if (hold) return <MemoHoldSpace key="new" height={hold.height} />;
       const pick = memo.ui.pick!;
       const span = pickRange(pick);
       return <MemoEditor key="new" path={pick.path} span={span} githubDiff={memo.githubDiff} draft={memo.ui.draft} dispatch={dispatch} />;
     }
     if (x.kind === 'draft') return <DraftBox key={x.draft.id} draft={x.draft} text={memo.draftText[x.draft.id]} githubDiff={memo.githubDiff} dispatch={dispatch} />;
     const m = x.memo;
+    if (hold?.editing === m.id) return <MemoHoldSpace key={m.id} height={hold.height} />;
     return memo.ui.editing === m.id ? <MemoEditor key={m.id} path={m.path} span={m} memo={m} draft={memo.ui.draft} dispatch={dispatch} /> : <MemoSaved key={m.id} memo={m} githubDiff={memo.githubDiff} dispatch={dispatch} />;
   };
   if (mode === 'uni') return <div className="dmemo uni">{[...row.left, ...row.right].map(item)}</div>;

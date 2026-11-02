@@ -46,12 +46,26 @@ export function LineMark({ path, side, line, order, githubDiff, dispatch }: { pa
         if (e.button !== 0) return;
         // 押したまま動かしても文字を選ばない
         e.preventDefault();
-        dispatch({ id: 'memo.pick', path, side, line, order });
+        const hold = openBoxHeight();
+        dispatch({ id: 'memo.pick', path, side, line, order, ...(hold > 0 ? { hold } : {}) });
       }}
     >
       {ask ? '?' : '+'}
     </button>
   );
+}
+
+/** 開いている書く枠・直す枠（1 つだけ）の高さ（上下の余白も含む）。無ければ 0 */
+function openBoxHeight(): number {
+  const box = document.querySelector<HTMLElement>('.mbox.edit');
+  if (!box) return 0;
+  const css = getComputedStyle(box);
+  return box.getBoundingClientRect().height + (parseFloat(css.marginTop) || 0) + (parseFloat(css.marginBottom) || 0);
+}
+
+/** 「+」を押したとき開いていた枠の代わりの空き。離すまで同じ高さを保ち、下の行をずらさない（MemoUi.hold） */
+export function MemoHoldSpace({ height }: { height: number }) {
+  return <div className="mhold" style={{ height }} aria-hidden="true" />;
 }
 
 /**

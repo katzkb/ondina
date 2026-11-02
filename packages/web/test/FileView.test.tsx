@@ -103,6 +103,26 @@ describe('FileView の帯（変わった行から離れた行）', () => {
     expect(bands(container)).toEqual(['⋯ 12 行', '⋯ 8 行']);
   });
 
+  it('なぞっている間、hold があれば元の書く枠の場所に同じ高さの空きを出し、その帯も開いたままにする（離すまで行をずらさない）', () => {
+    const old = { side: 'RIGHT' as const, line: 16, order: 15 };
+    const now = { side: 'RIGHT' as const, line: 25, order: 25 };
+    const ui = { ...NO_MEMO, pick: { path: PATH, anchor: now, head: now }, drag: true, hold: { pick: { path: PATH, anchor: old, head: old }, editing: null, height: 150 } };
+    const { container } = render(<FileView analysis={analysis()} path={PATH} hunkId="h1" symbol={undefined} full={false} mode="uni" viewed={[]} dispatch={() => {}} memo={{ ...memoProp([]), ui }} />);
+    expect(container.querySelector('.mbox.edit')).toBeNull();
+    const hold = container.querySelectorAll<HTMLElement>('.mhold');
+    expect(hold.length).toBe(1);
+    expect(hold[0]!.style.height).toBe('150px');
+    expect(bands(container)).toEqual(['⋯ 12 行', '⋯ 8 行']);
+  });
+
+  it('直す枠を開いたまま押したときは、そのメモの代わりに同じ高さの空きを出す', () => {
+    const now = { side: 'RIGHT' as const, line: 25, order: 25 };
+    const ui = { ...NO_MEMO, pick: { path: PATH, anchor: now, head: now }, drag: true, hold: { pick: null, editing: 'm1', height: 90 } };
+    const { container } = render(<FileView analysis={analysis()} path={PATH} hunkId="h1" symbol={undefined} full={false} mode="uni" viewed={[]} dispatch={() => {}} memo={{ ...memoProp([memo('m1', 19)]), ui }} />);
+    expect(container.querySelector('[data-memo="m1"] .mhold')?.getAttribute('style')).toContain('height: 90px');
+    expect(container.textContent).not.toContain('本文 m1');
+  });
+
   it('統合でも、なぞると入った行で memo.drag。なぞっていなければ何も送らない', () => {
     const dispatch = vi.fn();
     const pick = { path: PATH, anchor: { side: 'RIGHT' as const, line: 17, order: 16 }, head: { side: 'RIGHT' as const, line: 17, order: 16 } };

@@ -15,7 +15,7 @@ import type { Analysis, CommentDraft, Symbol } from '@ondina/model';
 import { Fragment, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { Command } from '../commands/commands.js';
 import { Key } from '../components/Key.js';
-import { DraftBox, LineMark, MemoEditor, MemoSaved } from '../components/MemoBox.js';
+import { DraftBox, LineMark, MemoEditor, MemoHoldSpace, MemoSaved } from '../components/MemoBox.js';
 import { endsAt, isMemo, pickRange, pickSpan } from '../memo.js';
 import type { FocusLine } from '../state/reducer.js';
 import { DiffList, type DiffMemo } from './DiffList.js';
@@ -150,6 +150,9 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
   const drafts = memo ? memo.comments.filter((c) => !isMemo(c) && c.path === path) : [];
   const pick = memo?.ui.pick && memo.ui.pick.path === path ? memo.ui.pick : null;
   const span = pick ? pickSpan(pick) : null;
+  // 書く枠を出す範囲。なぞっている間は、押したとき開いていた書く枠の範囲（そこに同じ高さの空きを出す。MemoUi.hold）
+  const held = memo?.ui.drag ? (memo.ui.hold?.pick ?? null) : null;
+  const boxSpan = memo?.ui.drag ? (held && held.path === path ? pickSpan(held) : null) : span;
   const rowOf = (c: CommentDraft) => rows.findIndex((r) => endsAt(c, r));
   const liveDrafts = drafts.filter((c) => c.state !== 'discarded');
   const inSpan = (order: number) => span !== null && order >= span.start.order && order <= span.end.order;
@@ -171,9 +174,10 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
     return ms.length === 0 ? '' : ms.some((m) => m.on) ? ' ck on' : ' ck';
   };
   // 畳まない行: 見ている場所の変わった行と中心の行、範囲の中のメモ・AI の下書きの行、書く枠を開く行、答えの行。位置が無い停留所は畳まない。
-  // 書く枠を開く行は、なぞっている間は数えない（その前後の帯が開くと行が下にずれて、なぞる先がずれる。離してから開く）
+  // 書く枠を開く行は、なぞっている間は今選んでいる行を数えない（その前後の帯が開くと行が下にずれて、なぞる先がずれる。離してから開く）。
+  // 代わりに、押したとき開いていた枠の行（boxSpan。同じ高さの空きを出す場所）を数え、その前後の帯も押す前のまま開いておく
   const noted = new Set([...memos, ...drafts].map(rowOf).filter(inRegion));
-  const editAt = memo?.ui.drag ? null : (span?.end.order ?? null);
+  const editAt = boxSpan?.end.order ?? null;
   // このファイルに読む場所が 2 か所以上なら、ほかの場所の変わった行も畳まない
   const shown = places !== undefined && places.length > 1 ? places : [];
   const placeOf = new Map(shown.map((p) => [p.hunkId, p]));
@@ -239,7 +243,13 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
   // own = 全幅のメモの行（統合）。左右では半分の列の中に置くので行の箱を持たない
   const saved = (m: CommentDraft, own = true) => (
     <div key={`m-${m.id}`} className={own ? 'mrow-memo' : undefined} data-memo={m.id}>
-      {memo?.ui.editing === m.id ? <MemoEditor path={m.path} span={m} memo={m} draft={memo.ui.draft} dispatch={dispatch} /> : <MemoSaved memo={m} githubDiff={memo?.githubDiff} dispatch={dispatch} />}
+      {memo?.ui.drag && memo.ui.hold?.editing === m.id ? (
+        <MemoHoldSpace height={memo.ui.hold.height} />
+      ) : memo?.ui.editing === m.id ? (
+        <MemoEditor path={m.path} span={m} memo={m} draft={memo.ui.draft} dispatch={dispatch} />
+      ) : (
+        <MemoSaved memo={m} githubDiff={memo?.githubDiff} dispatch={dispatch} />
+      )}
     </div>
   );
   const draftBox = (d: CommentDraft, own = true) =>
@@ -250,15 +260,14 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
     );
   /** その行の下に出すメモと AI の下書き */
   const under = (r: FileRow, own = true) => [...memos.filter((m) => endsAt(m, r)).map((m) => saved(m, own)), ...drafts.filter((d) => endsAt(d, r)).map((d) => draftBox(d, own))];
-  // なぞっている間は出さない（出すと下の行がずれて、なぞる先がずれる）
+  // なぞっている間は書く枠を出さない（出すと下の行がずれて、なぞる先がずれる）。押したとき開いていた枠の場所に同じ高さの空きを出す
   const editor = (key: string, own = true) =>
-    pick &&
     memo &&
-    !memo.ui.drag && (
+    (memo.ui.drag ? memo.ui.hold && <div key={key} className={own ? 'mrow-memo' : undefined}><MemoHoldSpace height={memo.ui.hold.height} /></div> : pick && (
       <div key={key} className={own ? 'mrow-memo' : undefined}>
         <MemoEditor path={pick.path} span={pickRange(pick)} githubDiff={memo.githubDiff} draft={memo.ui.draft} dispatch={dispatch} />
       </div>
-    );
+    ));
 
   /** 続けて見える行（start = 最初の行の畳む前の位置） */
   const chunk = (shown: readonly FileRow[], start: number): ReactNode => {
@@ -285,7 +294,7 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
               </div>
             </div>
             {under(r)}
-            {span?.end.order === order && editor(`new-${span.start.order}-${order}`)}
+            {boxSpan?.end.order === order && editor(`new-${boxSpan.start.order}-${order}`)}
           </Fragment>
         );
       });
@@ -324,8 +333,8 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
       // メモはその行の側の列の下（消した行のメモは左、他は右）
       const left: ReactNode[] = o !== null && o.row.kind === 'del' ? under(o.row, false) : [];
       const right: ReactNode[] = n !== null ? under(n.row, false) : [];
-      if (span !== null && span.end.side === 'LEFT' && o?.row.kind === 'del' && o.order === span.end.order) left.push(editor(`new-${span.start.order}-${o.order}`, false));
-      if (span !== null && span.end.side === 'RIGHT' && n?.order === span.end.order) right.push(editor(`new-${span.start.order}-${n.order}`, false));
+      if (boxSpan !== null && boxSpan.end.side === 'LEFT' && o?.row.kind === 'del' && o.order === boxSpan.end.order) left.push(editor(`new-${boxSpan.start.order}-${o.order}`, false));
+      if (boxSpan !== null && boxSpan.end.side === 'RIGHT' && n?.order === boxSpan.end.order) right.push(editor(`new-${boxSpan.start.order}-${n.order}`, false));
       return (
         <Fragment key={key}>
           <div className={`mrow${lit ? flashClass(focusLine!) : ''}`}>

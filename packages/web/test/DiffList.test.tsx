@@ -234,6 +234,19 @@ describe('DiffList のメモ（差分一覧で書く。3.3 / 3.4）', () => {
     expect(container.querySelector('textarea')).toBeNull();
   });
 
+  it('なぞっている間、hold があれば元の書く枠・直す枠の場所に同じ高さの空きを出す（離すまで行をずらさない）', () => {
+    const h = hunk();
+    const pick = { path: h.path, anchor: at('RIGHT', 10, 3), head: at('RIGHT', 10, 3) };
+    const old = { path: h.path, anchor: at('RIGHT', 9, 0), head: at('RIGHT', 9, 0) };
+    const view = (ui: MemoUi, comments: CommentDraft[] = []) => <DiffList hunks={[h]} mode="uni" viewed={[]} selectedHunk={null} dispatch={() => {}} memo={{ comments, ui, githubDiff: undefined, draftText: {} }} />;
+    const { container, rerender } = render(view({ ...NO, pick, drag: true, hold: { pick: old, editing: null, height: 150 } }));
+    expect(container.querySelector('textarea')).toBeNull();
+    expect([...container.querySelectorAll<HTMLElement>('.mhold')].map((e) => e.style.height)).toEqual(['150px']);
+    rerender(view({ ...NO, pick, drag: true, hold: { pick: null, editing: 'm1', height: 90 } }, [memo('m1', 9, 'RIGHT')]));
+    expect([...container.querySelectorAll<HTMLElement>('.mhold')].map((e) => e.style.height)).toEqual(['90px']);
+    expect(container.textContent).not.toContain('本文 m1');
+  });
+
   it('統合: なぞっている間、入った行で memo.drag。なぞっていなければ何も送らない', () => {
     const h = hunk();
     const dispatch = vi.fn();
