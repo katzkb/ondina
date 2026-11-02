@@ -286,7 +286,6 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:2
 .dialog h2{margin:0 0 10px;font-size:14px;font-weight:500}
 /* ショートカットキー（? の一覧と設定のタブ。2026-10-20）: 左「どの画面でも」、右「コース」「入口」「変えられないキー」の 2 列。1 行 = 操作の名前 + キー */
 .dialog.keys{width:min(960px,92vw);max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:14px;padding:18px 24px 20px}
-.dialog.keys .sh{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .dialog.keys .sh h2{margin:0;font-size:15px}
 .kedit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 32px}
 .kcol{display:flex;flex-direction:column;min-width:0}
@@ -663,7 +662,7 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .top .fill{flex:1}
 /* 設定のモーダル: 画面中央・幅広め。1 項目 = 見出し + 欄 + 1 行の説明 */
 .dialog.settings{width:min(720px,92vw);max-height:92vh;overflow:auto;padding:18px 24px 22px;display:flex;flex-direction:column;gap:18px}
-.dialog.settings .sh{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:-18px;z-index:1;margin:-18px -24px -12px;padding:18px 24px 12px;background:var(--panel)}
+.dialog.settings .sh,.dialog.keys .sh{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:-18px;z-index:1;margin:-18px -24px -12px;padding:18px 24px 12px;background:var(--panel)}
 .dialog.settings .sh .seg{margin-right:auto}
 .dialog.settings .sh h2{margin:0;font-size:15px}
 .srow{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
