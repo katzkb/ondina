@@ -663,7 +663,7 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .top .fill{flex:1}
 /* 設定のモーダル: 画面中央・幅広め。1 項目 = 見出し + 欄 + 1 行の説明 */
 .dialog.settings{width:min(720px,92vw);max-height:92vh;overflow:auto;padding:18px 24px 22px;display:flex;flex-direction:column;gap:18px}
-.dialog.settings .sh{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.dialog.settings .sh{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:-18px;z-index:1;margin:-18px -24px -12px;padding:18px 24px 12px;background:var(--panel)}
 .dialog.settings .sh .seg{margin-right:auto}
 .dialog.settings .sh h2{margin:0;font-size:15px}
 .srow{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
