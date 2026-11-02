@@ -166,7 +166,15 @@ export type Command =
    * メモ（3.3）: 行を選ぶ（行番号の「+」を押す）。その 1 行から、押したままなぞって範囲にできる（離すまで書く枠を出さない）。
    * order は画面の上からの並び（LEFT と RIGHT の行番号は比べられないので、範囲の始まりと終わりをこれで決める）
    */
-  | { id: 'memo.pick'; path: string; side: 'LEFT' | 'RIGHT'; line: number; order: number }
+  | {
+      id: 'memo.pick';
+      path: string;
+      side: 'LEFT' | 'RIGHT';
+      line: number;
+      order: number;
+      /** 押したとき開いていた書く枠・直す枠の高さ（px）。離すまでその場所に同じ高さの空きを残す（MemoUi.hold） */
+      hold?: number;
+    }
   /** 「+」を押したままなぞって入った行まで範囲を伸ばす（2026-10-15。GitHub と同じ）。なぞっていない・別のファイルなら何もしない */
   | { id: 'memo.drag'; path: string; side: 'LEFT' | 'RIGHT'; line: number; order: number }
   /** なぞるのを終える（マウスを離した）。選んだ範囲の最後の行の下に書く枠を出す */

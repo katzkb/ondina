@@ -77,6 +77,8 @@ export type CourseMapSize = 'side' | 'big';
  * draft を書く枠の中ではなくここに持つのは、範囲を伸ばすと書く枠が別の行の下に移る（作り直される）ため、差分一覧（仮想リスト）では画面から外れた枠が消えるため。
  * 選び直しても書いた文は消さない。focus = 締めの「開く」で差分一覧に来たメモ（その行までスクロールする）。
  * drag = 「+」を押したままなぞっている（離すまで書く枠を出さない。出すと下の行がずれて、なぞる先がずれる）
+ * hold = 押したとき開いていた枠（新しく書く枠なら pick、直す枠なら editing）とその高さ。離すまでその場所に同じ高さの空きを出す。
+ * 枠が消えると下の行が上にずれ、止めたままのマウスの下に別の行が来て、押した行より下まで選ばれる（issue #4）
  */
 export interface MemoUi {
   pick: MemoPick | null;
@@ -84,6 +86,13 @@ export interface MemoUi {
   draft: string;
   focus: string | null;
   drag: boolean;
+  hold?: MemoHold | undefined;
+}
+
+export interface MemoHold {
+  pick: MemoPick | null;
+  editing: string | null;
+  height: number;
 }
 
 export const NO_MEMO: MemoUi = { pick: null, editing: null, draft: '', focus: null, drag: false };
@@ -1239,7 +1248,7 @@ function askMemo(state: Loaded, entryId: string): Reduced {
   if (!lines) return hint(state);
   const filled = (s: AppState, pick: MemoPick, draft: string, flash: boolean): AppState => ({
     ...s,
-    memo: { ...s.memo, pick, editing: null, drag: false, draft },
+    memo: { ...s.memo, pick, editing: null, drag: false, hold: undefined, draft },
     ask: { ...s.ask, memoFor: null, memoed: { entryId, label: spanLabel(pickRange(pick)) } },
     ...(flash ? { focusLine: { path: lines.path, side: lines.end.side === 'base' ? ('LEFT' as const) : ('RIGHT' as const), line: lines.end.line, n: (state.focusLine?.n ?? 0) + 1 } } : {}),
   });
@@ -1544,10 +1553,14 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
       const ask = state.ask;
       const span = pickRange(pick);
       const label = spanLabel(span);
+      // 開いていた枠（離した後の書く枠か、直す枠）の場所に、離すまで同じ高さの空きを残す
+      const opened = state.memo.editing !== null || (state.memo.pick !== null && !state.memo.drag);
+      const hold: MemoHold | undefined = opened && command.hold !== undefined && command.hold > 0 ? { pick: state.memo.editing === null ? state.memo.pick : null, editing: state.memo.editing, height: command.hold } : undefined;
+      const base = { ...state.memo, pick, editing: null, drag: true, hold };
       if (ask.memoFor !== null && onGithubDiff(state.analysis.githubDiff, { path: pick.path, ...span }) !== false) {
-        return none({ ...state, memo: { ...state.memo, pick, editing: null, drag: true, draft: mergeDraft(draft, ask.memoFor.question) }, ask: { ...ask, memoFor: null, memoed: { entryId: ask.memoFor.entryId, label } } });
+        return none({ ...state, memo: { ...base, draft: mergeDraft(draft, ask.memoFor.question) }, ask: { ...ask, memoFor: null, memoed: { entryId: ask.memoFor.entryId, label } } });
       }
-      return none({ ...state, memo: { ...state.memo, pick, editing: null, drag: true, draft }, ...(ask.memoed ? { ask: { ...ask, memoed: { ...ask.memoed, label } } } : {}) });
+      return none({ ...state, memo: { ...base, draft }, ...(ask.memoed ? { ask: { ...ask, memoed: { ...ask.memoed, label } } } : {}) });
     }
     case 'memo.drag': {
       const prev = state.memo.pick;
@@ -1559,7 +1572,7 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
       return none({ ...state, memo: { ...state.memo, pick }, ...(memoed ? { ask: { ...state.ask, memoed: { ...memoed, label: spanLabel(pickRange(pick)) } } } : {}) });
     }
     case 'memo.drop':
-      return state.memo.drag ? none({ ...state, memo: { ...state.memo, drag: false } }) : none(state);
+      return state.memo.drag ? none({ ...state, memo: { ...state.memo, drag: false, hold: undefined } }) : none(state);
     case 'memo.draft':
       return none({ ...state, memo: { ...state.memo, draft: command.body } });
     case 'memo.cancel':

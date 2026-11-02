@@ -46,6 +46,21 @@ describe('行を選ぶ', () => {
     expect(run(s, drag(10, 3, POLICY)).memo.pick).toEqual(s.memo.pick);
   });
 
+  it('書く枠を開いたまま別の行の「+」を押すと、離すまで元の枠の場所に同じ高さの空きを残す（hold。枠が消えて行がずれると、押した行と違う行まで選ばれる）', () => {
+    const open = run(atOrder(), pick(8, 9), DROP);
+    const s = run(open, { ...pick(13, 15), hold: 120 } as Command);
+    expect(s.memo.hold).toEqual({ pick: open.memo.pick, editing: null, height: 120 });
+    expect(s.memo.pick?.head).toEqual({ side: 'RIGHT', line: 13, order: 15 });
+    expect(run(s, DROP).memo.hold).toBeUndefined();
+    expect(run(s, { id: 'memo.cancel' }).memo.hold).toBeUndefined();
+  });
+
+  it('hold は、開いている枠が無いとき（なぞっている途中・何も開いていない）や高さが無いときは残さない', () => {
+    expect(run(atOrder(), { ...pick(8, 9), hold: 120 } as Command).memo.hold).toBeUndefined();
+    expect(run(atOrder(), pick(8, 9), { ...pick(13, 15), hold: 120 } as Command).memo.hold).toBeUndefined();
+    expect(run(atOrder(), pick(8, 9), DROP, pick(13, 15)).memo.hold).toBeUndefined();
+  });
+
   it('やめる（Esc）となぞりも終わる', () => {
     const s = run(atOrder(), pick(8, 9), drag(11, 12), { id: 'memo.cancel' });
     expect(s.memo.pick).toBeNull();
@@ -107,6 +122,13 @@ describe('保存する', () => {
 
 describe('直す・消す', () => {
   const m1: CommentDraft = { id: 'm1', path: ORDER, line: 13, side: 'RIGHT', body: '前', source: 'reviewer', state: 'adopted' };
+
+  it('直す枠を開いたまま「+」を押すと、離すまでそのメモの場所に直す枠と同じ高さの空きを残す', () => {
+    const s = run(loaded([m1]), { id: 'course.enter', courseId: 3, at: 0 }, { id: 'memo.edit', commentId: 'm1' }, { ...pick(8, 9), hold: 90 } as Command);
+    expect(s.memo.hold).toEqual({ pick: null, editing: 'm1', height: 90 });
+    expect(s.memo.editing).toBeNull();
+    expect(run(s, DROP).memo.hold).toBeUndefined();
+  });
 
   it('memo.edit で直す枠を開き（選んでいる行は外す。直す文は draft に今の本文から）、memo.update で本文を替えて閉じる', () => {
     const s = run(loaded([m1]), { id: 'course.enter', courseId: 3, at: 0 }, pick(8, 9), { id: 'memo.edit', commentId: 'm1' });
