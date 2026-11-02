@@ -302,7 +302,7 @@ mark{background:var(--warn-soft);color:var(--warn);padding:0 2px;border-radius:2
 .kfoot{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:12px;font-size:11.5px;color:var(--faint)}
 .kfoot .btn{margin-left:auto}
 /* 設定のショートカットキーのタブ: キーの欄を押すと記録（点線）、変えた行は点と「既定に戻す」、重なれば行の下に知らせ */
-.dialog.settings.wide{width:min(960px,92vw);max-height:92vh;overflow:auto;gap:14px}
+.dialog.settings.wide{width:min(960px,92vw);gap:14px}
 .krow .kl .chg{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--peach);margin-left:6px;vertical-align:middle}
 .kc:hover{border-color:var(--accent-edge);color:var(--accent-ink)}
 .kc.ro:hover{border-color:var(--line-2);color:var(--ink)}
@@ -662,7 +662,7 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .btn.jobs{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;font-size:12px;border-color:var(--accent-edge);background:var(--accent-soft);color:var(--ink)}
 .top .fill{flex:1}
 /* 設定のモーダル: 画面中央・幅広め。1 項目 = 見出し + 欄 + 1 行の説明 */
-.dialog.settings{width:min(720px,92vw);padding:18px 24px 22px;display:flex;flex-direction:column;gap:18px}
+.dialog.settings{width:min(720px,92vw);max-height:92vh;overflow:auto;padding:18px 24px 22px;display:flex;flex-direction:column;gap:18px}
 .dialog.settings .sh{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .dialog.settings .sh .seg{margin-right:auto}
 .dialog.settings .sh h2{margin:0;font-size:15px}
