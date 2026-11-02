@@ -174,7 +174,8 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
     return ms.length === 0 ? '' : ms.some((m) => m.on) ? ' ck on' : ' ck';
   };
   // 畳まない行: 見ている場所の変わった行と中心の行、範囲の中のメモ・AI の下書きの行、書く枠を開く行、答えの行。位置が無い停留所は畳まない。
-  // 書く枠を開く行は、なぞっている間は数えない（その前後の帯が開くと行が下にずれて、なぞる先がずれる。離してから開く）
+  // 書く枠を開く行は、なぞっている間は今選んでいる行を数えない（その前後の帯が開くと行が下にずれて、なぞる先がずれる。離してから開く）。
+  // 代わりに、押したとき開いていた枠の行（boxSpan。同じ高さの空きを出す場所）を数え、その前後の帯も押す前のまま開いておく
   const noted = new Set([...memos, ...drafts].map(rowOf).filter(inRegion));
   const editAt = boxSpan?.end.order ?? null;
   // このファイルに読む場所が 2 か所以上なら、ほかの場所の変わった行も畳まない
