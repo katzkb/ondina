@@ -343,7 +343,8 @@ describe('applyNarration（fixture の記録）', () => {
     expect(existing.length).toBeGreaterThanOrEqual(1);
     expect(existing.length).toBeLessThanOrEqual(3);
     expect(existing.some((e) => e.removed && e.names.some((n) => n.fqName.endsWith('Order.getDiscount')))).toBe(true);
-    for (const e of existing) expect(e.text).toMatch(/^[^。]+。$/);
+    // 何をするものかの 1 文に、差分での使われ方の 1 文を添えてよい（指示文の existing[].text）
+    for (const e of existing) expect(e.text).toMatch(/^[^。]+。([^。]+。)?$/);
     const terms = r.background.terms!;
     expect(terms.length).toBeGreaterThanOrEqual(2);
     expect(terms.length).toBeLessThanOrEqual(4);

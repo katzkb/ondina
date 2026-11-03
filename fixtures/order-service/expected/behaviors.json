@@ -1,0 +1,106 @@
+[
+  {
+    "id": "b1",
+    "title": "OrderController.apply",
+    "titleProvenance": "ast",
+    "start": "130e7d62f211839eec7c68582ae3565629d8c673",
+    "messages": [
+      {
+        "from": "130e7d62f211839eec7c68582ae3565629d8c673",
+        "to": "a135ba90941c193b82bb22bc319e52347521ee99",
+        "line": 18,
+        "returns": "Order",
+        "call": {
+          "text": "useCase.execute(OrderId(id), body.discountCode)",
+          "exact": true,
+          "name": "execute",
+          "args": [
+            "OrderId(id)",
+            "body.discountCode"
+          ]
+        }
+      },
+      {
+        "from": "a135ba90941c193b82bb22bc319e52347521ee99",
+        "to": "3b823c2027bd0957f11251555393d73cee9318ed",
+        "line": 16,
+        "returns": "Order?",
+        "call": {
+          "text": "repository.find(id)",
+          "exact": true,
+          "name": "find",
+          "args": [
+            "id"
+          ]
+        }
+      },
+      {
+        "from": "a135ba90941c193b82bb22bc319e52347521ee99",
+        "to": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+        "line": 17,
+        "call": {
+          "text": "order.applyDiscount(DiscountCommand(code))",
+          "exact": true,
+          "name": "applyDiscount",
+          "args": [
+            "DiscountCommand(code)"
+          ]
+        }
+      },
+      {
+        "from": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+        "to": "2d34cf1c445b513eec0e31ad87b68bdaf5ab9cc8",
+        "line": 9,
+        "returns": "Rate",
+        "call": {
+          "text": "DiscountPolicy.rateFor(cmd.code)",
+          "exact": true,
+          "name": "rateFor",
+          "args": [
+            "cmd.code"
+          ]
+        }
+      },
+      {
+        "from": "a135ba90941c193b82bb22bc319e52347521ee99",
+        "to": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+        "line": 18,
+        "call": {
+          "text": "repository.save(order)",
+          "exact": true,
+          "name": "save",
+          "args": [
+            "order"
+          ]
+        }
+      },
+      {
+        "from": "130e7d62f211839eec7c68582ae3565629d8c673",
+        "to": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+        "line": 19,
+        "call": {
+          "text": "repository.save(order)",
+          "exact": true,
+          "name": "save",
+          "args": [
+            "order"
+          ]
+        }
+      },
+      {
+        "from": "130e7d62f211839eec7c68582ae3565629d8c673",
+        "to": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+        "line": 20,
+        "returns": "OrderResponse",
+        "call": {
+          "text": "OrderResponse.from(order)",
+          "exact": true,
+          "name": "from",
+          "args": [
+            "order"
+          ]
+        }
+      }
+    ]
+  }
+]

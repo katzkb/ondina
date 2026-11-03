@@ -9,7 +9,7 @@ const text = { type: 'string' } as const;
 export const NARRATION_OUTPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['summary', 'background', 'courses'],
+  required: ['summary', 'background', 'courses', 'behaviors'],
   properties: {
     summary: {
       type: 'object',
@@ -93,6 +93,10 @@ export const NARRATION_OUTPUT_SCHEMA = {
         },
       },
     },
+    behaviors: {
+      type: 'array',
+      items: { type: 'object', additionalProperties: false, required: ['id', 'title'], properties: { id: text, title: text } },
+    },
   },
 } as const;
 
@@ -123,7 +127,7 @@ export function parseNarrationOutput(stdout: string): { output: NarrationOutput 
   }
   if (!isObj(doc)) return { error: 'stdout に JSON オブジェクトがありません' };
   try {
-    return { output: { summary: summary(doc['summary']), background: background(doc['background']), courses: courses(doc['courses']) } };
+    return { output: { summary: summary(doc['summary']), background: background(doc['background']), courses: courses(doc['courses']), behaviors: behaviors(doc['behaviors']) } };
   } catch (e) {
     if (e instanceof Bad) return { error: e.message };
     throw e;
@@ -202,6 +206,16 @@ function courses(v: unknown): NarrationOutput['courses'] {
         return { symbolId: s['symbolId'], role: str(s['role']) };
       }),
     };
+  });
+}
+
+function behaviors(v: unknown): NarrationOutput['behaviors'] {
+  if (v === undefined || v === null) return [];
+  if (!Array.isArray(v)) bad('behaviors が配列ではありません');
+  return v.map((b, i) => {
+    if (!isObj(b)) bad(`behaviors[${i}] がオブジェクトではありません`);
+    if (typeof b['id'] !== 'string') bad(`behaviors[${i}].id が文字列ではありません`);
+    return { id: b['id'], title: str(b['title']) };
   });
 }
 

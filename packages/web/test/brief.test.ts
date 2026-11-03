@@ -35,7 +35,7 @@ describe('courseChecks', () => {
   it('場所を全部「問題なし」にした確かめることだけ seen', () => {
     const [execute, , , , , missing] = c5.steps;
     const one = { ...review, viewed: [execute!.hunkId!] };
-    expect(courseChecks(analysis, c5, infos(one)).map((c) => c.seen)).toEqual([true, false, false, false]);
+    expect(courseChecks(analysis, c5, infos(one)).map((c) => c.seen)).toEqual([true, false, true, false]);
     const two = { ...review, viewed: [execute!.hunkId!, missing!.hunkId!] };
     expect(courseChecks(analysis, c5, infos(two))[1]!.seen).toBe(true);
   });
