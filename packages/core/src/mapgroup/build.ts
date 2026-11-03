@@ -84,8 +84,7 @@ function buildBoxes(hunks: readonly Hunk[], hows: readonly How[], tours: readonl
     seen.add(g.representative);
     for (const m of g.members) members.add(m);
     const inside = hunks.filter((x) => g.members.includes(x.id));
-    const rep = hunks.find((x) => x.id === g.representative);
-    out.push({ id: `group:${g.representative}`, label: g.pattern, hunkIds: inside.map((x) => x.id), course: courseOf(rep === undefined ? inside : [rep]) });
+    out.push({ id: `group:${g.representative}`, label: g.pattern, hunkIds: inside.map((x) => x.id), course: courseOf(inside) });
   }
   const byPath = new Map<string, Hunk[]>();
   for (const h of hunks) {

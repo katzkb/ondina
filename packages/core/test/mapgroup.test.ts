@@ -92,4 +92,11 @@ describe('箱のコース', () => {
     ]);
     expect(mapGroups.root).toEqual(['course:2', 'outside']);
   });
+
+  it('束は、サンプルだけでなくメンバー全部の How のうち一番小さいもの', () => {
+    const group = { pattern: 'a → b', derivedFrom: { coreHunkId: 'c', removed: ['a'], added: ['b'] }, uniform: 'ast' as const, representative: 'r', members: ['r', 'm'], deviations: [], distance: {}, near: [] };
+    const hunks = [{ ...H('r', 'src/R.kt', [3], 'ripple'), group }, { ...H('m', 'src/M.kt', [2], 'ripple'), group }];
+    const { mapGroups } = buildMapGroups({ hunks, hows: [W(2), W(3)], tours: [] });
+    expect(mapGroups.boxes).toEqual([{ id: 'group:r', label: 'a → b', hunkIds: ['r', 'm'], course: 2 }]);
+  });
 });
