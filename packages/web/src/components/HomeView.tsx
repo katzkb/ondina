@@ -105,6 +105,9 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
             step={home.step}
             play={home.play}
             speed={speed}
+            behavior={analysis.behaviors?.find((b) => b.id === home.behavior) ?? null}
+            mode={home.mode}
+            args={home.args}
             zoom={zoom}
             dispatch={dispatch}
             {...(elk ? { elk } : {})}

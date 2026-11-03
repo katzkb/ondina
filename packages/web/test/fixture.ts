@@ -1,7 +1,8 @@
 // fixtures/order-service のゴールデン（hunks.json + tokens.json + ripples.json + hows.json + symbols-lsp.json + edges.json + tours.json + text.json + github-diff.json + definitions.json）と pr-body.md から、
 // cli の analyze --lsp が 2 回の LLM（目的ごとに分ける・文を書く）まで終えたときと同じ Analysis を組む。
 // hunks.json は Stage 1 の SemanticHunk なので、ripples.json の group と hows.json の kind / hows（LLM の検証結果）を重ねる。
-import type { Analysis, Background, Claim, Definitions, Edge, FileText, GithubDiffFile, How, Hunk, MapGroups, ReviewState, RippleGroup, Summary, Symbol, TokenLine, Tour } from '@ondina/model';
+import type { Analysis, Background, Behavior, Claim, Definitions, Edge, FileText, GithubDiffFile, How, Hunk, MapGroups, ReviewState, RippleGroup, Summary, Symbol, TokenLine, Tour } from '@ondina/model';
+import behaviorsJson from '../../../fixtures/order-service/expected/behaviors.json';
 import definitionsJson from '../../../fixtures/order-service/expected/definitions.json';
 import edgesJson from '../../../fixtures/order-service/expected/edges.json';
 import githubDiffJson from '../../../fixtures/order-service/expected/github-diff.json';
@@ -118,6 +119,7 @@ export function fixtureAnalysis({ text = true }: { text?: boolean } = {}): Analy
     defs,
     githubDiff: structuredClone(githubDiffJson as GithubDiffFile[]),
     mapGroups: structuredClone(mapGroupsJson as unknown as MapGroups),
+    behaviors: structuredClone(behaviorsJson as unknown as Behavior[]),
   };
 }
 
