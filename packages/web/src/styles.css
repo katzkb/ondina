@@ -644,6 +644,59 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .cmap .legend i{display:inline-block;width:18px;border-top:2px solid;vertical-align:middle;margin-right:6px}
 .cmap .legend .l-on{border-color:var(--subtext0)}.cmap .legend .l-call{border-color:var(--surface2)}
 .cmap .legend .l-ref{border-color:var(--overlay0);border-top-style:dotted}.cmap .legend .l-skip{border-color:var(--danger);border-top-style:dashed}
+/* 入口の地図（2026-11-04。見本 5 の形）。箱は HTML、線は SVG。倍率は .gzoom の scale、中に入る動きは .vw */
+.gmap .crumbs{display:flex;align-items:center;gap:2px;flex-wrap:wrap;min-width:0}
+.gmap .crumbs button{border:0;background:none;color:var(--accent-ink);font:600 13px var(--sans);cursor:pointer;padding:2px 5px;border-radius:4px}
+.gmap .crumbs button:hover{background:var(--accent-soft)}
+.gmap .crumbs b{font:600 13px var(--sans);color:var(--ink);padding:2px 5px}
+.gmap .crumbs .csep{color:var(--faint)}
+.gstage{position:relative}
+.gzoom{position:absolute;left:0;top:0;transform-origin:0 0}
+.gmap .vw{position:relative}
+@media (prefers-reduced-motion:no-preference){
+  .gmap .vw.zin{animation:gzin .34s cubic-bezier(.3,.7,.2,1)}
+  .gmap .vw.zout{animation:gzout .34s cubic-bezier(.3,.7,.2,1)}
+  .gn,.grel,.ged,.gcnt{transition:opacity .2s,box-shadow .2s}
+}
+@keyframes gzin{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes gzout{from{transform:scale(1.9);opacity:0}to{transform:none;opacity:1}}
+.gmap .map svg.gedges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none}
+.ged{fill:none;stroke:var(--surface2);stroke-width:1.5}
+.ged.portal{stroke-dasharray:5 4}
+.ged.dim,.gcnt.dim{opacity:.25}
+.gedges marker path{fill:var(--surface2)}
+.gcnt{position:absolute;transform:translate(-50%,-50%);font:700 10px/1 var(--sans);background:var(--panel);border:1px solid var(--line-2);color:var(--muted);border-radius:8px;padding:2px 5px;pointer-events:none}
+.gband{position:absolute;left:0;right:0;border-top:1px solid var(--line);font:500 10.5px var(--sans);color:var(--faint);padding-top:2px;pointer-events:none}
+.gn{position:absolute;box-sizing:border-box;border:1.5px solid var(--line-2);background:var(--panel);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;gap:2px;cursor:pointer;color:var(--ink);overflow:hidden;text-align:left;font:inherit;margin:0}
+.gn:hover{border-color:var(--accent-edge)}
+.gn:focus-visible,.grel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gn.add{border-color:var(--green)}
+.gn.dim,.grel.dim{opacity:.3}
+.gn.lit{box-shadow:0 0 0 2px var(--accent)}
+.gdots{display:inline-flex;gap:2px;flex-wrap:wrap}
+.gn-tag{display:flex;align-items:center;gap:5px;min-height:16px;font:500 10.5px var(--sans);color:var(--muted)}
+.gn-tag .mk{border:1px solid var(--line-2);border-radius:3px;padding:0 4px;line-height:14px}
+.gn.add .gn-tag .mk:first-child{border-color:var(--green);color:var(--green)}
+.gn-tag .mk.dev{border-color:var(--peach);color:var(--peach)}
+.gn.box .cn{font:600 11.5px/15px var(--mono);word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:none}
+.gn.box .cn .el{font-style:normal;color:var(--faint);font-weight:400}
+.gn.box code{font:10px/14px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
+.gn.group .gn-h{display:flex;align-items:flex-start;gap:6px;justify-content:space-between}
+.gn.group .gn-h b{font:700 13px/1.35 var(--sans);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.gn.group .gn-n{font:500 11px var(--sans);color:var(--muted)}
+.gn.group .gn-go{position:absolute;right:8px;bottom:6px;color:var(--accent-ink);font:700 16px var(--sans)}
+.gmini{display:flex;flex-direction:column;gap:3px;margin-top:auto;padding:5px 0 1px;border-top:1px solid var(--line);margin-right:18px}
+.gmini .mr{display:flex;gap:2px;height:7px;align-items:center;flex-wrap:wrap;overflow:hidden}
+.gmini i{width:7px;height:7px;border-radius:50%;background:var(--overlay1);flex:none}
+.gmini i.add{background:var(--green)}
+.gn.portal{flex-direction:row;align-items:center;justify-content:space-between;gap:6px;border-style:dashed;border-radius:14px;padding:2px 10px;font:600 12px var(--sans);color:var(--accent-ink);background:var(--panel-2);white-space:nowrap}
+.gn.portal span{overflow:hidden;text-overflow:ellipsis}
+.gn.portal i{font-style:normal}
+.grel{position:absolute;transform:translateX(-100%);z-index:1;border:1.2px dashed var(--overlay0);background:var(--panel);color:var(--muted);border-radius:9px;font:600 10px/14px var(--sans);padding:1px 7px;cursor:pointer;white-space:nowrap}
+.grel:hover{border-color:var(--accent);color:var(--ink)}
+.gmap .gcommon{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap}
+.gmap .gcommon code{font:10.5px var(--mono);background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 4px;color:var(--muted)}
+.gmap .guess{text-decoration:underline dotted;text-decoration-color:var(--overlay1);text-underline-offset:3px}
 @media (prefers-reduced-motion:no-preference){.cmap .nd rect{transition:stroke .18s ease-out,stroke-width .18s ease-out}}
 
 /* 上の帯: 画面の行き先と設定（2026-09-30。左の列から移した） */

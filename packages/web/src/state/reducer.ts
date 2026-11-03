@@ -13,6 +13,7 @@ import { READ_FAILED, setDoneMessage, setFailedMessage } from '../github.js';
 import { howRows, navigable } from '../hows.js';
 import { calleeDest, type PaletteTarget } from '../palette.js';
 import { mapNodeOf } from '../map/graph.js';
+import { groupTree, pathTo } from '../map/groupmap/view.js';
 import { openRel, relAt, relMove, relVisible, type RelView } from '../rel.js';
 import { ideaUrl } from '../ide.js';
 import { isMemo, memoPlace, memoStop, mergeDraft, newMemo, onGithubDiff, pickFor, pickRange, spanLabel, stopShows, type MemoPick, type PickScreen } from '../memo.js';
@@ -52,6 +53,8 @@ export interface HomeState {
   ticket: boolean;
   /** 説明タブの段（1 = 背景、2 = この PR。2026-10-29）。保存しない。解析を開くたびに背景から */
   stage: 1 | 2;
+  /** 入口の地図で見ているまとまりの道筋（全景の直下から。空 = 全景）。MapGroup.id。保存しない（2026-11-04） */
+  path: string[];
 }
 
 /**
@@ -341,7 +344,7 @@ export interface Reduced {
 }
 
 export function initialState(): AppState {
-  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'map', sel: null, ticket: false, stage: 1 }, course: null, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
+  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'map', sel: null, ticket: false, stage: 1, path: [] }, course: null, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
 }
 
 const none = (state: AppState): Reduced => ({ state, effects: [] });
@@ -678,7 +681,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return { effects, state: {
         ...state,
         view: command.view ?? keep?.view ?? 'home',
-        home: { tab: 'map', sel: null, ticket: false, stage: 1 },
+        home: { tab: 'map', sel: null, ticket: false, stage: 1, path: [] },
         memo: NO_MEMO,
         draftText: {},
         current: command.summary,
@@ -801,9 +804,17 @@ function reduceAll(state: AppState, command: Command): Reduced {
       }
       if (state.view === 'hows' && state.selectedHow !== null) return none({ ...state, selectedHow: null });
       if (state.view === 'hows' || state.view === 'diff' || state.view === 'closing') return none(state.course === null ? { ...state, view: 'home' } : { ...state, view: 'course', peek: null });
+      // 入口の地図: まず 1 段上へ。全景ならコースを外す（2026-11-04）
+      if (state.home.tab === 'map' && state.home.path.length > 0) return none({ ...state, home: { ...state.home, path: state.home.path.slice(0, -1) } });
       return none({ ...state, home: { ...state.home, sel: null } });
     case 'map.zoom':
       return none({ ...state, mapZoom: command.zoom });
+    case 'map.enter': {
+      // 入口の地図のまとまりの中へ（札からはそのまとまりへ）。木に無い id と入口の外では何もしない
+      const mg = state.analysis?.mapGroups;
+      const path = mg && state.view === 'home' ? pathTo(groupTree(mg), command.group) : null;
+      return path === null ? none(state) : none({ ...state, home: { ...state.home, tab: 'map', path } });
+    }
     case 'ask.toggle':
     case 'ask.close':
     case 'ask.draft':

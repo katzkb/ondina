@@ -32,6 +32,8 @@ function lines(analysis: Analysis): Line[] {
       ),
     });
   }
+  // 入口の地図のまとまり（2026-11-04）が無い解析は、前の形の地図を出す（web は core の分け方を持たない。原則 5）
+  if (analysis.mapGroups === undefined) out.push({ key: 'g', text: '古い ondina で作った解析なので、前の形の地図を出しています。', hint: <>{analyze} で解析し直すと新しい地図になります</> });
   const lsp = analysis.lsp;
   if (lsp === undefined) {
     out.push({ key: 'l', text: '言語サーバーを使わずに解析したので、関連の線がありません。', hint: <>--no-lsp を付けずに {analyze} を実行し直すと表示されます</> });

@@ -573,6 +573,8 @@ describe('App（地図の知らせ。層と関連の線）', () => {
     const a = fixtureAnalysis();
     a.symbols = [];
     a.edges = [];
+    // 前の形の地図（まとまりの無い古い解析）の空の知らせ。新しい地図は hunk から箱を作るので空にならない
+    delete a.mapGroups;
     await entry(a);
     expect(screen.queryByText(/LSP を動かした解析でだけ出る/)).toBeNull();
     expect(screen.getByText('地図に載せる変更がありません')).toBeInTheDocument();
@@ -1251,6 +1253,11 @@ describe('App（コース。3.3）', () => {
     });
   };
 
+  /** まとまり（mapGroups）の無い古い解析。入口は前の形の地図（CourseMap） */
+  const old = (x = fixtureAnalysis()) => {
+    delete x.mapGroups;
+    return x;
+  };
   async function renderCourses(analysis = a) {
     const fake = fakeApi(analysis);
     const r = render(<App api={fake.api} />);
@@ -1626,8 +1633,9 @@ describe('App（コース。3.3）', () => {
   const relDrawer = () => screen.queryByRole('complementary', { name: '差分のない相手' });
   const centerLine = () => relDrawer()?.querySelector('.fv-body .cd.ctr')?.textContent;
 
-  it('入口の地図: 「差分なし 1 か所」（execute の呼び出し先）を押すと引き出しに名前とコード。Esc で閉じる', async () => {
-    const { container } = await renderCourses();
+  it('古い解析の入口の地図: 「差分なし 1 か所」（execute の呼び出し先）を押すと引き出しに名前とコード。Esc で閉じる', async () => {
+    const { container } = await renderCourses(old());
+    expect(screen.getByText(/古い ondina で作った解析なので、前の形の地図を出しています/)).toBeInTheDocument();
     const map = container.querySelector('.home .cmap')!;
     const exec = idOf('ApplyDiscountUseCase.execute');
     await waitFor(() => expect(relBox(map, exec, 'Domain')).not.toBeNull(), { timeout: 3000 });
@@ -1645,7 +1653,7 @@ describe('App（コース。3.3）', () => {
   });
 
   it('引き出しの ↓ で次の相手（相手の多い再現: execute の呼び出し先 4）', async () => {
-    const { container } = await renderCourses(fixtureWithNeighbors());
+    const { container } = await renderCourses(old(fixtureWithNeighbors()));
     const map = container.querySelector('.home .cmap')!;
     const exec = idOf('ApplyDiscountUseCase.execute');
     await waitFor(() => expect(relBox(map, exec, 'Domain')).not.toBeNull(), { timeout: 3000 });
@@ -1656,13 +1664,73 @@ describe('App（コース。3.3）', () => {
     expect(relDrawer()!.querySelector('.rlist [aria-current="true"]')!.textContent).toBe('Money.plus');
   });
 
+  describe('入口の地図（まとまり。2026-11-04）', () => {
+    const gmap = async (analysis = a) => {
+      const r = await renderCourses(analysis);
+      const map = r.container.querySelector<HTMLElement>('.home .gmap')!;
+      await waitFor(() => expect(map.querySelector('.gn')).not.toBeNull(), { timeout: 3000 });
+      return { ...r, map, at: (id: string) => map.querySelector<HTMLElement>(`.gn[data-id="${id}"]`) };
+    };
+    const crumbs = (map: Element) => [...map.querySelectorAll('.crumbs > *:not(.csep)')].map((x) => x.textContent);
+
+    it('全景はコースのまとまり 7 つとコース外。押すと中に入り、パンくずが伸びる。Esc で全景へ戻る', async () => {
+      const { map, at } = await gmap();
+      expect([...map.querySelectorAll('.gn.group')].map((x) => x.getAttribute('data-id'))).toEqual(a.mapGroups!.root);
+      expect(crumbs(map)).toEqual(['全景']);
+      await act(async () => {
+        fireEvent.click(at('course:3')!);
+      });
+      await waitFor(() => expect(map.querySelector('.gn.box')).not.toBeNull(), { timeout: 3000 });
+      expect(crumbs(map)).toEqual(['全景', 'コース 3']);
+      expect(map.querySelectorAll('.gn.portal').length).toBeGreaterThan(0);
+      await key('Escape');
+      await waitFor(() => expect(map.querySelector('.gn.group')).not.toBeNull(), { timeout: 3000 });
+      expect(crumbs(map)).toEqual(['全景']);
+    });
+
+    it('箱を押すとその箱のコースを選び、そのコースが通らない箱は沈む。札を押すとそのまとまりへ移る', async () => {
+      const { container, map, at } = await gmap();
+      await act(async () => {
+        fireEvent.click(at('course:3')!);
+      });
+      await waitFor(() => expect(map.querySelector('.gn.box')).not.toBeNull(), { timeout: 3000 });
+      const order = a.mapGroups!.boxes.find((b) => b.path?.endsWith('/Order.kt'))!.id;
+      await act(async () => {
+        fireEvent.click(at(order)!);
+      });
+      expect(container.querySelector('.ccard.sel')).toBe(container.querySelectorAll('.ccard')[2]);
+      expect(at(order)!.className).toContain('lit');
+      const portal = map.querySelector<HTMLElement>('.gn.portal.dim')!;
+      const to = portal.getAttribute('data-id')!;
+      await act(async () => {
+        fireEvent.click(portal);
+      });
+      await waitFor(() => expect(crumbs(map)).toEqual(['全景', `コース ${to.slice('course:'.length)}`]), { timeout: 3000 });
+    });
+
+    it('「差分なし n」を押すと、そのファイルのシンボルの相手を引き出しに出す', async () => {
+      const { map, at } = await gmap(fixtureWithNeighbors());
+      await act(async () => {
+        fireEvent.click(at('course:5')!);
+      });
+      await waitFor(() => expect(map.querySelector('.grel')).not.toBeNull(), { timeout: 3000 });
+      fireEvent.click(map.querySelector('.grel')!);
+      const d = relDrawer()!;
+      expect(d.textContent).toContain('ApplyDiscountUseCase の呼び出し先');
+      expect([...d.querySelectorAll('.rlist button')].map((b) => b.textContent)).toEqual(['Clock.now', 'Money.plus', 'OrderId.of', 'OrderRepository.save']);
+      await key('Escape');
+      expect(relDrawer()).toBeNull();
+      expect(crumbs(map)).toEqual(['全景', 'コース 5']);
+    });
+  });
+
   describe('入口の地図をつまんで拡大・縮小する', () => {
     async function homeMap() {
       const { container } = await renderCourses();
-      const map = container.querySelector<HTMLElement>('.home .cmap')!;
-      const svg = map.querySelector('svg')!;
-      await waitFor(() => expect(svg.getAttribute('width')).toBeTruthy(), { timeout: 3000 });
-      return { map, width: () => Number(svg.getAttribute('width')) };
+      const map = container.querySelector<HTMLElement>('.home .gmap')!;
+      await waitFor(() => expect(map.querySelector('.gstage')).not.toBeNull(), { timeout: 3000 });
+      const stage = map.querySelector<HTMLElement>('.gstage')!;
+      return { map, width: () => parseFloat(stage.style.width) };
     }
     /** トラックパッドのピンチ（Chrome は Ctrl 付きの wheel で来る） */
     const wheel = async (el: Element, deltaY: number, ctrlKey = true) => {
@@ -1676,7 +1744,7 @@ describe('App（コース。3.3）', () => {
     it('広げると地図だけが大きくなり、画面全体の拡大は止める', async () => {
       const { map, width } = await homeMap();
       const before = width();
-      const e = await wheel(map.querySelector('svg')!, -10);
+      const e = await wheel(map.querySelector('.gstage')!, -10);
       expect(e.defaultPrevented).toBe(true);
       expect(width()).toBeGreaterThan(before);
     });
@@ -1691,7 +1759,7 @@ describe('App（コース。3.3）', () => {
     it('Ctrl なしの 2 本指のスクロールは倍率を変えず、止めない', async () => {
       const { map, width } = await homeMap();
       const before = width();
-      const e = await wheel(map.querySelector('svg')!, -10, false);
+      const e = await wheel(map.querySelector('.gstage')!, -10, false);
       expect(e.defaultPrevented).toBe(false);
       expect(width()).toBe(before);
     });
@@ -1734,8 +1802,8 @@ describe('App（コース。3.3）', () => {
     });
   });
 
-  it('同じ層の相手は差分の箱の右隣: domain.Order の右を押すと DiscountPolicy.rateFor', async () => {
-    const { container } = await renderCourses();
+  it('古い解析の地図で、同じ層の相手は差分の箱の右隣: domain.Order の右を押すと DiscountPolicy.rateFor', async () => {
+    const { container } = await renderCourses(old());
     const map = container.querySelector('.home .cmap')!;
     const order = () => [...map.querySelectorAll<SVGGElement>('g.nd.ch')].find((g) => g.querySelector('text.nm')?.textContent === 'domain.Order');
     await waitFor(() => expect(order()?.querySelector('g.side')).toBeTruthy(), { timeout: 3000 });
