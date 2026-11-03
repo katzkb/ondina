@@ -3,12 +3,14 @@
 // - 停留所はプログラムが組んだ読む順番（tours）のまま。LLM に並びを決めさせない（10.3）
 // - 停留所は差分だけ（2026-10-11）。差分の無い呼び出しの相手はコースの related に名前だけ入れる（図の箱の「変えていない」の札の材料。文は書かせない）
 // - 前からあるものの候補（existing。説明タブの背景。2026-10-29）は related の out と、この PR で消える宣言（hunks/removed.ts）。LLM はここから選ぶ（原則 3）
+// - 動き（2026-11-04）は呼ぶ順の呼び出しを「呼ぶ側の短い名前: 呼び出しの式」で渡す。LLM は題を付けて見せる順に並べるだけ（呼ぶ順はプログラムが組んだ事実）
 // - 作者の説明・前回の結果・辺・層の無いパスは渡さない（文を書くのに要らない。入口の説明は差分だけから書く）
-import type { Edge, How, Hunk, Symbol as OndinaSymbol, Tour } from '../model.js';
+import { shortName } from '../behavior/build.js';
+import type { Behavior, Edge, How, Hunk, Symbol as OndinaSymbol, Tour } from '../model.js';
 import { headLines } from '../hunks/changed-lines.js';
 import type { RemovedDeclaration } from '../hunks/removed.js';
 import type { LlmInput, LlmInputGroup } from '../label/types.js';
-import type { NarrationInput, NarrationInputCourse, NarrationInputExisting, NarrationInputRelated, NarrationInputStop } from './types.js';
+import type { NarrationInput, NarrationInputBehavior, NarrationInputCourse, NarrationInputExisting, NarrationInputRelated, NarrationInputStop } from './types.js';
 
 export interface BuildNarrationInputArgs {
   /** 1 回目の入力（buildLlmInput の結果） */
@@ -22,9 +24,11 @@ export interface BuildNarrationInputArgs {
   tours: readonly Tour[];
   /** この PR で消える宣言（removedDeclarations の結果）。前からあるものの候補になる */
   removed?: readonly RemovedDeclaration[];
+  /** 動き（buildBehaviors と attachCalls の結果）。題を付けさせる */
+  behaviors?: readonly Behavior[];
 }
 
-export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, removed = [] }: BuildNarrationInputArgs): NarrationInput {
+export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, removed = [], behaviors = [] }: BuildNarrationInputArgs): NarrationInput {
   const symbolOf = new Map(symbols.map((s) => [s.id, s]));
   const hunkOf = new Map(hunks.map((h) => [h.id, h]));
   const tourOf = new Map(tours.map((t) => [t.howId, t]));
@@ -77,6 +81,10 @@ export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, 
     return [{ howId: w.id, title: w.title, why: w.why, stops: steps.map(stop), related: related(steps) }];
   });
   const kindOf = new Map(symbols.map((s) => [s.fqName, s.kind]));
+  const nameOf = (id: string) => shortName(symbolOf.get(id) ?? { fqName: id });
+  const moves = behaviors.map(
+    (b): NarrationInputBehavior => ({ id: b.id, start: symbolOf.get(b.start)?.fqName ?? b.start, calls: b.messages.map((m) => `${nameOf(m.from)}: ${m.call?.text ?? nameOf(m.to)}`) }),
+  );
   const used = [...new Map(courses.flatMap((c) => c.related.filter((r) => r.dir === 'out')).map((r) => [r.symbol, r])).values()];
 
   return {
@@ -89,6 +97,7 @@ export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, 
       ...used.map((r): NarrationInputExisting => ({ symbol: r.symbol, path: r.path, kind: kindOf.get(r.symbol)!, removed: false })),
       ...removed.map((d): NarrationInputExisting => ({ symbol: d.fqName, path: d.path, kind: d.kind, removed: true })),
     ],
+    ...(moves.length === 0 ? {} : { behaviors: moves }),
   };
 }
 

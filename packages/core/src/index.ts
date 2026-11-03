@@ -27,7 +27,7 @@ export { buildNarrationInput, type BuildNarrationInputArgs } from './narration/i
 export { renderNarrationPrompt } from './narration/prompt.js';
 export { parseNarrationOutput, NARRATION_OUTPUT_SCHEMA } from './narration/schema.js';
 export { applyNarration, MAX_EXISTING, MAX_TERMS, type NarrationResult } from './narration/verify.js';
-export type { NarrationInput, NarrationInputCourse, NarrationInputExisting, NarrationInputStop, NarrationOutput } from './narration/types.js';
+export type { NarrationInput, NarrationInputBehavior, NarrationInputCourse, NarrationInputExisting, NarrationInputStop, NarrationOutput } from './narration/types.js';
 export { buildAskInput, hunkLines, fileLines, excerptLines } from './ask/input.js';
 export { renderAskPrompt } from './ask/prompt.js';
 export { parseAskOutput, ASK_OUTPUT_SCHEMA } from './ask/schema.js';
@@ -44,6 +44,9 @@ export { EXPORT_PROJECT_MODEL_COMMAND, outsideSourceDirs, placeProjectModel, PRO
 export { buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphContext, type CallGraphResult, type CallGraphSource, type CallItem, type DeclarationRange } from './lsp/edges.js';
 export { buildDefinitions, defTargetOf, diffLines, drawerFiles, filesToAsk, libName, namePositions, placeTarget, shownAt, type DefinitionAnswer, type DefinitionSource, type DefSide, type NamePosition, type RawDefTarget } from './lsp/definitions.js';
 export { buildTours, type BuildToursArgs } from './tour/build.js';
+export { buildBehaviors, type BuildBehaviorsArgs } from './behavior/build.js';
+export { attachCalls, type AttachCallsArgs } from './behavior/calls.js';
+export { applyBehaviorTitles } from './behavior/titles.js';
 export { buildMapGroups, courseGroupId, MAP_LIMIT, OUTSIDE_GROUP, type BuildMapGroupsArgs, type Theme } from './mapgroup/build.js';
 export { buildStructureInput, STRUCTURE_INPUT_LIMIT } from './structure/input.js';
 export { renderStructurePrompt } from './structure/prompt.js';

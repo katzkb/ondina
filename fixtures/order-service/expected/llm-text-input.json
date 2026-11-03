@@ -730,5 +730,20 @@
       "kind": "function",
       "removed": true
     }
+  ],
+  "behaviors": [
+    {
+      "id": "b1",
+      "start": "com.example.order.api.OrderController.apply",
+      "calls": [
+        "OrderController.apply: useCase.execute(OrderId(id), body.discountCode)",
+        "ApplyDiscountUseCase.execute: repository.find(id)",
+        "ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))",
+        "domain.Order: DiscountPolicy.rateFor(cmd.code)",
+        "ApplyDiscountUseCase.execute: repository.save(order)",
+        "OrderController.apply: repository.save(order)",
+        "OrderController.apply: OrderResponse.from(order)"
+      ]
+    }
   ]
 }

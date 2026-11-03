@@ -20,6 +20,7 @@ const good = {
       stops: [{ symbolId: 's1', role: '注文。割引額を持つ。' }],
     },
   ],
+  behaviors: [{ id: 'b1', title: '割引コードで割り引く' }],
 };
 
 describe('parseNarrationOutput', () => {
@@ -34,8 +35,13 @@ describe('parseNarrationOutput', () => {
     expect('output' in r && r.output.summary.flows[0]!.nodes[0]).toEqual({ title: 't', howIds: [3], symbolId: '', before: '', after: '', untouched: ['u'], pass: '' });
   });
 
+  it('動きの題: 題が欠けたら空、id が文字列でなければ失敗', () => {
+    expect(parseNarrationOutput('{"behaviors":[{"id":"b1"}]}')).toMatchObject({ output: { behaviors: [{ id: 'b1', title: '' }] } });
+    expect(parseNarrationOutput('{"behaviors":[{"id":1}]}')).toEqual({ error: 'behaviors[0].id が文字列ではありません' });
+  });
+
   it('欠けた summary / courses / 文は空で埋める', () => {
-    expect(parseNarrationOutput('{}')).toEqual({ output: { summary: { headline: '', example: { text: '', at: [] }, flows: [] }, background: { existing: [], terms: [] }, courses: [] } });
+    expect(parseNarrationOutput('{}')).toEqual({ output: { summary: { headline: '', example: { text: '', at: [] }, flows: [] }, background: { existing: [], terms: [] }, courses: [], behaviors: [] } });
     const r = parseNarrationOutput('{"courses":[{"howId":1,"stops":[{"symbolId":"s"}]}]}');
     expect('output' in r && r.output.courses).toEqual([{ howId: 1, change: { before: '', after: '' }, checks: [], stops: [{ symbolId: 's', role: '' }] }]);
     const r2 = parseNarrationOutput('{"courses":[{"howId":1,"checks":[{"at":[{"symbolId":"s"}]},{"text":"t"}]}]}');

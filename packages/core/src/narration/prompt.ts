@@ -4,6 +4,7 @@
 // 入口の説明は要点 1 文・テストの値で書く例・流れの図（2026-10-29。見本を比べて新案にした。それまでは問題・方針・触らないもの・前後表）。
 // 背景の段の前からあるものと言葉（2026-10-29）。前からあるものは入力の候補から選び、言葉のコードの名前は差分の行の識別子（プログラムが確かめる。原則 3）。
 // コースは読む前の案内（変わること・確かめること）とこの場所（2026-10-22。見本を比べて案 1「まず水先案内、それを確かめるようにコードを追う」にした）。
+// 動き（2026-11-04）は題を付けて見せる順に並べるだけ。呼ぶ順と呼び出しの式はプログラムが組む（原則 3）。
 // 例文は別の題材で書く（fixture の記録を、デモの手書きの文に寄せて見せかけない）。
 import { NARRATION_OUTPUT_SCHEMA } from './schema.js';
 import type { NarrationInput } from './types.js';
@@ -55,6 +56,11 @@ courses（コースの文。コース = 入力の courses[] の 1 つ。停留�
 - stops[].role: この場所の 1〜2 文。コースの中でここが何をするか（入口 / 読み込み / 計算 / 何のテストか）。checks と同じことは繰り返さない。テスト（test: true）は何を確かめているか（入力と期待値）
 - 束のサンプル（groupId がある停留所）は、rippleGroups の pattern・members（同じ形の件数）・deviations（サンプルと差異のある場所）を見て、同じ書き換えが何か所あるかと、差異のある場所を role に書いてよい
 
+behaviors（動きの題。動き = 入力の behaviors[] の 1 つ。始まりから呼ぶ順に並べた呼び出しの列）:
+- 入力の behaviors[] と同じ id で、全部の動きを書く。入力に behaviors がなければ空
+- 並びは画面に見せる順。この PR の目的に近い動きを先にする
+- title: その動きが何をするか。振る舞いの短い言葉で、「〜する」で終える。クラス名・関数名は書かない。句点は付けない
+
 入力の読み方:
 - hunks[].lines と rippleGroups[] の representative.lines / deviations[].lines は差分の行。各行は「行番号|記号と中身」。行番号は head（マージ後）の行番号で、削除の行は番号の代わりに空白。記号が "+" は追加、"-" は削除、" " は前後の文脈
 - stops[].hunkId で差分の行を引く。hunks[] になければ rippleGroups[] の representative か deviations[] にある
@@ -62,6 +68,7 @@ courses（コースの文。コース = 入力の courses[] の 1 つ。停留�
 - courses[].related は停留所の差分のない相手（dir: in = 停留所を呼んでいる、out = 停留所が呼んでいる。of はどの停留所の相手か）。停留所ではないので文は書かない
 - unassigned はどの How（コース）にも入らなかった hunk の id
 - existing[] は前からあるものの候補。removed: false は停留所が呼んでいて差分のないもの、removed: true はこの PR で消える宣言
+- behaviors[].calls は呼ぶ順の呼び出し。各項目は「呼ぶ側: 呼び出しの式」。順はプログラムが決めたもの
 - hunks[].kindHint と hunks[].layer は読むだけのヒント
 
 例（題材は別の PR。文の形だけを真似る）:
@@ -72,6 +79,7 @@ courses（コースの文。コース = 入力の courses[] の 1 つ。停留�
 - example: { "text": "在庫 5 個の倉庫 A から 3 個を引き当てると、倉庫 A の在庫が 2 個になる。", "at": [{ "symbolId": "<テストの停留所の symbolId>", "lines": [21, 22] }] }
 - existing の 1 行: { "symbols": ["com.example.stock.domain.StockTable.countFor"], "text": "倉庫ごとの在庫の数を返す。" }
 - terms の 1 つ: { "word": "引当数", "code": "reserved", "meaning": "出荷のために取り置いた在庫の数。" }
+- behaviors の 1 つ: { "id": "b1", "title": "倉庫を指定して在庫を引き当てる" }
 - flows の箱の 1 つ: { "title": "引き当て", "howIds": [2], "symbolId": "<その箱のコースの停留所の symbolId>", "before": "全倉庫の合計から引く。", "after": "指定した倉庫の在庫から引く（5 個 → 2 個）。", "untouched": ["在庫の数え方"], "pass": "引き当て 3 個" }`;
 
 export function renderNarrationPrompt(input: NarrationInput): string {

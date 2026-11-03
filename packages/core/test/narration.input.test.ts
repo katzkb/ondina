@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Edge, How, Hunk, Symbol, Tour } from '@ondina/model';
+import type { Behavior, Edge, How, Hunk, Symbol, Tour } from '@ondina/model';
 import type { LlmInput } from '../src/label/types.js';
 import { removedDeclarations } from '../src/hunks/removed.js';
 import { buildNarrationInput } from '../src/narration/input.js';
@@ -160,6 +160,25 @@ describe('buildNarrationInput（fixture）', () => {
     edges: read<Edge[]>('expected/edges.json'),
     tours: read<Tour[]>('expected/tours.json'),
     removed: fixtureRemoved,
+    behaviors: read<Behavior[]>('expected/behaviors.json'),
+  });
+
+  it('動き: 呼ぶ順の呼び出しを「呼ぶ側: 呼び出しの式」で渡す', () => {
+    expect(input.behaviors).toEqual([
+      {
+        id: 'b1',
+        start: 'com.example.order.api.OrderController.apply',
+        calls: [
+          'OrderController.apply: useCase.execute(OrderId(id), body.discountCode)',
+          'ApplyDiscountUseCase.execute: repository.find(id)',
+          'ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))',
+          'domain.Order: DiscountPolicy.rateFor(cmd.code)',
+          'ApplyDiscountUseCase.execute: repository.save(order)',
+          'OrderController.apply: repository.save(order)',
+          'OrderController.apply: OrderResponse.from(order)',
+        ],
+      },
+    ]);
   });
 
   it('前からあるものの候補: 呼んでいる相手はコースの順に 1 回ずつ（rateFor・Money.ZERO・save）、その後に消える Order.promo と getDiscount', () => {

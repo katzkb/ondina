@@ -68,7 +68,15 @@ describe('renderNarrationPrompt', () => {
     expect(rule('background.terms')).toContain('2〜4 個');
     expect(rule('terms[].code')).toContain('差分の行に出てくる識別子をそのまま 1 つ');
     expect(p).toContain('existing[] は前からあるものの候補');
-    expect(NARRATION_OUTPUT_SCHEMA.required).toEqual(['summary', 'background', 'courses']);
+    expect(NARRATION_OUTPUT_SCHEMA.required).toEqual(['summary', 'background', 'courses', 'behaviors']);
+  });
+
+  it('動き: 題だけを書かせ、並びは見せる順。呼ぶ順はプログラムが決めたもの', () => {
+    const p = renderNarrationPrompt(input);
+    const rule = (k: string) => p.split('\n').find((l) => l.startsWith(`- ${k}:`)) ?? '';
+    expect(rule('title')).toContain('「〜する」で終える');
+    expect(p).toContain('並びは画面に見せる順');
+    expect(p).toContain('順はプログラムが決めたもの');
   });
 
   it('例文は fixture（注文と割引の PR）の題材を使わない（記録を手書きの文に寄せて見せかけない）', () => {

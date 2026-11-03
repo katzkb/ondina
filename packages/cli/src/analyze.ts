@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyNarration, attachTokens, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
+import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyBehaviorTitles, applyNarration, attachCalls, attachTokens, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
 import type { How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
 import { readConfigFile } from './config.js';
 import { changedFiles, git, githubDiff, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
@@ -248,6 +248,11 @@ async function runAnalysis(
   info.push(...projectInfo);
   warnings.push(...projectWarnings);
   let tours = buildTours({ hows, hunks, symbols, edges: graph.edges, layers: layering.bands });
+  // 動き（3.3）。呼ぶ順と呼び出しの式はプログラムが組み、2 回目の LLM が題を付けて見せる順に並べる
+  let behaviors = await attachCalls(buildBehaviors({ symbols, edges: graph.edges, hunks, layers: layering.bands }), {
+    symbols,
+    readHead: (rel) => files.find((f) => f.path === rel)?.after ?? readHead(rel),
+  });
   let llmText: LlmRun | undefined;
   let specs: Spec[] = [];
   let why: string[] = [];
@@ -256,7 +261,7 @@ async function runAnalysis(
   let llmSpecs: LlmRun | undefined;
   if (labeled.status === 'ok') {
     opts.progress?.('AI が案内文を書いています');
-    const narrationInput = buildNarrationInput({ base: input, hows, hunks, symbols, edges: graph.edges, tours, removed: await removedDeclarations(files) });
+    const narrationInput = buildNarrationInput({ base: input, hows, hunks, symbols, edges: graph.edges, tours, removed: await removedDeclarations(files), behaviors });
     const prompt = renderNarrationPrompt(narrationInput);
     const extracting = ticket === undefined || ticket.error !== undefined ? undefined : specsFor({ repo, key, command, mode, base: input, hows, hunks, ticket, parent: project?.parent, prev });
     const [narrated, extracted] = await Promise.all([runLlm({ repo, key, headSha: refs.headSha, call: 'text' }, command, prompt, mode, parseNarrationOutput), extracting]);
@@ -267,6 +272,9 @@ async function runAnalysis(
       ({ tours, summary } = applied);
       background = applied.background;
       info.push(...applied.info);
+      const titled = applyBehaviorTitles(behaviors, narrated.output.behaviors);
+      behaviors = titled.behaviors;
+      info.push(...titled.info);
     } else {
       info.push(`案内文を書けませんでした: ${narrated.reason}`);
     }
@@ -306,6 +314,7 @@ async function runAnalysis(
     // local は GitHub に送らず AI に返す（12 章）。GitHub の行の決まりが無いので塊を持たない（画面はどの行にもメモを書ける）
     ...(key === 'local' ? {} : { githubDiff: githubDiff(repo, refs) }),
     mapGroups: grouped.mapGroups,
+    behaviors,
   };
   mkdirSync(dir, { recursive: true });
   const cachePath = path.join(dir, `${refs.headSha}.json`);

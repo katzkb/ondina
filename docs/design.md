@@ -602,6 +602,7 @@ interface Analysis {                         // パイプラインの成果物�
   files?: FileText[];                        // head 側の全文。差分のあるファイル（削除を除く）と Symbol.path のファイル、path 順（2026-09-30）。古い解析には無い
   githubDiff?: Array<{ path: string; hunks: Array<{ oldStart: number; oldLines: number; newStart: number; newLines: number }> }>;  // GitHub の PR の差分の塊（12章。2026-10-06）。古い解析には無い
   mapGroups?: MapGroups;                     // 入口の地図のまとまり（2026-11-04）。古い解析には無い
+  behaviors?: Behavior[];                    // behaviors (2026-11-04). Absent in old analyses
 }
 
 // 入口の地図のまとまりの木（2026-11-04。packages/core/src/mapgroup/build.ts）。分け方はプログラム、題の名前だけ LLM（原則 3）。
@@ -625,6 +626,26 @@ interface MapBox {                           // 差分のあるファイル 1 �
   label: string;                             // ファイルは拡張子を除いたファイル名、束は書き換えのパターン
   path?: string; hunkIds: string[];          // 束の hunkIds はメンバー全部。逸脱は自分のファイルの箱
   course: number;                            // 箱の最初のコース。0 = コース外
+}
+
+// Behaviors (2026-11-04. packages/core/src/behavior/): the diff's calls, from a start in calling order. Calling order, call expressions and return types come from the program; only the title comes from the LLM (principle 3).
+// Decided by comparing mockups: the arrow text is the call expression (the screen folds arguments into 「…6」), returns are return types (facts, so solid lines), the start rule does not rely on layer names, and value cards are not shown (TODO in chapter 17).
+// - Start = a symbol with a diff and no caller with a diff. A symbol with no outgoing call edge is not a behavior. Ordered by the start's layer order → FQ name
+// - Follow call edges only, depth first. Within one caller, in order of the calling lines (Edge.lines); an edge with several lines gives one call per line. Enter each symbol once
+// - Two calls with the same caller, line and name become one (interface and implementation; keep the one with a diff). Non-representative ripple members are not used
+// - The call expression comes from reading the calling line with the syntax tree and picking a call whose name is on that line (the one named like the callee's last name, otherwise the outer one).
+//   For non-Kotlin files, or when no expression is found, use the line's text (exact: false)
+// The fixture has one behavior from OrderController.apply with 7 calls (execute → find → applyDiscount → rateFor → save → save → from)
+interface Behavior {
+  id: string;                                // 'b1' onward. Program order
+  title: string; titleProvenance: Provenance; // llm = title from the second LLM call (dashed on screen). ast = no LLM, the start's short name
+  start: string;                             // Symbol.id of the start. The screen first draws an arrow from the caller to here
+  messages: Array<{
+    from: string; to: string;                // Symbol.id
+    line?: number;                           // calling line (head of the caller's file)
+    call?: { text: string; exact: boolean; name?: string; args?: string[] };  // call expression (packed into one line). A trailing lambda is "{…}"
+    returns?: string;                        // return type (Edge.types.out)
+  }>;
 }
 
 interface AnalysisConfig {                   // 11章。変えたら analyze の打ち直しが要る
@@ -767,6 +788,7 @@ The program determines everything. Print each exclusion and renumbering on its o
 8. Accept `layerGuesses` only for “layer names that exist in configuration” and “paths actually in `unlayeredPaths`” (do not let inference overwrite glob-determined layers). Keep only the first occurrence of a repeated path. Accepted entries get `layerProvenance: 'llm'` (implemented 2026-09-22 in `packages/core/src/layers/guesses.ts`)
 9. Second call (write prose. `packages/core/src/narration/verify.ts`): exclude courses with nonexistent `howId` and prose for `symbolId` absent from that course's stops / treat empty or whitespace-only prose as absent (the screen uses generated prose) / keep only the first duplicate course or stop (even if the first prose is empty, do not use later occurrences. Same rule as 8) / do not change paths (order or call relationships) / entry explanation (2026-10-29): strip surrounding whitespace from the Key point (「要点」), Example (「例」), and box prose; omit empty fields. Supporting locations for examples follow the same rules as checks (stops may belong to any course). Diagram boxes may reference only existing courses; a course appears only once across all diagrams, at its first occurrence. Exclude boxes with no remaining courses or empty titles, and diagrams with no remaining boxes. Names beneath boxes must be stops in that box's courses. If an entry explanation was written, print a final line (`入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）`. Also lists courses absent from every box) / background (2026-10-29): Existing items (「前からあるもの」) names must appear among candidates (input `existing`). Keep a candidate only in the first row where it appears (once even if repeated in that row). If disappearing and unchanged items are mixed, keep only those matching the first name's category (one fact per chip). Exclude rows with empty prose or no remaining names; maximum three rows (`MAX_EXISTING`). The program supplies disappearance, path, and kind from candidates. Exclude Terms (「言葉」) with empty wording, and code names (allow trailing `()` and identifiers joined by `.`) that are not identifiers appearing in diff lines. Keep the first occurrence of each name, up to four (`MAX_TERMS`). If background was written, print a final line (`背景: 前からあるもの 3 行（候補 5）、言葉 4 個`) / checks (2026-10-22): retain only supporting locations that are stops in that course, and line numbers on the head side (context or added lines) of that stop's hunk (the screen highlights those lines, so do not retain nonexistent ones). Exclude locations with no remaining lines, sentences with no remaining locations, and empty sentences. Keep only the first identical location in the same sentence. Reorder locations in reading order; sort and deduplicate lines ascending. Exclude the sixth onward (`MAX_CHECKS`). Report each exclusion on its own line, then report filled counts on a final line (`案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 23（場所 32）`. stderr reveals omissions)
 10. `themes` (map groups. 2026-11-04 `packages/core/src/mapgroup/build.ts`) is read only when there are 8 or more Hows. Use it only when all of these hold: 7 or fewer themes, no empty title, every How in exactly one theme, and no unknown How id. Otherwise use none of it, print the reason to stderr in one line, and put every course on the overview (still more than 7. Do not fix it silently)
+11. Behavior titles (2026-11-04 `packages/core/src/behavior/titles.ts`): drop titles with unknown ids; for a repeated id use only the first. Trim spaces and a trailing full stop; if empty, keep the start's short name (`titleProvenance: 'ast'`). The order is the LLM's output order (display order); behaviors the LLM did not write follow in program order. The call list is not changed. One last line (`動きの題: 1 / 1 本`)
 
 ### 5.5 Execution modes
 - **CLI**: generate Analysis.json with `ondina analyze <pr>` and run the local UI with `ondina serve`. Cache in `.ondina/<pr>/<headSha>.json` (`.ondina/` in the original folder even when run inside a worktree. Worktree item in chapter 12). The target repository is the current directory
@@ -1227,7 +1249,7 @@ Pass only the representative, deviations, and candidates for LLM judgment from e
 
 Called after verification of the first call and construction of the reading order (`tours`) (5.3). Have it write the entry explanation, each course's What changes and What to check, and each stop's This place (2026-10-22. The prototype selected "first provide guidance, then follow the code to check it." Previously this was a course introduction and two lines per stop). Types are in `narration/types.ts`, the output shape in `NARRATION_OUTPUT_SCHEMA` in `narration/schema.ts`, and the prompt in `narration/prompt.ts`.
 
-Input (built deterministically. Golden file: `fixtures/order-service/expected/llm-text-input.json`. The fixture has 7 courses and 29 stops; the prompt is 33 KB):
+Input (built deterministically. Golden file: `fixtures/order-service/expected/llm-text-input.json`. The fixture has 7 courses and 29 stops, and 1 behavior; the prompt is 40 KB):
 ```json
 {
   "pr": { "title": "…" },
@@ -1238,9 +1260,12 @@ Input (built deterministically. Golden file: `fixtures/order-service/expected/ll
     "related": [ { "of": "…（Order の symbolId）", "dir": "out", "symbol": "…DiscountPolicy.rateFor", "path": "…" } ] } ],
   "unassigned": ["…どの How にも入らなかった hunk の id"],
   "existing": [ { "symbol": "…DiscountPolicy.rateFor", "path": "…", "kind": "function", "removed": false },
-                { "symbol": "…Order.getDiscount", "path": "…", "kind": "function", "removed": true } ]
+                { "symbol": "…Order.getDiscount", "path": "…", "kind": "function", "removed": true } ],
+  "behaviors": [ { "id": "b1", "start": "com.example.order.api.OrderController.apply",
+                   "calls": [ "OrderController.apply: useCase.execute(OrderId(id), body.discountCode)", "…" ] } ]
 }
 ```
+- `behaviors` are the behaviors (2026-11-04. `Behavior` in chapter 4). Calls are passed in calling order as "caller's short name: call expression" (the callee's short name when there is no expression). Absent when there are no behaviors
 - `existing` contains candidates for What existed before this PR? in the explain tab's background (2026-10-29). First are unchanged callees of stops (out in `related`, once in course order), followed by declarations removed in this PR (Kotlin declarations found only in base. If the parent is also removed, include only the parent. Also inspect primary-constructor `val` / `var`. `core/src/hunks/removed.ts`). The fixture has `rateFor`, `Money.ZERO`, and `OrderRepository.save`, plus the removed `Order.promo` and `getDiscount`
 - Do not pass `pr.body` (write the entry explanation from the diff alone). Do not pass `previous` / `edges` / `unlayeredPaths` either
 - Prefix the same diff lines used in the first call with the head (after merge) line number and `|` (`15|+    fun execute(…`. Deleted lines have spaces instead of a number. Align to the width of the largest number in the hunk). This lets it select evidence lines for What to check by number (2026-10-22)
@@ -1257,9 +1282,11 @@ Output:
                   "terms": [ { "word": "小計", "code": "subtotal", "meaning": "意味の 1 文" } ] },
   "courses": [ { "howId": 3, "change": { "before": "1〜2 文", "after": "1〜2 文" },
                  "checks": [ { "text": "観測の 1 文（句点なし）", "at": [ { "symbolId": "…停留所", "lines": [16], "say": "1 文" } ] } ],
-                 "stops": [ { "symbolId": "…", "role": "1〜2 文" } ] } ]
+                 "stops": [ { "symbolId": "…", "role": "1〜2 文" } ] } ],
+  "behaviors": [ { "id": "b1", "title": "割引コードを受け取って注文に割引を適用する" } ]
 }
 ```
+`behaviors` (2026-11-04) are behavior titles; their order is the display order. Old records lack them (read as empty). Verification: 5.4, item 11.
 Background has been included since 2026-10-29 (verified results go into `existing` / `terms` in `Analysis.background`. Requirement extraction produces `why` separately). If existing items' `symbols` or boxes' `untouched` arrive as strings, read them as one-element arrays; likewise, read a single number in `howIds` or `lines` as a one-element array. Verification: 5.4, item 9. Since 2026-10-29, the entry explanation has a headline, example, and flow diagram (a new option chosen by comparing prototypes). Previously it was `problem` / `approach` / `untouched` / `beforeAfter` (problem, approach, untouched areas, before/after table).
 
 Prompt constraints (in addition to 10.3. Sentence style decided 2026-09-29):
@@ -1269,6 +1296,7 @@ Prompt constraints (in addition to 10.3. Sentence style decided 2026-09-29):
 - `change` describes before and after merge within this course's scope (1–2 sentences each, in behavioral terms). `checks` has 2–5 items. Each is one sentence of observation that readers can check against the code, without saying whether it is correct. Order them so they can be checked while visiting stops in order. `checks[].at` has 1–3 locations per sentence, using stops in that course and the numbers at the start of lines (deleted lines cannot be selected. Unchanged lines and test stops may be selected). `role` describes what this place does within the course (entry / loading / calculation / what is tested). Do not write where it is called from or on which lines; the UI derives those from edges (2026-10-22)
 - Entry explanation (2026-10-29): readers see this first, without hearing the project's background. `headline` is one sentence saying what this PR does (in the form "Enable …." Do not begin with the state before the change). `example` is 1–2 sentences with concrete values (inputs and results) from test-stop diffs; `at` identifies the test stops and lines the values came from (empty if there are no values). `flows` is a diagram of boxes in traversal order, usually one flow (two or more only when purposes differ). Each box groups 1–3 courses; put every course in exactly one box. `title` is a short name for the behavior (not a class name), `symbolId` is a central stop in the box's courses, and `before` / `after` are one sentence each in behavioral terms (example values may be added in parentheses). `untouched` lists 0–2 unchanged areas beside the box (`courses[].related`, etc.), by area name only (exclude changes that belong to no course). `pass` is the value passed to the next box (empty for the last box)
 - Background (2026-10-29): before reading the diff, readers learn here what existed before this PR and the terms they will encounter (knowing the main terms first helps readers understand the explanation of the mechanism. Readers with less background learn from sentences that state connections fully). `existing` has 1–3 rows from input `existing[]`; `symbols` contains 1–2 unchanged `existing[].symbol` values (only items with the same `removed` value in one row). `text` is one sentence describing what the item does (it may add how the diff uses it, or what replaces a removed item. Do not write Unchanged or Removed; chips show these). `terms` has 2–4 terms needed to read the diff, in diff-reading order. `word` is a Japanese term, `code` is one exact identifier appearing in diff lines (append `()` for functions), and `meaning` is one sentence explaining its meaning
+- Behaviors (2026-11-04): write every behavior with the same ids as the input's `behaviors[]`. The order is the display order (behaviors closer to the PR's purpose first). `title` is a short phrase about the behavior ending in 「〜する」 (no class or function names, no full stop). The calling order is decided by the program; the LLM does not change it
 - Use another subject (inventory allocation) for examples. Using the fixture's subject (orders and discounts) would make recorded output look as though it copied the examples
 
 ### 10.5 Input/output for Ask the guide (implemented 2026-10-08. `packages/core/src/ask/`)
@@ -1605,6 +1633,7 @@ To keep this branch open, keep the Web UI limited to "read JSON and render," wit
 - Known limitation in hunk extraction: when the line diff (Myers) matches identical lines such as `}` to different declarations, hunks that should be separate may be promoted to a common parent. Not seen in the fixture. If encountered, add "do not pair lines containing only whitespace/brackets" to the pairing rules in 5.2
 - Continue implementation in TypeScript. If switching to Kotlin/JVM, see the alternatives column in chapter 6
 - Unverified items (check when starting): interpretation of `path` in the `jetbrains://` scheme (whether repo-relative works). **kotlin-lsp launch options were checked on an actual machine on 2026-09-21 and written in 9.1. Catppuccin for JetBrains attribute mappings were checked on 2026-09-22 and written in 7.2. `textDocument/hover` was confirmed to return signatures with return types on 2026-09-22 and written in 9.3**
+- Value cards for behaviors (the mockup's 「割引額 0 → 100」: how a value changes step by step) are not implemented (TODO. 2026-11-04). No data holds per-step values (`Analysis.summary.example` is only one sentence written from the test diff). An LLM guess is often wrong and cannot cover behaviors without tests, so after comparing mockups they are left out for now. To show them, first confirm where the values would come from
 - Name finalized as `ondina`. npm's `ondina` is available (as of 2026-09-13); no prominent same-name project on GitHub. Use `ondina` consistently for CLI command, config file, and cache directory
 - README's first line is "A review support tool for reading large PRs." (The tagline was dropped before publication). Do not use logos or character images from the work (the name is a common word, so there is no trademark issue)
 

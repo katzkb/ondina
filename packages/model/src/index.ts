@@ -688,6 +688,49 @@ export interface Analysis {
   githubDiff?: GithubDiffFile[];
   /** 入口の地図のまとまり（3.3）。全景に 7 つまで並べ、押すと中に入る。無い = 古い解析 */
   mapGroups?: MapGroups;
+  /** 動き（3.3。2026-11-04）。差分の呼び出しの線を、始まりから呼ぶ順に並べたもの。無い = 古い解析 */
+  behaviors?: Behavior[];
+}
+
+/**
+ * 動き 1 本（3.3。2026-11-04）。呼び出しの順はプログラムが call の線と呼んでいる行から組む（原則 3）。LLM は題だけを付け、見せる順を選ぶ。
+ * 始まりは、差分があり、差分のある呼び出し元を持たないシンボル（テストを除く。呼び出しを 1 本も持たないものは動きにしない）
+ */
+export interface Behavior {
+  /** 'b1' から。プログラムが付けた順の番号（LLM が並べ替えても変えない） */
+  id: string;
+  title: string;
+  /** llm = 2 回目の LLM が付けた題（画面は点線）。ast = LLM が無いので始まりの短い名前 */
+  titleProvenance: Provenance;
+  /** 始まりの Symbol.id。画面は呼び出し元からここへの矢印を最初に描く */
+  start: string;
+  /** 呼ぶ順（深さ優先。同じ呼ぶ側の中は呼んでいる行の順） */
+  messages: BehaviorMessage[];
+}
+
+/** 呼び出し 1 回。1 本の線が何行かで呼んでいれば、行ごとに 1 回 */
+export interface BehaviorMessage {
+  /** 呼ぶ側の Symbol.id */
+  from: string;
+  /** 呼ばれる側の Symbol.id */
+  to: string;
+  /** 呼んでいる行（呼ぶ側のファイルの head。1 始まり）。無い = 言語サーバーが位置を返さなかった */
+  line?: number;
+  /** 呼び出しの式。無い = 行が無い、またはファイルを読めなかった */
+  call?: BehaviorCall;
+  /** 戻り型（Edge.types.out。言語サーバーの事実）。何も返さない呼び出しには無い */
+  returns?: string;
+}
+
+export interface BehaviorCall {
+  /** 呼び出しの式の原文（何行にまたがっても 1 行に詰める）。exact でなければ、呼んでいる行の中身 */
+  text: string;
+  /** true = 構文木で呼び出しの式を見つけた。false = 見つからないので行の中身をそのまま入れた（Kotlin 以外のファイルなど） */
+  exact: boolean;
+  /** exact のときだけ: 呼んでいる名前（"applyDiscount"） */
+  name?: string;
+  /** exact のときだけ: 引数の原文（1 つずつ。画面は名前の後ろを「…6」に畳む） */
+  args?: string[];
 }
 
 /**

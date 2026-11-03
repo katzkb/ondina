@@ -55,6 +55,15 @@ export interface NarrationInputExisting {
   removed: boolean;
 }
 
+/** 動き 1 本（2026-11-04）。呼ぶ順はプログラムが組んだもの。LLM は題を付けて、見せる順に並べるだけ */
+export interface NarrationInputBehavior {
+  id: string;
+  /** 始まりの FQ 名 */
+  start: string;
+  /** 呼ぶ順の呼び出し。「呼ぶ側の短い名前: 呼び出しの式」（式が無ければ呼ばれる側の短い名前） */
+  calls: string[];
+}
+
 export interface NarrationInput {
   /** 作者の説明（pr.body）は渡さない。入口の説明は差分だけから書く（10.3） */
   pr: { title: string };
@@ -67,6 +76,8 @@ export interface NarrationInput {
   unassigned: string[];
   /** 前からあるものの候補。停留所が呼んでいる差分の無い相手（courses[].related の out。コースの順に 1 回）の後に、この PR で消える宣言（base の並び） */
   existing: NarrationInputExisting[];
+  /** 動き（2026-11-04）。無い = 動きが 0 本 */
+  behaviors?: NarrationInputBehavior[];
 }
 
 /** 確かめることの 1 文（検証の前）。at は根拠の場所（停留所の symbolId と、入力の行の頭の番号） */
@@ -93,4 +104,6 @@ export interface NarrationOutput {
   background: { existing: Array<{ symbols: string[]; text: string }>; terms: Array<{ word: string; code: string; meaning: string }> };
   /** change = 変わること、checks = 確かめること、stops[].role = この場所（2026-10-22。それまでは intro と停留所の guide / say） */
   courses: Array<{ howId: number; change: { before: string; after: string }; checks: NarrationOutputCheck[]; stops: Array<{ symbolId: string; role: string }> }>;
+  /** 動きの題（2026-11-04）。並びが見せる順。古い記録には無い（空） */
+  behaviors: Array<{ id: string; title: string }>;
 }
