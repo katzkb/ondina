@@ -44,6 +44,7 @@ export { EXPORT_PROJECT_MODEL_COMMAND, outsideSourceDirs, placeProjectModel, PRO
 export { buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphContext, type CallGraphResult, type CallGraphSource, type CallItem, type DeclarationRange } from './lsp/edges.js';
 export { buildDefinitions, defTargetOf, diffLines, drawerFiles, filesToAsk, libName, namePositions, placeTarget, shownAt, type DefinitionAnswer, type DefinitionSource, type DefSide, type NamePosition, type RawDefTarget } from './lsp/definitions.js';
 export { buildTours, type BuildToursArgs } from './tour/build.js';
+export { buildMapGroups, courseGroupId, MAP_LIMIT, OUTSIDE_GROUP, type BuildMapGroupsArgs, type Theme } from './mapgroup/build.js';
 export { buildStructureInput, STRUCTURE_INPUT_LIMIT } from './structure/input.js';
 export { renderStructurePrompt } from './structure/prompt.js';
 export { parseStructureOutput, STRUCTURE_OUTPUT_SCHEMA } from './structure/schema.js';

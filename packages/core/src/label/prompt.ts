@@ -25,12 +25,17 @@ layerGuesses（層の推定）:
 - unlayeredPaths は層の規則に当たらなかった変更ファイル。パスと差分から層を当てられるものだけ、layerGuesses に { path, layer } で書く
 - layer は layers の名前のどれかを使う。当てられないファイルは書かない（空配列でよい）
 
+themes（地図のまとまり）:
+- How が 8 つ以上のときだけ書く。7 つ以下なら空配列
+- How を、内容の近いものどうし 7 つ以下にまとめる。title はまとめた How の内容を短く（15 字以内）、howIds はその How の id。どの How もちょうど 1 つに入れる。並びは依存順
+
 claims:
 - pr.body の各文について、差分に裏付けがあるか（backed）を判定し、なければ reason に「差分のどこに該当する変更がないか」を書く。text は pr.body の文をそのまま写す（言い換えない）。pr.body が空なら claims は空配列`;
 
 const PREVIOUS_INSTRUCTIONS = `previous（前回の結果）:
 - previous.hows は前回の How、previous.assignment は内容が変わっていない hunk の前回の割当（hunk id → How id）
-- 内容が変わっていない hunk の割当と How の id は維持する。前回の How を残すときは同じ id と title を使う。新しい How は前回にない id を使う`;
+- 内容が変わっていない hunk の割当と How の id は維持する。前回の How を残すときは同じ id と title を使う。新しい How は前回にない id を使う
+- previous.themes は前回の地図のまとまり。今回も themes を書くときは、入る How が同じまとまりに同じ title を使う`;
 
 export function renderPrompt(input: LlmInput): string {
   const parts = [INSTRUCTIONS];

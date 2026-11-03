@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyNarration, attachTokens, buildCallGraph, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
+import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyNarration, attachTokens, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
 import type { How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
 import { readConfigFile } from './config.js';
 import { changedFiles, git, githubDiff, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
@@ -277,6 +277,10 @@ async function runAnalysis(
     }
   }
 
+  // 入口の地図のまとまり（3.3）。箱をコースで分ける。コースが 8 つ以上なら 1 回目の LLM の題でまとめる
+  const grouped = buildMapGroups({ hunks, hows, tours, ...(labeled.status === 'ok' ? { themes: labeled.output.themes } : {}) });
+  info.push(...grouped.info);
+
   const analysis: Analysis = {
     pr: { ...pr, baseSha: refs.baseSha, headSha: refs.headSha, body: opts.body ?? '', ...(bodyCode.length === 0 ? {} : { bodyCode }), ...(ticket === undefined ? {} : { ticket }), ...(search === undefined ? {} : { ticketSearch: search }) },
     hunks,
@@ -301,6 +305,7 @@ async function runAnalysis(
     ...(defs === undefined ? {} : { defs }),
     // local は GitHub に送らず AI に返す（12 章）。GitHub の行の決まりが無いので塊を持たない（画面はどの行にもメモを書ける）
     ...(key === 'local' ? {} : { githubDiff: githubDiff(repo, refs) }),
+    mapGroups: grouped.mapGroups,
   };
   mkdirSync(dir, { recursive: true });
   const cachePath = path.join(dir, `${refs.headSha}.json`);

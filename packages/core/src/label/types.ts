@@ -28,6 +28,8 @@ export interface LlmInputGroup {
 export interface LlmPrevious {
   hows: Array<{ id: number; title: string; why: string }>;
   assignment: Record<string, number[]>;
+  /** 前回の地図のまとまりの名前（How が 8 つ以上だった回だけ） */
+  themes?: Array<{ title: string; howIds: number[] }>;
 }
 
 export interface LlmInput {
@@ -49,4 +51,6 @@ export interface LlmOutput {
   claims: Array<{ text: string; backed: boolean; reason?: string }>;
   /** どの glob にも当たらなかったファイルの層の推定（10.2）。検証を通ったものだけ使う */
   layerGuesses: Array<{ path: string; layer: string }>;
+  /** How が 8 つ以上のときの、地図のまとまり（How をまとめた題）。検証は mapgroup/build.ts */
+  themes: Array<{ title: string; howIds: number[] }>;
 }

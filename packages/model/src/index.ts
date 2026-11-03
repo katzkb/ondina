@@ -686,6 +686,48 @@ export interface Analysis {
   defs?: Definitions;
   /** GitHub の PR の差分の塊（12 章）。ファイルごと、path 順。行コメントを付けられるのはこの塊に入る行だけ。古い Analysis.json には無い */
   githubDiff?: GithubDiffFile[];
+  /** 入口の地図のまとまり（3.3）。全景に 7 つまで並べ、押すと中に入る。無い = 古い解析 */
+  mapGroups?: MapGroups;
+}
+
+/**
+ * 入口の地図のまとまりの木（3.3。2026-11-04）。箱はコースで分ける（箱の最初のコース。地図の丸と同じ決め方）。
+ * コースが 7 つ以下なら全景はコースとコース外。8 つ以上なら、1 回目の LLM がコースを 7 つ以下の題にまとめ、全景は題とコース外になる。
+ * 題の中は、箱が 8 つ以上ならコース、7 つ以下なら箱を並べる
+ */
+export interface MapGroups {
+  /** 全景に並べるまとまりの id（並び順） */
+  root: string[];
+  groups: MapGroup[];
+  boxes: MapBox[];
+}
+
+export interface MapGroup {
+  /** 'theme:<n>' / 'course:<How の id>' / 'outside' */
+  id: string;
+  kind: 'theme' | 'course' | 'outside';
+  /** course だけ */
+  howId?: number;
+  /** theme だけ: LLM が付けた名前 */
+  title?: string;
+  /** theme は llm（画面は点線）。course と outside はプログラムが分けたので ast */
+  provenance: Provenance;
+  /** 中に並ぶもの（並び順）。theme はコースのまとまりか箱、course と outside は箱。MapGroup.id か MapBox.id */
+  children: string[];
+}
+
+/** 地図の箱 1 つ。差分のあるファイル 1 つ（テストを除く）か、畳んだ束 1 つ */
+export interface MapBox {
+  /** 'file:<path>' / 'group:<代表の hunk id>' */
+  id: string;
+  /** ファイルは拡張子を除いたファイル名、束は書き換えのパターン */
+  label: string;
+  /** ファイルの箱だけ */
+  path?: string;
+  /** 箱に入る hunk（束はメンバー全部） */
+  hunkIds: string[];
+  /** 箱の最初のコース（hunk の How の id のうち一番小さいもの）。0 = コース外 */
+  course: number;
 }
 
 /**
