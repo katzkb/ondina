@@ -815,9 +815,6 @@ function reduceAll(state: AppState, command: Command): Reduced {
       const path = mg && state.view === 'home' ? pathTo(groupTree(mg), command.group) : null;
       return path === null ? none(state) : none({ ...state, home: { ...state.home, tab: 'map', path } });
     }
-    case 'map.up':
-      if (state.view !== 'home' || state.home.path.length === 0) return none(state);
-      return none({ ...state, home: { ...state.home, path: state.home.path.slice(0, -1) } });
     case 'ask.toggle':
     case 'ask.close':
     case 'ask.draft':

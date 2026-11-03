@@ -112,17 +112,16 @@ describe('道筋とパンくず', () => {
   });
 });
 
-describe('reducer: map.enter / map.up / Esc', () => {
+describe('reducer: map.enter / Esc', () => {
   const loaded = (): AppState => {
     const a = fixtureAnalysis();
     const summary = { key: 'local', headSha: a.pr.headSha, pr: a.pr, mtime: 1, repoName: 'order-service' };
     return reduce(initialState(), { id: 'data.loaded', summary, analysis: a, review: emptyReview() }).state;
   };
-  it('中に入り、1 段上へ戻る。木に無い id は何もしない', () => {
+  it('中に入り、全景へ戻る。木に無い id は何もしない', () => {
     const s = reduce(loaded(), { id: 'map.enter', group: 'course:3' }).state;
     expect(s.home.path).toEqual(['course:3']);
     expect(reduce(s, { id: 'map.enter', group: 'nope' }).state.home.path).toEqual(['course:3']);
-    expect(reduce(s, { id: 'map.up' }).state.home.path).toEqual([]);
     expect(reduce(s, { id: 'map.enter', group: ROOT }).state.home.path).toEqual([]);
   });
   it('Esc はまず 1 段上へ。全景ならコースを外す', () => {
