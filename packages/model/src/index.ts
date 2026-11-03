@@ -889,4 +889,6 @@ export interface UiSettings {
   keymap?: Record<string, string[]>;
   /** 列の幅（2026-10-20）。境目をドラッグした列だけを持つ（列 → px の整数）。無い列は既定の幅 */
   panes?: Partial<Record<PaneId, number>>;
+  /** 入口の地図でコースの道順を再生する速さ（2026-11-04。0.25〜3 倍）。無ければ 1 倍 */
+  mapSpeed?: number;
 }

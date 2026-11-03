@@ -1,6 +1,6 @@
 // 入口（全体図。設計書 3.1）。承認したデモ（2026-09-29）の screenIntro が画面の正。
 // 上: タブ（地図 1 / 説明 2）・題・件数・コースごとの割合・開始ボタン。題の下に LLM が動かなかった知らせ（1 回目か 2 回目）。
-// 中: 地図タブ = 変更のまとまりの地図（GroupMap。押すと中に入る。丸の色と番号 = コース。選んだコースが通る所だけを残し、他を沈める）/ 説明タブ = 差分から生成した説明。
+// 中: 地図タブ = 変更のまとまりの地図（GroupMap。押すと中に入る。丸の色と番号 = コース。選んだコースが通る所だけを残し、他を沈め、道順を流す）/ 説明タブ = 差分から生成した説明。
 //     まとまりの無い古い解析は、前の形の地図（CourseMap。変更した場所を全部並べ、選んだコースの道順を出す）。
 // 下: コースの並び。押すとそのコースを選び（道順が出る）、選んだカードの「入る」でコースに入る。ここは描くだけで、押した物は全部コマンド（原則 6）。
 import type { Analysis, ReviewState } from '@ondina/model';
@@ -26,6 +26,8 @@ export interface HomeViewProps {
   flavor: string;
   home: HomeState;
   zoom: number;
+  /** 道順の再生の速さ（ui.mapSpeed。無ければ 1） */
+  speed?: number;
   dispatch: (c: Command) => void;
   /** 差し替えはテスト用（jsdom に Web Worker が無い） */
   elk?: () => ElkLike;
@@ -33,7 +35,7 @@ export interface HomeViewProps {
 
 const label = (id: number) => (id === OUTSIDE ? '外' : String(id));
 
-export function HomeView({ analysis, review, flavor, home, zoom, dispatch, elk }: HomeViewProps) {
+export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, dispatch, elk }: HomeViewProps) {
   const all = useMemo(() => courses(analysis), [analysis]);
   // 古い解析の地図で、箱の id と丸のコースを引くだけ。「差分なし n か所」を押したときの引き出しは CourseMap が開く（設計書 3.3）
   const full = useMemo(() => buildGraph(analysis, null), [analysis]);
@@ -93,7 +95,20 @@ export function HomeView({ analysis, review, flavor, home, zoom, dispatch, elk }
       <MapNotice analysis={analysis} />
       <div className="hubbody">
         {home.tab === 'map' && analysis.mapGroups ? (
-          <GroupMap analysis={analysis} mapGroups={analysis.mapGroups} path={home.path} sel={home.sel} zoom={zoom} dispatch={dispatch} {...(elk ? { elk } : {})} />
+          <GroupMap
+            analysis={analysis}
+            mapGroups={analysis.mapGroups}
+            path={home.path}
+            sel={home.sel}
+            course={sel ?? null}
+            review={review}
+            step={home.step}
+            play={home.play}
+            speed={speed}
+            zoom={zoom}
+            dispatch={dispatch}
+            {...(elk ? { elk } : {})}
+          />
         ) : home.tab === 'map' ? (
           // 古い解析（mapGroups が無い）だけ。知らせは MapNotice
           <CourseMap

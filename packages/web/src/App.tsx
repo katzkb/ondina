@@ -351,7 +351,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       {s.view !== 'prs' && <ReanalyzeStrip strip={stripOf(s)} dispatch={dispatch} />}
       <main className="stage">
         {s.view === 'prs' && <PrListView prs={s.prs} analyses={s.analyses} jobs={s.reanalyze.jobs} reviews={s.reviews} reviewEnabled={(s.ui.reviewCommand ?? '').trim() !== ''} flavor={flavor} dispatch={dispatch} />}
-        {s.view === 'home' && s.analysis && s.review && <HomeView analysis={s.analysis} review={s.review} flavor={flavor} home={s.home} zoom={s.mapZoom} dispatch={dispatch} />}
+        {s.view === 'home' && s.analysis && s.review && <HomeView analysis={s.analysis} review={s.review} flavor={flavor} home={s.home} zoom={s.mapZoom} speed={s.ui.mapSpeed ?? 1} dispatch={dispatch} />}
         {s.view === 'hows' && s.analysis && s.review && (
           <HowView
             analysis={s.analysis}

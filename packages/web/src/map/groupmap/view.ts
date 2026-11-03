@@ -46,13 +46,13 @@ export function leavesOf(tree: GroupTree, id: string): MapBox[] {
 }
 
 /** x を含む、at の直下の子。at の中に無ければ null */
-function childUnder(tree: GroupTree, at: string, x: string): string | null {
+export function childUnder(tree: GroupTree, at: string, x: string): string | null {
   for (let y: string | undefined = x; y !== undefined && y !== ROOT; y = tree.parent.get(y)) if (tree.parent.get(y) === at) return y;
   return null;
 }
 
 /** at の外にある x を、at の道筋の脇に出ている段まで丸める（その図の札） */
-function portalOf(tree: GroupTree, at: string, x: string): string {
+export function portalOf(tree: GroupTree, at: string, x: string): string {
   const up = new Set([ROOT, ...(pathTo(tree, at) ?? [])]);
   let y = x;
   while (!up.has(tree.parent.get(y) ?? ROOT)) y = tree.parent.get(y)!;
