@@ -2,19 +2,23 @@
 // 図の外の相手は点線の札（押すとそのまとまりへ）。上にパンくず、名前の共通の語は「…」で省いて下に書く。
 // 箱を押すとその箱のコースを選ぶ（下のコースの並びと同じ home.select）。「差分なし n」は差分の無い相手の引き出し（rel.open）。
 // コースを選ぶと、いま見ている段の図の上に道順を流す（2026-11-04。見本 5 の 2 版）。箱の左上に停留所の番号、線はコースの色、
-// 今の歩の箱の下に札（中に入れる箱なら「… の中で見る」）。下に再生の帯（▶・前・次・歩の帯・速さ）。動き・シーケンス図は次の PR（計画の PR 4・5）。
+// 今の歩の箱の下に札（中に入れる箱なら「… の中で見る」）。下に再生の帯（▶・前・次・歩の帯・速さ）。
+// 動きを選ぶと、同じ図の上に呼び出しの矢印を流し、シーケンス図に切り替えられる（BehaviorFlow.tsx）。
 // 押した物は全部コマンド（原則 6）。描くだけで、事実は view.ts、道順は flow.ts が組む（原則 3・5）
-import type { Analysis, MapGroups, ReviewState } from '@ondina/model';
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import type { Analysis, Behavior, MapGroups, ReviewState } from '@ondina/model';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Command } from '../commands/commands.js';
 import { courseBg, OUTSIDE, stopInfo, type Course, type Narration } from '../course.js';
 import { workerElk } from '../map/elk.js';
 import { NO_LAYER } from '../map/graph.js';
-import { along, mapRouteOf, moveMs, routeDraw, snapSpeed, SPEED_MAX, SPEED_MIN, SPEED_SNAP, stepMs, whereTo, type MapRoute, type RouteDraw } from '../map/groupmap/flow.js';
+import { behaviorSteps, flowDraw, seqLayout, seqRows } from '../map/groupmap/behavior.js';
+import { mapRouteOf, moveMs, routeDraw, stepMs, whereTo, type MapRoute, type RouteDraw } from '../map/groupmap/flow.js';
 import { layoutView, midOf, textW, type PlacedItem, type PlacedView } from '../map/groupmap/layout.js';
 import { crumbName, groupName, leavesOf, litBy, mapFacts, pathTo, ROOT, viewOf, type MapFacts } from '../map/groupmap/view.js';
 import type { ElkLike } from '../map/layout.js';
 import { clampZoom, wheelZoom } from '../map/zoom.js';
+import { BehaviorPicker, BehaviorPlayer, bandNameOf, FlowLayer, inCardAt, SeqView } from './BehaviorFlow.js';
+import { ccOf, reducedMotion, Short, SpeedControl, stopKeys, Token } from './gmapParts.js';
 import { Key } from './Key.js';
 
 const ZOOMS = [0.5, 0.7, 1] as const;
@@ -37,6 +41,11 @@ export interface GroupMapProps {
   play: boolean;
   /** 再生の速さ（ui.mapSpeed） */
   speed: number;
+  /** 選んでいる動き（home.behavior）。コースとどちらか 1 つ */
+  behavior: Behavior | null;
+  /** 動きの見せ方（home.mode）と、矢印の札に引数を全部出すか（home.args） */
+  mode: 'map' | 'seq';
+  args: boolean;
   zoom: number;
   dispatch: (c: Command) => void;
   /** 差し替えはテスト用（jsdom に Web Worker が無い） */
@@ -54,34 +63,7 @@ const Dots = ({ cs }: { cs: readonly number[] }) => (
   </span>
 );
 
-/** 「…」を薄くし、キャメルケースの切れ目で折り返せるようにする */
-function Short({ text }: { text: string }) {
-  const parts = text.split('…');
-  return (
-    <>
-      {parts.map((p, i) => (
-        <Fragment key={i}>
-          {i > 0 && <i className="el">…</i>}
-          {p.split(/(?<=[a-z\d])(?=[A-Z])/).map((w, k) => (
-            <Fragment key={k}>
-              {k > 0 && <wbr />}
-              {w}
-            </Fragment>
-          ))}
-        </Fragment>
-      ))}
-    </>
-  );
-}
-
-/** Enter / Space はこの箱だけのもの（App の Enter =「選んだコースに入る」に流さない） */
-const stopKeys = (e: KeyboardEvent) => {
-  if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
-};
-
-const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-export function GroupMap({ analysis, mapGroups, path, sel, course, review, step, play, speed, zoom, dispatch, elk = workerElk }: GroupMapProps) {
+export function GroupMap({ analysis, mapGroups, path, sel, course, review, step, play, speed, behavior, mode, args, zoom, dispatch, elk = workerElk }: GroupMapProps) {
   const facts = useMemo(() => mapFacts(analysis, mapGroups), [analysis, mapGroups]);
   const at = path[path.length - 1] ?? ROOT;
   const labelOf = useMemo(() => (id: string) => facts.tree.boxes.get(id)?.label ?? id, [facts]);
@@ -179,15 +161,65 @@ export function GroupMap({ analysis, mapGroups, path, sel, course, review, step,
   const lit = view ? litBy(facts, view.spec, sel) : null;
   const route = useMemo(() => (course ? mapRouteOf(analysis, facts.tree, course) : null), [analysis, facts, course]);
   const draw = view && route ? routeDraw(facts.tree, view, route, step) : null;
-  const curLine = draw?.lines.find((l) => l.state === 'cur') ?? null;
+  const [paneW, setPaneW] = useState(0);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver !== 'function') return;
+    const ro = new ResizeObserver(() => setPaneW(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const bsteps = useMemo(() => (behavior ? behaviorSteps(analysis, facts.tree, behavior) : null), [analysis, facts, behavior]);
+  const fdraw = view && bsteps ? flowDraw(facts.tree, view, bsteps, step) : null;
+  const seq = useMemo(() => {
+    if (!view || !bsteps || !behavior || mode !== 'seq') return null;
+    const rows = seqRows(facts.tree, view.spec, behavior, bsteps);
+    // 幅は地図の枠いっぱい（長い呼び出しの式を切らない）
+    return { rows, layout: seqLayout(view, rows, Math.max(680, view.w, Math.floor((paneW - 4) / zoom))) };
+  }, [view, bsteps, behavior, mode, facts, paneW, zoom]);
+  const curLine = draw?.lines.find((l) => l.state === 'cur') ?? (seq ? null : fdraw?.cur?.arrow) ?? null;
   // 今の歩の線を玉が動き終わったら、着いた箱を光らせて札を出す（動きを減らす設定では玉を出さずすぐ）
-  const moveKey = `${view?.spec.at ?? ''}|${course?.id ?? ''}|${step}`;
+  const moveKey = `${view?.spec.at ?? ''}|${course?.id ?? behavior?.id ?? ''}|${step}|${mode}`;
   const [arrived, setArrived] = useState<string | null>(null);
   const moving = curLine !== null && arrived !== moveKey && !reducedMotion();
   const says = course && route && draw?.cur ? route.steps[draw.cur.n - 1]!.stops.map((k) => stopInfo(analysis, course, k, review).say) : [];
   const card = view && draw?.cur && !moving ? cardAt(view, view.items.find((it) => it.id === draw.cur!.item)!, says) : null;
+  const fcur = fdraw?.cur;
+  const fcard = view && fcur && !moving && fcur.place.t === 'in' && fcur.place.at !== null ? inCardAt(view, view.items.find((it) => it.id === (fcur.place as { at: string }).at)!, fcur.step, args) : null;
+  // 動きで今の歩が着いた item（矢印の先。呼び出し元へ戻る矢印は無いので CALLER にならない）
+  const fhot = fcur && !moving ? (fcur.place.t === 'arrow' ? fcur.place.b : fcur.place.at) : null;
   // 札は箱の下に出す。図の下にはみ出す分だけ図を伸ばす（上に出すと箱と線を隠す）
-  const h = view ? Math.max(view.h, card ? card.top + card.h + 8 : 0) : 0;
+  const below = card ?? fcard;
+  const h = seq ? seq.layout.h : view ? Math.max(view.h, below ? below.top + below.h + 8 : 0) : 0;
+  const w = seq ? seq.layout.w : (view?.w ?? 0);
+  const bandName = useMemo(() => bandNameOf(analysis, facts.bands), [analysis, facts]);
+
+  // 地図とシーケンス図を切り替えたら、箱を元の場所から新しい場所へ動かす（同じ data-id の箱と列の頭。見本 5 の morph）
+  const geom = useRef<{ key: string; mode: string; rects: Map<string, { x: number; y: number; w: number; h: number }> } | null>(null);
+  useLayoutEffect(() => {
+    if (!view) return;
+    const rects = new Map((seq ? seq.layout.lanes : view.items).map((r) => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]));
+    const key = `${view.spec.at}|${behavior?.id ?? ''}`;
+    const before = geom.current;
+    geom.current = { key, mode: seq ? 'seq' : 'map', rects };
+    const root = rootRef.current;
+    if (!root || !before || before.key !== key || before.mode === geom.current.mode || reducedMotion()) return;
+    const els = [...root.querySelectorAll<HTMLElement>('.vw [data-id]')].filter((el) => before.rects.has(el.dataset.id!) && rects.has(el.dataset.id!));
+    for (const el of els) {
+      const a = before.rects.get(el.dataset.id!)!;
+      const b = rects.get(el.dataset.id!)!;
+      el.style.transition = 'none';
+      el.style.transformOrigin = '0 0';
+      el.style.transform = `translate(${a.x - b.x}px,${a.y - b.y}px) scale(${a.w / (b.w || 1)},${a.h / (b.h || 1)})`;
+    }
+    const raf = requestAnimationFrame(() => {
+      for (const el of els) {
+        el.style.transition = 'transform .5s cubic-bezier(.3,.7,.2,1)';
+        el.style.transform = '';
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [view, seq, behavior]);
 
   // 再生: 歩ごとに待って次へ。最後の歩で reducer が止める
   useEffect(() => {
@@ -197,6 +229,7 @@ export function GroupMap({ analysis, mapGroups, path, sel, course, review, step,
   }, [play, step, speed, dispatch]);
   const crumbs = [ROOT, ...path];
   const guessShown = view?.spec.kind === 'groups' && view.items.some((it) => it.kind === 'group' && nameOf(it.id).guess);
+  const behaviors = analysis.behaviors ?? [];
 
   return (
     <div className="cmap gmap" ref={rootRef} style={course ? ccOf(course.id) : undefined}>
@@ -226,6 +259,7 @@ export function GroupMap({ analysis, mapGroups, path, sel, course, review, step,
           </span>
         </span>
       </div>
+      {behaviors.length > 0 && mapGroups.boxes.length > 0 && <BehaviorPicker behaviors={behaviors} sel={behavior?.id ?? null} dispatch={dispatch} />}
       {mapGroups.boxes.length === 0 ? (
         <div className="empty">地図に載せる変更がありません</div>
       ) : placed instanceof Error ? (
@@ -235,50 +269,58 @@ export function GroupMap({ analysis, mapGroups, path, sel, course, review, step,
           {view === null && <div className="empty">地図を作っています…</div>}
           {view && (
             <div className="map">
-              <div className="gstage" ref={stageRef} style={{ width: view.w * zoom, height: h * zoom }}>
-                <div className="gzoom" style={{ width: view.w, height: h, transform: `scale(${zoom})` }}>
+              <div className="gstage" ref={stageRef} style={{ width: w * zoom, height: h * zoom }}>
+                <div className="gzoom" style={{ width: w, height: h, transform: `scale(${zoom})` }}>
                   <div
                     key={view.spec.at}
                     className={`vw${anim ? ` ${anim.cls}` : ''}`}
-                    style={{ width: view.w, height: view.h, ...(anim ? { transformOrigin: `${anim.ox}px ${anim.oy}px` } : {}) }}
+                    style={{ width: w, height: seq ? h : view.h, ...(anim ? { transformOrigin: `${anim.ox}px ${anim.oy}px` } : {}) }}
                     role="group"
-                    aria-label={`地図: ${crumbName(analysis, facts.tree, view.spec.at)}`}
+                    aria-label={`${seq ? 'シーケンス図' : '地図'}: ${crumbName(analysis, facts.tree, view.spec.at)}`}
                   >
-                    <Bands view={view} bands={facts.bands} analysis={analysis} />
-                    <Edges view={view} dim={lit !== null} />
-                    {view.items.map((it) => (
-                      <Item
-                        key={it.id}
-                        it={it}
-                        facts={facts}
-                        name={nameOf(it.id)}
-                        dim={lit !== null && !lit.has(it.id) && !(draw?.badges.has(it.id) ?? false)}
-                        lit={(lit?.has(it.id) ?? false) && !(draw?.cur?.item === it.id && !moving)}
-                        hot={draw?.cur?.item === it.id && !moving}
-                        dispatch={dispatch}
-                      />
-                    ))}
-                    {draw && course && route && (
-                      <RouteLayer
-                        view={view}
-                        draw={draw}
-                        course={course}
-                        route={route}
-                        facts={facts}
-                        analysis={analysis}
-                        says={says}
-                        card={card}
-                        moving={moving ? moveKey : null}
-                        speed={speed}
-                        onArrive={setArrived}
-                        dispatch={dispatch}
-                      />
+                    {seq && bsteps ? (
+                      <SeqView view={view} facts={facts} steps={bsteps} rows={seq.rows} layout={seq.layout} step={step} args={args} nameOf={nameOf} bandName={bandName} dispatch={dispatch} />
+                    ) : (
+                      <>
+                      <Bands view={view} bands={facts.bands} analysis={analysis} />
+                      <Edges view={view} dim={lit !== null} />
+                      {view.items.map((it) => (
+                        <Item
+                          key={it.id}
+                          it={it}
+                          facts={facts}
+                          name={nameOf(it.id)}
+                          dim={fdraw ? !fdraw.used.has(it.id) : lit !== null && !lit.has(it.id) && !(draw?.badges.has(it.id) ?? false)}
+                          lit={(lit?.has(it.id) ?? false) && !(draw?.cur?.item === it.id && !moving)}
+                          hot={(draw?.cur?.item === it.id && !moving) || fhot === it.id}
+                          dispatch={dispatch}
+                        />
+                      ))}
+                      {draw && course && route && (
+                        <RouteLayer
+                          view={view}
+                          draw={draw}
+                          course={course}
+                          route={route}
+                          facts={facts}
+                          analysis={analysis}
+                          says={says}
+                          card={card}
+                          moving={moving ? moveKey : null}
+                          speed={speed}
+                          onArrive={setArrived}
+                          dispatch={dispatch}
+                        />
+                      )}
+                      {fdraw && <FlowLayer view={view} facts={facts} analysis={analysis} draw={fdraw} args={args} moving={moving ? moveKey : null} speed={speed} onArrive={setArrived} dispatch={dispatch} />}
+                      </>
                     )}
                   </div>
                 </div>
               </div>
             </div>
           )}
+          {view && behavior && bsteps && <BehaviorPlayer view={view} facts={facts} analysis={analysis} behavior={behavior} steps={bsteps} step={step} play={play} speed={speed} mode={mode} dispatch={dispatch} />}
           {view && course && route && <Player view={view} facts={facts} analysis={analysis} course={course} route={route} review={review} step={step} play={play} speed={speed} dispatch={dispatch} />}
           <div className="legend">
             {view && view.spec.common.length > 0 && (
@@ -291,6 +333,7 @@ export function GroupMap({ analysis, mapGroups, path, sel, course, review, step,
             )}
             <span>丸の色と番号 = コース（外 = どのコースにも入らない差分）</span>
             {course && <span>箱の左上の番号 = 選んだコースの停留所の順</span>}
+            {behavior && <span>矢印の札 = 呼び出し（押すと引数を出す）· ↩ = 戻り型 · 灰色の点 = 呼び出し元</span>}
             <span>点線の札 = ほかのまとまりとの呼び出し（押すとそこへ）</span>
             <span>「差分なし n」= 差分のない相手（押すと右に出す）</span>
             {guessShown && (
@@ -458,9 +501,6 @@ function Item({ it, facts, name, dim, lit, hot, dispatch }: ItemProps) {
   );
 }
 
-/** コースの色（App が根元に置く --c<番号>） */
-const ccOf = (id: number): CSSProperties => ({ ['--cc' as string]: `var(--c${id})` });
-
 interface RouteLayerProps {
   view: PlacedView;
   draw: RouteDraw;
@@ -511,29 +551,6 @@ function RouteLayer({ view, draw, course, route, facts, analysis, says, card, mo
       {cur && card && <StepCard view={view} item={byId.get(cur.item)!} n={cur.n} box={route.steps[cur.n - 1]!.box} says={says} card={card} course={course} facts={facts} analysis={analysis} dispatch={dispatch} />}
     </>
   );
-}
-
-/** 道順の玉。前の箱から今の箱へ線の上を動く（React の外で毎フレーム属性を書く） */
-function Token({ pts, ms, onDone }: { pts: Array<[number, number]>; ms: number; onDone: () => void }) {
-  const ref = useRef<SVGCircleElement>(null);
-  const done = useRef(onDone);
-  done.current = onDone;
-  useEffect(() => {
-    let raf = 0;
-    const t0 = performance.now();
-    const frame = (now: number) => {
-      const t = Math.min(1, (now - t0) / ms);
-      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-      const [x, y] = along(pts, e);
-      ref.current?.setAttribute('cx', String(x));
-      ref.current?.setAttribute('cy', String(y));
-      if (t < 1) raf = requestAnimationFrame(frame);
-      else done.current();
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [pts, ms]);
-  return <circle ref={ref} className="gtok" r="5.5" cx={pts[0]![0]} cy={pts[0]![1]} />;
 }
 
 const CARD_W = 330;
@@ -612,14 +629,6 @@ interface PlayerProps {
 /** 再生の帯（▶・前・次・歩の帯・速さ）と、今の歩の 1 行（全部を見ているときはコースの紹介）。歩が別の図で起きていれば「… で見る ›」 */
 function Player({ view, facts, analysis, course, route, review, step, play, speed, dispatch }: PlayerProps) {
   const n = route.steps.length;
-  const [spd, setSpd] = useState(speed);
-  useEffect(() => setSpd(speed), [speed]);
-  // つまみを動かしている間は画面の数だけ変え、止まってから保存する（ui.json への書き込みを減らす）
-  useEffect(() => {
-    if (spd === speed) return;
-    const t = setTimeout(() => dispatch({ id: 'map.speed', speed: spd }), 250);
-    return () => clearTimeout(t);
-  }, [spd, speed, dispatch]);
   const cur = step > 0 ? route.steps[step - 1] : undefined;
   const boxes = cur ? [cur.box] : route.steps.map((s) => s.box);
   const where = boxes.length > 0 ? whereTo(facts.tree, view.spec, boxes) : null;
@@ -658,25 +667,7 @@ function Player({ view, facts, analysis, course, route, review, step, play, spee
           ))}
         </span>
         <span className="gpl-n">{`${step}/${n}`}</span>
-        <label className="gspd" title="再生の速さ（0.5 刻みの数に吸い付く）">
-          <input
-            type="range"
-            min={SPEED_MIN}
-            max={SPEED_MAX}
-            step={0.01}
-            value={spd}
-            list="gspd-snap"
-            aria-label="再生の速さ"
-            onChange={(e) => setSpd(snapSpeed(Number(e.target.value)))}
-            onKeyDown={(e) => e.stopPropagation()}
-          />
-          <datalist id="gspd-snap">
-            {SPEED_SNAP.map((x) => (
-              <option key={x} value={x} />
-            ))}
-          </datalist>
-          <output>{`${+spd.toFixed(2)}×`}</output>
-        </label>
+        <SpeedControl speed={speed} dispatch={dispatch} />
       </div>
       <div className="gpl-cap">
         {cur && <span className={`mk${added(cur.box) ? ' add' : ''}`}>{added(cur.box) ? '新規' : '変更'}</span>}

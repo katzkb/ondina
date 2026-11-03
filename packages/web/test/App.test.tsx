@@ -1731,6 +1731,43 @@ describe('App（コース。3.3）', () => {
       expect(map.querySelector('.gpl-n')!.textContent).toBe('1/5');
     });
 
+    it('動きを選ぶと地図の上に矢印。→ で歩を進めると札（name(…n) と ↩ 戻り型）。シーケンス図に切り替えると、列の頭は地図の箱と同じ data-id', async () => {
+      const { container, map } = await gmap();
+      const n = a.behaviors![0]!.messages.length + 1;
+      const pick = map.querySelector<HTMLElement>('.gbehs button')!;
+      expect(pick.textContent).toContain('OrderController.apply');
+      expect(pick.textContent).toContain(`${n} 歩`);
+      await act(async () => {
+        fireEvent.click(pick);
+      });
+      await waitFor(() => expect(map.querySelector('.gplay.beh')).not.toBeNull(), { timeout: 3000 });
+      expect(map.querySelectorAll('.gfp').length).toBeGreaterThan(0);
+      await key('ArrowRight');
+      await key('ArrowRight');
+      expect(container.querySelector('.home')).not.toBeNull();
+      expect(map.querySelector('.gpl-n')!.textContent).toBe(`2/${n}`);
+      expect(map.querySelector('.gpl-cap')!.textContent).toContain('OrderController.apply → ApplyDiscountUseCase.execute');
+      await waitFor(() => expect(map.querySelector('.gfl, .gfin')).not.toBeNull(), { timeout: 3000 });
+      const lab = map.querySelector('.gfl, .gfin')!;
+      expect(lab.textContent).toContain('execute(…2)');
+      expect(lab.textContent).toContain('↩ Order');
+      await act(async () => {
+        fireEvent.click(lab.querySelector('.gfl-c')!);
+      });
+      expect(map.querySelector('.gfl, .gfin')!.textContent).toContain('useCase.execute(OrderId(id), body.discountCode)');
+      const before = [...map.querySelectorAll('.gn[data-id]')].map((x) => x.getAttribute('data-id'));
+      await act(async () => {
+        fireEvent.click([...map.querySelectorAll('.gplay .seg button')].find((b) => b.textContent === 'シーケンス図')!);
+      });
+      await waitFor(() => expect(map.querySelector('.gsqh')).not.toBeNull(), { timeout: 3000 });
+      const heads = [...map.querySelectorAll('.gsqh')].map((x) => x.getAttribute('data-id'));
+      expect(heads.every((h) => before.includes(h))).toBe(true);
+      expect([...map.querySelectorAll('.gsq-l.ret')].map((x) => x.textContent)).toContain('↩ Order');
+      await key('Escape');
+      expect(map.querySelector('.gplay')).toBeNull();
+      expect(map.querySelector('.gn.group')).not.toBeNull();
+    });
+
     it('「差分なし n」を押すと、そのファイルのシンボルの相手を引き出しに出す', async () => {
       const { map, at } = await gmap(fixtureWithNeighbors());
       await act(async () => {

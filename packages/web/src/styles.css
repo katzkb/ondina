@@ -737,6 +737,60 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .gpl-cap .mk.add{border-color:var(--green);color:var(--green)}
 .gpl-cap .t{min-width:0}
 .gpl-cap .gwhere{margin-left:auto;flex:none;white-space:nowrap}
+/* 入口の地図の動き（2026-11-04。見本 5）。矢印はアクセントの色、呼び出し元は灰色の点。シーケンス図の列の頭は地図の箱と同じ data-id */
+.gbehs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
+.gbehs .lbl{font:600 11.5px var(--sans);color:var(--muted)}
+.gbehs button{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:14px;font:600 12px var(--sans);padding:3px 10px;cursor:pointer;max-width:340px}
+.gbehs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gbehs button i{font-style:normal;font-size:9px;color:var(--accent-ink)}
+.gbehs button small{font-weight:500;color:var(--muted);flex:none}
+.gbehs button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.gmap .map svg.gflow{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none;z-index:2}
+.gflow marker path,.gseq marker path{fill:var(--accent)}
+.gfp{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round}
+.gfp.fut{opacity:.2}
+.gfp.past{opacity:.5}
+.gfp.cur{stroke-width:3;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--accent) 70%,transparent))}
+.gcdot{fill:var(--overlay1);stroke:var(--base);stroke-width:1.5}
+.gftok{fill:var(--accent)}
+.gfl{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--panel);border:1.5px solid var(--accent);border-radius:5px;padding:2px 6px;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.gfl-c{border:0;background:none;padding:0;margin:0;font:600 11px/1.45 var(--mono);color:var(--ink);cursor:pointer;text-align:left;overflow-wrap:anywhere}
+.gfl-c:hover{color:var(--accent-ink);text-decoration:underline}
+.gfl-r{font:500 11px/1.45 var(--mono);color:var(--muted)}
+.gfin{position:absolute;z-index:4;width:max-content;max-width:330px;box-sizing:border-box;background:var(--panel);border:1.5px solid var(--accent);border-radius:6px;padding:4px 8px;box-shadow:0 4px 14px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.gfin-h{display:flex;align-items:center;gap:6px;font:600 11.5px var(--sans);color:var(--muted)}
+.gfin-h button{border:1px solid var(--accent-edge);background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;font:700 11px/1 var(--sans);padding:3px 6px;cursor:pointer}
+.gfin-off{display:flex;align-items:center;gap:5px;font:11px var(--mono);color:var(--muted)}
+.gfin-off .mk,.gpl-cap .mk{border:1px dashed var(--overlay0);border-radius:3px;padding:0 4px;font:500 10.5px/14px var(--sans)}
+.gpl-seg button.off{background:var(--overlay0);opacity:.6}
+.gpl-cap code{font:12px var(--mono)}
+.gpl-cap .t .mk{margin-left:6px}
+.gplay.beh{--cc:var(--accent)}
+.gplay .seg{margin-left:auto}
+.gsqband{position:absolute;top:0;border-left:1px solid var(--line);pointer-events:none}
+.gsqband.alt{background:color-mix(in srgb,var(--panel-2) 60%,transparent)}
+.gsqband span{position:absolute;left:4px;top:2px;font:500 10.5px var(--sans);color:var(--faint)}
+.gmap .map svg.gseq{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none}
+.gsq-life{stroke:var(--line-2);stroke-dasharray:3 4}
+.gsq-m line,.gsq-m path{fill:none;stroke:var(--accent);stroke-width:1.6}
+.gsq-m.ret line,.gsq-m.ret path{stroke:var(--overlay1);stroke-width:1.2}
+.gsq-m.fut{opacity:.3}
+.gsq-m.hot line,.gsq-m.hot path{stroke-width:2.6}
+.gsq-n{position:absolute;left:2px;transform:translateY(-50%);display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;font:700 10px/1 var(--sans);background:var(--accent);color:var(--base)}
+.gsq-n.fut{background:var(--panel);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.gsq-n.cur{box-shadow:0 0 0 2px var(--base),0 0 0 3.5px var(--accent)}
+.gsq-l{position:absolute;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;background:var(--base);padding:0 3px;margin:0;font:600 11px/1.3 var(--mono);color:var(--ink);cursor:pointer;border-radius:3px}
+.gsq-l small{font:500 10.5px var(--sans);color:var(--muted);margin-left:4px}
+.gsq-l.ret{font-weight:500;color:var(--muted);cursor:default}
+.gsq-l.fut{opacity:.4}
+.gsq-l.hot{box-shadow:0 0 0 1.5px var(--accent)}
+.gsqh{position:absolute;box-sizing:border-box;border:1.5px solid var(--line-2);background:var(--panel);border-radius:7px;padding:3px 6px;display:grid;place-items:center;text-align:center;font:600 11px/1.3 var(--mono);color:var(--ink);cursor:pointer;overflow:hidden;overflow-wrap:anywhere;margin:0;z-index:3}
+.gsqh.box{word-break:keep-all}
+.gsqh .el{font-style:normal;color:var(--faint);font-weight:400}
+.gsqh.add{border-color:var(--green)}
+.gsqh.group,.gsqh.portal{font:700 12px/1.3 var(--sans)}
+.gsqh.portal{border-style:dashed;color:var(--accent-ink);background:var(--panel-2)}
+.gsqh.hot{box-shadow:0 0 0 2.5px var(--accent)}
 @media (prefers-reduced-motion:no-preference){.cmap .nd rect{transition:stroke .18s ease-out,stroke-width .18s ease-out}}
 
 /* 上の帯: 画面の行き先と設定（2026-09-30。左の列から移した） */

@@ -65,7 +65,7 @@ export async function layoutView(spec: ViewSpec, elk: ElkLike, portalName: (id: 
           'elk.spacing.edgeNode': '14',
           'elk.spacing.edgeEdge': '8',
           'elk.edgeRouting': 'ORTHOGONAL',
-          'elk.padding': `[top=${down ? 28 : 12},left=${down ? 10 : 12},bottom=14,right=10]`,
+          'elk.padding': `[top=${down ? 28 : 12},left=${down ? 10 : 34},bottom=14,right=10]`,
           'elk.separateConnectedComponents': String(!down),
           'elk.aspectRatio': '1.4',
           'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
