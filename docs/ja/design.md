@@ -601,6 +601,30 @@ interface Analysis {                         // パイプラインの成果物�
   };
   files?: FileText[];                        // head 側の全文。差分のあるファイル（削除を除く）と Symbol.path のファイル、path 順（2026-09-30）。古い解析には無い
   githubDiff?: Array<{ path: string; hunks: Array<{ oldStart: number; oldLines: number; newStart: number; newLines: number }> }>;  // GitHub の PR の差分の塊（12章。2026-10-06）。古い解析には無い
+  mapGroups?: MapGroups;                     // 入口の地図のまとまり（2026-11-04）。古い解析には無い
+}
+
+// 入口の地図のまとまりの木（2026-11-04。packages/core/src/mapgroup/build.ts）。分け方はプログラム、題の名前だけ LLM（原則 3）。
+// 箱はコースで分ける（箱の hunk の How の id のうち一番小さいもの = 地図の丸と同じ「最初のコース」）。1 枚に並べるのは 7 つまで（MAP_LIMIT）。
+// - コースが 7 つ以下: 全景 = コース（How の並び）+ コース外
+// - コースが 8 つ以上: 全景 = 1 回目の LLM の題（themes。10.2）+ コース外。題の中は、箱が 8 つ以上ならコース、7 つ以下なら箱。
+//   題が規則（5.4 の 10）に合わなければ使わず、全景にコースを全部並べる
+// - 箱の並びはコースの読む順（tours）に出てくる順、読む順に無い箱は path 順
+// - 1 つのコースの箱が 8 つ以上のときの中の段は未実装（TODO。いまはそのまま並べる）
+interface MapGroups { root: string[]; groups: MapGroup[]; boxes: MapBox[] }   // root = 全景に並べるまとまりの id
+interface MapGroup {
+  id: string;                                // 'theme:<n>' / 'course:<How の id>' / 'outside'
+  kind: 'theme' | 'course' | 'outside';
+  howId?: number;                            // course だけ
+  title?: string;                            // theme だけ（LLM の名前。画面は点線）
+  provenance: Provenance;                    // theme は llm、course と outside は ast
+  children: string[];                        // 中に並ぶ MapGroup.id か MapBox.id（並び順）
+}
+interface MapBox {                           // 差分のあるファイル 1 つ（テストを除く）か、畳んだ束 1 つ
+  id: string;                                // 'file:<path>' / 'group:<代表の hunk id>'
+  label: string;                             // ファイルは拡張子を除いたファイル名、束は書き換えのパターン
+  path?: string; hunkIds: string[];          // 束の hunkIds はメンバー全部。逸脱は自分のファイルの箱
+  course: number;                            // 箱の最初のコース。0 = コース外
 }
 
 interface AnalysisConfig {                   // 11章。変えたら analyze の打ち直しが要る
@@ -741,6 +765,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
 7. 要求の抜き出し（10.8。`packages/core/src/spec/verify.ts`）: 文の前後の空白と末尾の句点を落とし、空の文は除外し、同じ文は最初だけ。11 個目からは除外する（`MAX_SPECS`）。`hows` は実在する How の番号だけ（存在しない番号は除外して stderr に 1 行）、同じ番号は 1 つにして昇順。id は残った並び順に `s1`…。`How.specIds` は `specs` から逆に引く。最後の 1 行「要求: 8 件（対応するコースがあるもの 7 件）」。「なぜ」の文（2026-10-29）は前後の空白を落とし、LLM に渡したチケットの本文に含まれるものだけ残す（空白と Markdown の強調・コードの記号は無視して比べる。言い換えた文を「原文」として出さないため）。空の文・同じ文（空白と記号だけ違うものも同じ文）は除外し、4 個目からは除外する（`MAX_WHY`）。残ったものは `Analysis.background.why`。親チケットの目的の文（`parentWhy`。2026-10-29）も同じ規則で、親チケットの本文に含まれるものだけ残す（親がなければ全部除外する）。残ったものは `Analysis.background.project.why`
 8. `layerGuesses` は「設定に実在する層の名前」かつ「本当に `unlayeredPaths` にあるパス」のものだけ採る（glob で決まった層を推測で上書きさせない）。同じパスが 2 回来たら最初だけ。採ったものは `layerProvenance: 'llm'`（2026-09-22 実装 `packages/core/src/layers/guesses.ts`）
 9. 2 回目（文を書く。`packages/core/src/narration/verify.ts`）: 存在しない `howId` のコース・そのコースの停留所にない `symbolId` の文は除外する／空・空白だけの文はないものとして扱う（画面は自動の文）／同じコース・同じ停留所が 2 回来たら最初だけ（最初の文が空でも後の分は使わない。8 と同じ規則）／経路（並び・呼ばれ方）は変えない／入口の説明（2026-10-29）: 要点・例・箱の文は前後の空白を落とし、空なら欄を付けない。例の根拠の場所は確かめることと同じ規則（停留所はどのコースのものでもよい）。図の箱のコースは実在するものだけで、1 つのコースは全部の図で最初の 1 回だけ。コースが残らない箱・題が空の箱・箱が残らない図は除外する。箱の下の名前はその箱のコースの停留所だけ。入口の説明を書いていれば最後に 1 行（`入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）`。どの箱にも入らなかったコースもここに出る）／背景（2026-10-29）: 前からあるものの名前は候補（入力の `existing`）にあるものだけ。1 つの候補は最初の行だけ（同じ行で 2 回来ても 1 回）。消えるものと変えていないものが混ざったら最初の名前と同じ方だけ（チップの事実を 1 つにする）。文が空の行・名前が残らない行は除外し、3 行まで（`MAX_EXISTING`）。消えるか・パス・種類はプログラムが候補から付ける。言葉は言葉が空なら除外し、コードの名前（後ろの `()` と、識別子を `.` で繋いだものは認める）が差分の行に出る識別子でなければ除外する。同じ名前は最初だけ、4 個まで（`MAX_TERMS`）。背景を書いていれば最後に 1 行（`背景: 前からあるもの 3 行（候補 5）、言葉 4 個`）／確かめること（2026-10-22）は、根拠の場所がそのコースの停留所で、行がその停留所の hunk の head 側（文脈か追加の行）にある番号だけ残す（画面がその行を光らせるので、実在しない行を残さない）。行が残らない場所・場所が残らない文・文が空のものは除外する。同じ文で同じ場所は最初だけ。場所は読む順に並べ直し、行は昇順・重複なし。6 個目からは除外する（`MAX_CHECKS`）。除外したものは 1 行ずつ知らせ、最後の 1 行で埋まった数を出す（`案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 23（場所 32）`。書き漏らしが stderr で分かる）
+10. `themes`（地図のまとまり。2026-11-04 `packages/core/src/mapgroup/build.ts`）は How が 8 つ以上のときだけ見る。7 つ以下・名前が空でない・どの How もちょうど 1 つの題に入る・不明な How の番号がない、を全部満たすときだけ使う。満たさなければ全部使わず、理由を stderr に 1 行出して、全景にコースを全部並べる（7 を超えたまま出す。黙って直さない）
 
 ### 5.5 実行形態
 - **CLI**: `ondina analyze <pr>` で Analysis.json を生成し、`ondina serve` でローカル UI。キャッシュは `.ondina/<pr>/<headSha>.json`（worktree の中で実行しても元のフォルダの `.ondina/`。12 章の worktree の項）。対象リポジトリはカレントディレクトリ
@@ -1145,13 +1170,13 @@ fixture の実数: 変更 hunk（ファイル hunk 以外）42 件のうち call
 ## 10. LLM 入出力仕様
 
 LLM の呼び出しは 1 回。入力は Stage 1 の成果物。出力の形は JSON Schema としてプロンプト本文に書き、LLM 側では強制せず Stage 3（5.4）で検査する（LLM コマンドは Claude とは限らない。5.3）。
-**実装済みの範囲（2026-09-22。M2）**: 入力は `pr` / `previous` / `hunks`（`layer` つき）/ `rippleGroups` / `edges` / `unlayeredPaths`、出力は `hows` / `claims` / `layerGuesses`（`summary` は 2026-10-03 に 2 回目へ移した。10.4）。`specs` は 1 回目に出させず、チケットが取れたときの別の呼び出し（10.8。2026-10-12）、`rippleVerdicts` は M4。**`tours` は LLM に出させない**（2026-09-24 決定。経路はプログラムが `call` の辺を辿って組む: `packages/core/src/tour/build.ts`。理由: LLM に出させるとメーターが揺れる、経路は辺の列 = 事実、辺のない経路が構造上作れない。各ステップの文は 2 回目の LLM が書く。10.4）。実装との差分:
+**実装済みの範囲（2026-09-22。M2）**: 入力は `pr` / `previous` / `hunks`（`layer` つき）/ `rippleGroups` / `edges` / `unlayeredPaths`、出力は `hows` / `claims` / `layerGuesses` / `themes`（`themes` は 2026-11-04。How が 8 つ以上のときの地図のまとまり。7 つ以下なら空配列。`summary` は 2026-10-03 に 2 回目へ移した。10.4）。`specs` は 1 回目に出させず、チケットが取れたときの別の呼び出し（10.8。2026-10-12）、`rippleVerdicts` は M4。**`tours` は LLM に出させない**（2026-09-24 決定。経路はプログラムが `call` の辺を辿って組む: `packages/core/src/tour/build.ts`。理由: LLM に出させるとメーターが揺れる、経路は辺の列 = 事実、辺のない経路が構造上作れない。各ステップの文は 2 回目の LLM が書く。10.4）。実装との差分:
 - `hunks[].kindHint` は `core`（束を持つ核）/ `candidate`（束のない核候補。8 章 8）/ `test` / なし。読むだけのヒントで、LLM に kind は出させない（5.4 の 4）
 - `hunks[].layer` は glob で確定した層だけ（推定は入れない）。`edges` は `{ from, to, kind }` の 3 欄だけ渡す（型ラベルと `crossesLayers` は渡さない。判定させない。原則 3）。参照辺（`reference`）は渡さない。LSP を動かしていなければ `edges` の欄ごとない
 - `unlayeredPaths` はどの glob にも当たらなかった変更ファイル（fixture では 37 件中 24 件）。出力の `layerGuesses` は検証（5.4 の 8）を通ったものだけ採る
 - `rippleGroups[]` は `id`（`g1` …）、`pattern`、`coreHunkId`、`members`（数）、`representative` と `deviations`（行つき）。束の hunk は `hunks[]` に入れない
 - `hows[]` に `groupIds` を足し、束は丸ごと 1 つの How に割り当てる（`hunkIds` に代表の id を書かせない）
-- `previous.hows` は `{ id, title, why }`、`previous.assignment` は変わっていない hunk だけ
+- `previous.hows` は `{ id, title, why }`、`previous.assignment` は変わっていない hunk だけ。`previous.themes` は前回の地図の題（`{ title, howIds }`。前回に題があったときだけ）。入る How が同じ題には同じ名前を使わせる（原則 7）
 - 型は `packages/core/src/label/types.ts`、プロンプト本文は `prompt.ts`、出力の形は `schema.ts` の `LLM_OUTPUT_SCHEMA`
 
 ### 10.1 入力（抜粋）
@@ -1180,6 +1205,7 @@ LLM の呼び出しは 1 回。入力は Stage 1 の成果物。出力の形は 
   "claims": [ { "text": "キャッシュ層を横断的に更新し", "backed": false, "reason": "キャッシュ層に該当する変更は差分に見当たらない" } ],
   "rippleVerdicts": [ { "groupId": "g1", "hunkId": "…", "same": true } ],
   "layerGuesses": [ { "path": "scripts/foo.kt", "layer": "Infrastructure" } ],
+  "themes": [ { "title": "割引の計算と適用", "howIds": [3, 5] } ],
   "tours": "（出させない。2026-09-24 決定。経路はプログラムが組む。上の実装済みの範囲を参照）"
 }
 ```

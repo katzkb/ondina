@@ -7,7 +7,7 @@ import type { LlmOutput } from './types.js';
 export const LLM_OUTPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['hows', 'claims', 'layerGuesses'],
+  required: ['hows', 'claims', 'layerGuesses', 'themes'],
   properties: {
     hows: {
       type: 'array',
@@ -31,6 +31,15 @@ export const LLM_OUTPUT_SCHEMA = {
     layerGuesses: {
       type: 'array',
       items: { type: 'object', additionalProperties: false, required: ['path', 'layer'], properties: { path: { type: 'string' }, layer: { type: 'string' } } },
+    },
+    themes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'howIds'],
+        properties: { title: { type: 'string' }, howIds: { type: 'array', items: { type: 'integer', minimum: 1 } } },
+      },
     },
   },
 } as const;
@@ -82,7 +91,7 @@ export function parseLlmOutput(stdout: string): { output: LlmOutput } | { error:
   }
   if (!isObj(doc)) return { error: 'stdout に JSON オブジェクトがありません' };
   try {
-    return { output: { hows: hows(doc['hows']), claims: claims(doc['claims']), layerGuesses: layerGuesses(doc['layerGuesses']) } };
+    return { output: { hows: hows(doc['hows']), claims: claims(doc['claims']), layerGuesses: layerGuesses(doc['layerGuesses']), themes: themes(doc['themes']) } };
   } catch (e) {
     if (e instanceof Bad) return { error: e.message };
     throw e;
@@ -124,5 +133,16 @@ function layerGuesses(v: unknown): LlmOutput['layerGuesses'] {
     if (typeof g['path'] !== 'string') bad(`layerGuesses[${i}].path が文字列ではありません`);
     if (typeof g['layer'] !== 'string') bad(`layerGuesses[${i}].layer が文字列ではありません`);
     return { path: g['path'], layer: g['layer'] };
+  });
+}
+
+function themes(v: unknown): LlmOutput['themes'] {
+  if (v === undefined || v === null) return [];
+  if (!Array.isArray(v)) bad('themes が配列ではありません');
+  return v.map((t, i) => {
+    if (!isObj(t)) bad(`themes[${i}] がオブジェクトではありません`);
+    const ids = t['howIds'];
+    if (!Array.isArray(ids) || !ids.every((n) => Number.isInteger(n))) bad(`themes[${i}].howIds が整数の配列ではありません`);
+    return { title: str(t['title']), howIds: ids as number[] };
   });
 }

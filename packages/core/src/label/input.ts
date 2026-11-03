@@ -2,7 +2,7 @@
 // - 追従グループの hunk は hunks[] に入れず、rippleGroups[] に代表と逸脱の行だけ入れる（メンバー 22 件の同型は数だけ）
 // - kindHint は読むだけのヒント。LLM に kind を書かせない（kind は verify.ts の規則で決める。原則 3）
 // - previous は同じ PR の直近の解析から、id も lines も同じ hunk の割当だけ（5.3「変わっていない hunk の割当と How ID は維持」）
-import type { Edge, How, Hunk, RippleGroup } from '../model.js';
+import type { Edge, How, Hunk, MapGroups, RippleGroup } from '../model.js';
 import { createLayerAssigner, type LayerRule } from '../layers/assign.js';
 import type { LlmInput, LlmInputGroup, LlmInputHunk, LlmPrevious } from './types.js';
 
@@ -60,7 +60,7 @@ export function buildLlmInput({ hunks, groups, candidateIds, pr, previous, layer
 }
 
 /** 前回の解析から previous を作る。前回に hows が無ければ（LLM を飛ばした回）undefined */
-export function previousFrom(prev: { hows: readonly How[]; hunks: readonly Pick<Hunk, 'id' | 'lines' | 'hows'>[] }, hunks: readonly Pick<Hunk, 'id' | 'lines'>[]): LlmPrevious | undefined {
+export function previousFrom(prev: { hows: readonly How[]; hunks: readonly Pick<Hunk, 'id' | 'lines' | 'hows'>[]; mapGroups?: MapGroups }, hunks: readonly Pick<Hunk, 'id' | 'lines'>[]): LlmPrevious | undefined {
   if (prev.hows.length === 0) return undefined;
   const now = new Map(hunks.map((h) => [h.id, h.lines.join('\n')]));
   const assignment: Record<string, number[]> = {};
@@ -69,5 +69,16 @@ export function previousFrom(prev: { hows: readonly How[]; hunks: readonly Pick<
     if (now.get(h.id) !== h.lines.join('\n')) continue;
     assignment[h.id] = [...h.hows];
   }
-  return { hows: prev.hows.map((h) => ({ id: h.id, title: h.title, why: h.why })), assignment };
+  const themes = themesOf(prev.mapGroups);
+  return { hows: prev.hows.map((h) => ({ id: h.id, title: h.title, why: h.why })), assignment, ...(themes.length === 0 ? {} : { themes }) };
+}
+
+/** 前回の題と、その中のコース（題の中が箱でも、箱のコースから引く） */
+function themesOf(m: MapGroups | undefined): Array<{ title: string; howIds: number[] }> {
+  if (m === undefined) return [];
+  const course = new Map(m.boxes.map((b) => [b.id, b.course]));
+  const howOf = new Map(m.groups.flatMap((g) => (g.howId === undefined ? [] : [[g.id, g.howId] as const])));
+  return m.groups.flatMap((g) =>
+    g.kind !== 'theme' || g.title === undefined ? [] : [{ title: g.title, howIds: [...new Set(g.children.map((c) => howOf.get(c) ?? course.get(c) ?? 0).filter((n) => n > 0))] }],
+  );
 }

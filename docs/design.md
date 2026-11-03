@@ -601,6 +601,30 @@ interface Analysis {                         // パイプラインの成果物�
   };
   files?: FileText[];                        // head 側の全文。差分のあるファイル（削除を除く）と Symbol.path のファイル、path 順（2026-09-30）。古い解析には無い
   githubDiff?: Array<{ path: string; hunks: Array<{ oldStart: number; oldLines: number; newStart: number; newLines: number }> }>;  // GitHub の PR の差分の塊（12章。2026-10-06）。古い解析には無い
+  mapGroups?: MapGroups;                     // 入口の地図のまとまり（2026-11-04）。古い解析には無い
+}
+
+// 入口の地図のまとまりの木（2026-11-04。packages/core/src/mapgroup/build.ts）。分け方はプログラム、題の名前だけ LLM（原則 3）。
+// 箱はコースで分ける（箱の hunk の How の id のうち一番小さいもの = 地図の丸と同じ「最初のコース」）。1 枚に並べるのは 7 つまで（MAP_LIMIT）。
+// - コースが 7 つ以下: 全景 = コース（How の並び）+ コース外
+// - コースが 8 つ以上: 全景 = 1 回目の LLM の題（themes。10.2）+ コース外。題の中は、箱が 8 つ以上ならコース、7 つ以下なら箱。
+//   題が規則（5.4 の 10）に合わなければ使わず、全景にコースを全部並べる
+// - 箱の並びはコースの読む順（tours）に出てくる順、読む順に無い箱は path 順
+// - 1 つのコースの箱が 8 つ以上のときの中の段は未実装（TODO。いまはそのまま並べる）
+interface MapGroups { root: string[]; groups: MapGroup[]; boxes: MapBox[] }   // root = 全景に並べるまとまりの id
+interface MapGroup {
+  id: string;                                // 'theme:<n>' / 'course:<How の id>' / 'outside'
+  kind: 'theme' | 'course' | 'outside';
+  howId?: number;                            // course だけ
+  title?: string;                            // theme だけ（LLM の名前。画面は点線）
+  provenance: Provenance;                    // theme は llm、course と outside は ast
+  children: string[];                        // 中に並ぶ MapGroup.id か MapBox.id（並び順）
+}
+interface MapBox {                           // 差分のあるファイル 1 つ（テストを除く）か、畳んだ束 1 つ
+  id: string;                                // 'file:<path>' / 'group:<代表の hunk id>'
+  label: string;                             // ファイルは拡張子を除いたファイル名、束は書き換えのパターン
+  path?: string; hunkIds: string[];          // 束の hunkIds はメンバー全部。逸脱は自分のファイルの箱
+  course: number;                            // 箱の最初のコース。0 = コース外
 }
 
 interface AnalysisConfig {                   // 11章。変えたら analyze の打ち直しが要る
@@ -741,6 +765,7 @@ The program determines everything. Print each exclusion and renumbering on its o
 7. Requirement extraction (10.8. `packages/core/src/spec/verify.ts`): strip surrounding whitespace and the final period, exclude empty sentences, and keep only the first identical sentence. Exclude the 11th onward (`MAX_SPECS`). Keep only existing How numbers in `hows` (exclude nonexistent numbers and print one stderr line); deduplicate and sort ascending. Assign IDs `s1`… in the remaining order. Reverse-map `How.specIds` from `specs`. Final line: “Requirements: 8 (7 with corresponding courses)” (「要求: 8 件（対応するコースがあるもの 7 件）」). For Why (「なぜ」) sentences (2026-10-29), strip surrounding whitespace and retain only those contained in the ticket body passed to the LLM (compare ignoring whitespace and Markdown emphasis/code markers, to avoid showing paraphrases as “source text”). Exclude empty and identical sentences (whitespace/marker-only differences count as identical), and the fourth onward (`MAX_WHY`). Store the remainder in `Analysis.background.why`. Apply the same rules to parent ticket purpose sentences (`parentWhy`. 2026-10-29), retaining only those in the parent ticket body (exclude all if no parent exists). Store the remainder in `Analysis.background.project.why`
 8. Accept `layerGuesses` only for “layer names that exist in configuration” and “paths actually in `unlayeredPaths`” (do not let inference overwrite glob-determined layers). Keep only the first occurrence of a repeated path. Accepted entries get `layerProvenance: 'llm'` (implemented 2026-09-22 in `packages/core/src/layers/guesses.ts`)
 9. Second call (write prose. `packages/core/src/narration/verify.ts`): exclude courses with nonexistent `howId` and prose for `symbolId` absent from that course's stops / treat empty or whitespace-only prose as absent (the screen uses generated prose) / keep only the first duplicate course or stop (even if the first prose is empty, do not use later occurrences. Same rule as 8) / do not change paths (order or call relationships) / entry explanation (2026-10-29): strip surrounding whitespace from the Key point (「要点」), Example (「例」), and box prose; omit empty fields. Supporting locations for examples follow the same rules as checks (stops may belong to any course). Diagram boxes may reference only existing courses; a course appears only once across all diagrams, at its first occurrence. Exclude boxes with no remaining courses or empty titles, and diagrams with no remaining boxes. Names beneath boxes must be stops in that box's courses. If an entry explanation was written, print a final line (`入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）`. Also lists courses absent from every box) / background (2026-10-29): Existing items (「前からあるもの」) names must appear among candidates (input `existing`). Keep a candidate only in the first row where it appears (once even if repeated in that row). If disappearing and unchanged items are mixed, keep only those matching the first name's category (one fact per chip). Exclude rows with empty prose or no remaining names; maximum three rows (`MAX_EXISTING`). The program supplies disappearance, path, and kind from candidates. Exclude Terms (「言葉」) with empty wording, and code names (allow trailing `()` and identifiers joined by `.`) that are not identifiers appearing in diff lines. Keep the first occurrence of each name, up to four (`MAX_TERMS`). If background was written, print a final line (`背景: 前からあるもの 3 行（候補 5）、言葉 4 個`) / checks (2026-10-22): retain only supporting locations that are stops in that course, and line numbers on the head side (context or added lines) of that stop's hunk (the screen highlights those lines, so do not retain nonexistent ones). Exclude locations with no remaining lines, sentences with no remaining locations, and empty sentences. Keep only the first identical location in the same sentence. Reorder locations in reading order; sort and deduplicate lines ascending. Exclude the sixth onward (`MAX_CHECKS`). Report each exclusion on its own line, then report filled counts on a final line (`案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 23（場所 32）`. stderr reveals omissions)
+10. `themes` (map groups. 2026-11-04 `packages/core/src/mapgroup/build.ts`) is read only when there are 8 or more Hows. Use it only when all of these hold: 7 or fewer themes, no empty title, every How in exactly one theme, and no unknown How id. Otherwise use none of it, print the reason to stderr in one line, and put every course on the overview (still more than 7. Do not fix it silently)
 
 ### 5.5 Execution modes
 - **CLI**: generate Analysis.json with `ondina analyze <pr>` and run the local UI with `ondina serve`. Cache in `.ondina/<pr>/<headSha>.json` (`.ondina/` in the original folder even when run inside a worktree. Worktree item in chapter 12). The target repository is the current directory
@@ -1145,13 +1170,13 @@ Actual fixture counts: of 42 changed hunks (excluding file hunks), callHierarchy
 ## 10. LLM input/output specification
 
 The LLM is called once. Its input is the output of Stage 1. The output shape is written as JSON Schema in the prompt body. It is checked in Stage 3 (5.4), rather than enforced by the LLM provider (the LLM command is not necessarily Claude. 5.3).
-**Implemented scope (2026-09-22. M2)**: Input is `pr` / `previous` / `hunks` (with `layer`) / `rippleGroups` / `edges` / `unlayeredPaths`; output is `hows` / `claims` / `layerGuesses` (`summary` moved to the second call on 2026-10-03. 10.4). `specs` is not produced by the first call; it comes from a separate call when a ticket is retrieved (10.8. 2026-10-12). `rippleVerdicts` is for M4. **Do not have the LLM produce `tours`** (decided 2026-09-24. The program builds paths by following `call` edges: `packages/core/src/tour/build.ts`. Reasons: having the LLM produce them makes the meter fluctuate; a path is a sequence of edges = facts; the structure prevents paths without edges. The second LLM call writes the text for each step. 10.4). Differences from the implementation:
+**Implemented scope (2026-09-22. M2)**: Input is `pr` / `previous` / `hunks` (with `layer`) / `rippleGroups` / `edges` / `unlayeredPaths`; output is `hows` / `claims` / `layerGuesses` / `themes` (`themes` since 2026-11-04: map groups when there are 8 or more Hows, an empty array for 7 or fewer. `summary` moved to the second call on 2026-10-03. 10.4). `specs` is not produced by the first call; it comes from a separate call when a ticket is retrieved (10.8. 2026-10-12). `rippleVerdicts` is for M4. **Do not have the LLM produce `tours`** (decided 2026-09-24. The program builds paths by following `call` edges: `packages/core/src/tour/build.ts`. Reasons: having the LLM produce them makes the meter fluctuate; a path is a sequence of edges = facts; the structure prevents paths without edges. The second LLM call writes the text for each step. 10.4). Differences from the implementation:
 - `hunks[].kindHint` is `core` (a core with a group) / `candidate` (a core candidate without a group. Chapter 8, item 8) / `test` / absent. It is only a reading hint; the LLM does not produce kind (5.4, item 4)
 - `hunks[].layer` contains only layers determined by globs (no inferences). Only the three fields `{ from, to, kind }` are passed for `edges` (type labels and `crossesLayers` are not passed. Do not ask it to judge. Principle 3). Reference edges (`reference`) are not passed. If LSP has not run, the entire `edges` field is absent
 - `unlayeredPaths` contains changed files that matched no glob (24 of 37 in the fixture). Only output `layerGuesses` that pass verification (5.4, item 8) are accepted
 - `rippleGroups[]` contains `id` (`g1` …), `pattern`, `coreHunkId`, `members` (count), and `representative` and `deviations` (with lines). Hunks in groups are not included in `hunks[]`
 - Add `groupIds` to `hows[]` and assign each entire group to one How (do not have it put the representative's id in `hunkIds`)
-- `previous.hows` is `{ id, title, why }`; `previous.assignment` contains only unchanged hunks
+- `previous.hows` is `{ id, title, why }`; `previous.assignment` contains only unchanged hunks. `previous.themes` is the previous map's themes (`{ title, howIds }`, only when the previous run had themes). A theme with the same Hows keeps the same title (Principle 7)
 - Types are in `packages/core/src/label/types.ts`, the prompt body in `prompt.ts`, and the output shape in `LLM_OUTPUT_SCHEMA` in `schema.ts`
 
 ### 10.1 Input (excerpt)
@@ -1180,6 +1205,7 @@ Pass only the representative, deviations, and candidates for LLM judgment from e
   "claims": [ { "text": "キャッシュ層を横断的に更新し", "backed": false, "reason": "キャッシュ層に該当する変更は差分に見当たらない" } ],
   "rippleVerdicts": [ { "groupId": "g1", "hunkId": "…", "same": true } ],
   "layerGuesses": [ { "path": "scripts/foo.kt", "layer": "Infrastructure" } ],
+  "themes": [ { "title": "割引の計算と適用", "howIds": [3, 5] } ],
   "tours": "（出させない。2026-09-24 決定。経路はプログラムが組む。上の実装済みの範囲を参照）"
 }
 ```

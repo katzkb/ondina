@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Hunk, How } from '@ondina/model';
+import type { Hunk, How, MapGroups } from '@ondina/model';
 import { parseConfig, splitConfig } from '../src/config/load.js';
 import { extractAllHunks } from '../src/hunks/extract.js';
 import { toHunk } from '../src/hunks/to-hunk.js';
@@ -128,6 +128,25 @@ describe('previousFrom', () => {
   it('前回で未帰属だった hunk は assignment に入れない', () => {
     const prev = { hows, hunks: [hunk('x', ['+a'], [])] };
     expect(previousFrom(prev, [hunk('x', ['+a'])])).toEqual({ hows: [{ id: 1, title: 'A', why: 'a' }, { id: 2, title: 'B', why: 'b' }], assignment: {} });
+  });
+
+  it('前回の地図に題があれば、題の名前と中のコースを渡す（中がコースでも箱でも）', () => {
+    const mapGroups: MapGroups = {
+      root: ['theme:1', 'theme:2'],
+      groups: [
+        { id: 'theme:1', kind: 'theme', title: '大きい題', provenance: 'llm', children: ['course:1'] },
+        { id: 'course:1', kind: 'course', howId: 1, provenance: 'ast', children: ['file:a'] },
+        { id: 'theme:2', kind: 'theme', title: '小さい題', provenance: 'llm', children: ['file:b'] },
+      ],
+      boxes: [
+        { id: 'file:a', label: 'a', path: 'a', hunkIds: ['x'], course: 1 },
+        { id: 'file:b', label: 'b', path: 'b', hunkIds: ['y'], course: 2 },
+      ],
+    };
+    expect(previousFrom({ hows, hunks: [], mapGroups }, [])?.themes).toEqual([
+      { title: '大きい題', howIds: [1] },
+      { title: '小さい題', howIds: [2] },
+    ]);
   });
 });
 

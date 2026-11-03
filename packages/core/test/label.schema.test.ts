@@ -7,6 +7,7 @@ const good = {
   hows: [{ id: 1, title: 'ドメインに割引を追加', why: '割引を Order が持つ', hunkIds: ['a'], groupIds: ['g1'] }],
   claims: [{ text: 'キャッシュ層を横断的に更新し', backed: false, reason: '該当する変更が無い' }],
   layerGuesses: [{ path: 'src/main/kotlin/com/example/common/Logger.kt', layer: 'Infrastructure' }],
+  themes: [{ title: '割引を持たせる', howIds: [1] }],
 };
 
 describe('extractJson', () => {
@@ -36,7 +37,7 @@ describe('parseLlmOutput', () => {
   it('欠けた claims / hunkIds / groupIds / title / why は空で埋める', () => {
     const r = parseLlmOutput('{"hows":[{"id":2}]}');
     expect(r).toEqual({
-      output: { hows: [{ id: 2, title: '', why: '', hunkIds: [], groupIds: [] }], claims: [], layerGuesses: [] },
+      output: { hows: [{ id: 2, title: '', why: '', hunkIds: [], groupIds: [] }], claims: [], layerGuesses: [], themes: [] },
     });
   });
   it('summary が来ても読まない（入口の説明は 2 回目の呼び出しが書く。5.3）', () => {
@@ -75,5 +76,16 @@ describe('parseLlmOutput と layerGuesses（M2）', () => {
   it('path や layer が文字列でなければ失敗する', () => {
     expect(parseLlmOutput(JSON.stringify({ ...good, layerGuesses: [{ path: 1, layer: 'Domain' }] }))).toEqual({ error: 'layerGuesses[0].path が文字列ではありません' });
     expect(parseLlmOutput(JSON.stringify({ ...good, layerGuesses: [{ path: 'a.kt' }] }))).toEqual({ error: 'layerGuesses[0].layer が文字列ではありません' });
+  });
+});
+
+describe('parseLlmOutput と themes（地図のまとまり）', () => {
+  it('無ければ空配列で読む（How が 7 つ以下の回と、themes の前の記録）', () => {
+    const out = parseLlmOutput(JSON.stringify({ ...good, themes: undefined }));
+    expect('output' in out && out.output.themes).toEqual([]);
+  });
+  it('howIds が整数の配列でなければ場所を言って失敗する', () => {
+    expect(parseLlmOutput(JSON.stringify({ ...good, themes: [{ title: 'a', howIds: ['1'] }] }))).toEqual({ error: 'themes[0].howIds が整数の配列ではありません' });
+    expect(parseLlmOutput(JSON.stringify({ ...good, themes: {} }))).toEqual({ error: 'themes が配列ではありません' });
   });
 });
