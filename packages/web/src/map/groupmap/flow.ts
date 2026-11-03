@@ -28,7 +28,8 @@ export function mapRouteOf(analysis: Analysis, tree: GroupTree, course: Course):
   const steps: RouteStep[] = [];
   let off = 0;
   course.steps.forEach((s, k) => {
-    const box = [s.hunkId, s.symbolId, hunkOfSym.get(s.symbolId)].map((h) => (h === undefined ? undefined : ofHunk.get(h))).find((b) => b !== undefined);
+    // hunkId はコース外の停留所（symbolId = hunkId = hunk の id）、シンボルの停留所はそのシンボルの hunk から引く
+    const box = [s.hunkId, hunkOfSym.get(s.symbolId)].map((h) => (h === undefined ? undefined : ofHunk.get(h))).find((b) => b !== undefined);
     if (box === undefined) {
       off++;
       return;
@@ -111,6 +112,7 @@ export function routeDraw(tree: GroupTree, view: PlacedView, route: MapRoute, i:
     const n = k + 1;
     const state = stepState(n, i);
     const b = itemAt(tree, view.spec, s.box);
+    // 線と玉の向きは道順の並び（前の歩 → この歩）で決まり、← で戻ってきたときも同じ向き（どう動いて来たかでは変えない）
     const a = prev;
     prev = b;
     if (b === null) return;
