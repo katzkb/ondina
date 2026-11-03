@@ -1708,6 +1708,29 @@ describe('App（コース。3.3）', () => {
       await waitFor(() => expect(crumbs(map)).toEqual(['全景', `コース ${to.slice('course:'.length)}`]), { timeout: 3000 });
     });
 
+    it('コースを選ぶと全景に停留所の番号と再生の帯。→ で 1 歩進むと札が出て、「… の中で見る」で中へ入る', async () => {
+      const { container, map } = await gmap();
+      await act(async () => {
+        fireEvent.click(container.querySelectorAll('.ccard .pick')[4]!);
+      });
+      const nums = (id: string) => map.querySelector(`.gsbs[data-for="${id}"]`)?.textContent;
+      await waitFor(() => expect(map.querySelector('.gplay')).not.toBeNull(), { timeout: 3000 });
+      expect(nums('course:5')).toBe('15');
+      expect(nums('course:4')).toBe('24');
+      expect(map.querySelector('.gpl-n')!.textContent).toBe('0/5');
+      expect(map.querySelector('.gpl-cap')!.textContent).toContain('テストの停留所 2 か所は地図にありません');
+      await key('ArrowRight');
+      expect(container.querySelector('.home')).not.toBeNull();
+      expect(map.querySelector('.gpl-n')!.textContent).toBe('1/5');
+      expect(map.querySelector('.gn[data-id="course:5"]')!.className).toContain('hot');
+      expect(map.querySelector('.gcard')!.textContent).toContain('ApplyDiscountUseCase');
+      await act(async () => {
+        fireEvent.click(map.querySelector('.gwhere')!);
+      });
+      await waitFor(() => expect(crumbs(map)).toEqual(['全景', 'コース 5']), { timeout: 3000 });
+      expect(map.querySelector('.gpl-n')!.textContent).toBe('1/5');
+    });
+
     it('「差分なし n」を押すと、そのファイルのシンボルの相手を引き出しに出す', async () => {
       const { map, at } = await gmap(fixtureWithNeighbors());
       await act(async () => {

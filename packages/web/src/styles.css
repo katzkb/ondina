@@ -697,6 +697,46 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .gmap .gcommon{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap}
 .gmap .gcommon code{font:10.5px var(--mono);background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 4px;color:var(--muted)}
 .gmap .guess{text-decoration:underline dotted;text-decoration-color:var(--overlay1);text-underline-offset:3px}
+/* 入口の地図の道順（2026-11-04。見本 5 の 2 版）。色は --cc（選んだコースの色）。線は SVG、番号と札は HTML */
+.gmap .map svg.groute{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none;z-index:2}
+.groute marker path{fill:var(--cc)}
+.grt{fill:none;stroke:var(--cc);stroke-width:2.4;stroke-linejoin:round}
+.grt.fut{opacity:.22}
+.grt.past{opacity:.55}
+.grt.cur{stroke-width:3;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--cc) 70%,transparent))}
+.gtok{fill:var(--cc);stroke:var(--base);stroke-width:2}
+.gn.hot{box-shadow:0 0 0 2.5px var(--cc,var(--accent)),0 0 16px color-mix(in srgb,var(--accent) 45%,transparent)}
+.gsbs{position:absolute;z-index:3;display:flex;gap:2px;pointer-events:none}
+.gsb{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;padding:0 4px;box-sizing:border-box;font:700 10px/1 var(--sans);background:var(--cc);color:var(--base)}
+.gsb.fut{background:var(--panel);color:var(--cc);box-shadow:inset 0 0 0 1.5px var(--cc)}
+.gsb.past{opacity:.7}
+.gsb.cur{box-shadow:0 0 0 2px var(--base),0 0 0 3.5px var(--cc)}
+.gcard{position:absolute;z-index:4;width:max-content;max-width:330px;box-sizing:border-box;background:var(--panel);border:1.5px solid var(--cc);border-radius:6px;padding:4px 8px;box-shadow:0 4px 14px rgba(0,0,0,.28);font:12px/1.5 var(--sans);color:var(--ink)}
+.gcard-h{display:flex;align-items:center;gap:6px}
+.gcard-h b{font:600 11.5px var(--mono);word-break:break-all}
+.gcard-h button,.gwhere{border:1px solid var(--accent-edge);background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;font:700 11px/1 var(--sans);padding:3px 6px;cursor:pointer}
+.gcard p{margin:2px 0 0}
+.gcard p.ai{border-left:2px dashed var(--accent-edge);padding-left:6px}
+.gcard .chip.ai{margin-right:4px;font-size:10px;padding:0 4px}
+.gplay{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 10px;border-top:1px solid var(--line)}
+.gplay>button{border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:5px;font:600 12px/1 var(--sans);padding:4px 8px;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+.gplay>button:disabled{opacity:.4;cursor:default}
+.gplay>button.pri{background:var(--cc);border-color:var(--cc);color:var(--base);min-width:30px;justify-content:center}
+.gplay kbd{font-size:10px}
+.gpl-seg{display:flex;gap:2px;flex:1;min-width:80px;max-width:420px}
+.gpl-seg button{flex:1;height:10px;border:0;border-radius:2px;padding:0;background:var(--overlay1);cursor:pointer}
+.gpl-seg button.add{background:var(--green)}
+.gpl-seg button.fut{opacity:.35}
+.gpl-seg button.cur{box-shadow:0 0 0 2px var(--base),0 0 0 3.5px var(--cc)}
+.gpl-n{font:600 11.5px var(--mono);color:var(--muted)}
+.gspd{display:inline-flex;align-items:center;gap:4px}
+.gspd input{width:96px;accent-color:var(--cc);margin:0}
+.gspd output{font:600 11.5px var(--mono);color:var(--muted);min-width:38px}
+.gpl-cap{display:flex;align-items:center;gap:8px;padding:0 10px 6px;font:12.5px/1.5 var(--sans);color:var(--ink);min-height:22px}
+.gpl-cap .mk{border:1px solid var(--line-2);border-radius:3px;padding:0 4px;font:500 10.5px/14px var(--sans);color:var(--muted);flex:none}
+.gpl-cap .mk.add{border-color:var(--green);color:var(--green)}
+.gpl-cap .t{min-width:0}
+.gpl-cap .gwhere{margin-left:auto;flex:none;white-space:nowrap}
 @media (prefers-reduced-motion:no-preference){.cmap .nd rect{transition:stroke .18s ease-out,stroke-width .18s ease-out}}
 
 /* 上の帯: 画面の行き先と設定（2026-09-30。左の列から移した） */

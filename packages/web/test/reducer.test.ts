@@ -19,7 +19,7 @@ describe('reduce', () => {
   it('data.loaded で最初のファイルと hunk が選ばれ、入口の地図タブに着く（3.1）', () => {
     const s = loaded();
     expect(s.view).toBe('home');
-    expect(s.home).toEqual({ tab: 'map', sel: null, ticket: false, stage: 1, path: [] });
+    expect(s.home).toEqual({ tab: 'map', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false });
     expect(s.selectedFile).toBe('src/main/kotlin/com/example/admin/OrderAdminView.kt');
     expect(s.selectedHunk).toBe(s.analysis!.hunks.find((h) => h.path === s.selectedFile)!.id);
   });
@@ -570,7 +570,7 @@ describe('入口（3.1）', () => {
   it('入口のタブと選んだコースは、別の画面へ移って戻っても残る。別の解析を読むと戻る', () => {
     const s1 = reduce(reduce(loaded(), { id: 'home.tab', tab: 'text' }).state, { id: 'home.select', courseId: 2 }).state;
     const back = reduce(reduce(s1, { id: 'view.diff' }).state, { id: 'view.home' }).state;
-    expect(back.home).toEqual({ tab: 'text', sel: 2, ticket: false, stage: 1, path: [] });
+    expect(back.home).toEqual({ tab: 'text', sel: 2, ticket: false, stage: 1, path: [], step: 0, play: false });
   });
 
   // 2026-10-29: 説明タブの左は 1 背景 / 2 この PR。n は切り替え、段のボタンはその段へ。地図タブなら説明タブにする

@@ -223,6 +223,10 @@ describe('isUiSettings', () => {
     expect(isUiSettings({})).toBe(true);
     expect(isUiSettings({ worktreeRoot: '/tmp/wt', llmCommand: 'codex exec -', reviewCommand: 'codex exec -s read-only -', theme: { mode: 'system', light: 'latte', dark: 'frappe', accent: 'peach' }, diffMode: { b: 'uni', c: 'sbs', d: 'uni' } })).toBe(true);
     expect(isUiSettings({ diffMode: { d: 'uni' } })).toBe(true);
+    // 入口の地図の道順の再生の速さ（2026-11-04）。正の数だけ
+    expect(isUiSettings({ mapSpeed: 1.5 })).toBe(true);
+    expect(isUiSettings({ mapSpeed: 0 })).toBe(false);
+    expect(isUiSettings({ mapSpeed: '2' })).toBe(false);
   });
 
   it('チケットの取り方（5.1）を受ける', () => {
