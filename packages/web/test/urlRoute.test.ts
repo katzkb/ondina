@@ -96,6 +96,7 @@ describe('sameEntry（履歴を足すか）', () => {
 
   it('画面の種類・解析・バージョンが替われば別の履歴', () => {
     expect(sameEntry(parse('/pr/12/a1b2c3d/explain'), parse('/pr/12/a1b2c3d/map'))).toBe(false);
+    expect(sameEntry(parse('/pr/12/a1b2c3d/course/1/5'), parse('/pr/12/a1b2c3d/course/2'))).toBe(false);
     expect(sameEntry(parse('/pr/12/a1b2c3d/explain'), parse('/pr/12/f00dfee/explain'))).toBe(false);
     expect(sameEntry(parse('/pr/12/a1b2c3d/explain'), parse('/local/a1b2c3d/explain'))).toBe(false);
     expect(sameEntry({ kind: 'prs' }, parse('/pr/12/a1b2c3d/explain'))).toBe(false);

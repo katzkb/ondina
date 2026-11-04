@@ -131,8 +131,12 @@ export function routeTarget(analyses: readonly AnalysisSummary[], route: Exclude
   return summary === undefined ? { summary: latest, page: EXPLAIN } : { summary, page: route.page };
 }
 
-/** 同じ履歴の 1 つか（同じ解析の同じ種類の画面）。違えば履歴を足し、同じなら書き換える（停留所・ファイル・絞り込みを移るたびに足さない） */
+/**
+ * 同じ履歴の 1 つか（同じ解析の同じ種類の画面。コースは同じコース）。違えば履歴を足し、同じなら書き換える（停留所・ファイル・絞り込みを移るたびに足さない）。
+ * コースを替えたら足す（次のコースに進んでから戻ると、前のコースに戻る）
+ */
 export function sameEntry(a: Route, b: Route): boolean {
   if (a.kind !== 'analysis' || b.kind !== 'analysis') return a.kind === b.kind;
+  if (a.page.kind === 'course' && b.page.kind === 'course' && a.page.course !== b.page.course) return false;
   return a.key === b.key && a.sha === b.sha && a.page.kind === b.page.kind;
 }
