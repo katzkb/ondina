@@ -30,6 +30,7 @@ import { meter } from './meter.js';
 import { paneStyle } from './panes.js';
 import { reviewActive } from './prs.js';
 import { isActive, stripOf } from './reanalyze.js';
+import { formatRoute, parseRoute, routeOf, routeTarget, sameEntry, type Route } from './route.js';
 import { canSend, diffModeOf, findable, initialState, overlayOpen, reduce, themeOf, type AppState, type Effect } from './state/reducer.js';
 import { flavorOf, useOsDark } from './theme.js';
 
@@ -37,6 +38,22 @@ import { flavorOf, useOsDark } from './theme.js';
 const CHECK_MS = 2 * 60 * 1000;
 /** 解析の順番待ちか解析中、AI レビューの解析待ちかレビュー中がある間、serve に聞く間隔 */
 const POLL_MS = 1000;
+
+/** 今の URL の画面 */
+const here = (): Route => parseRoute(window.location.pathname, window.location.search);
+
+/**
+ * URL を今の画面のものにする。解析・バージョン・画面の種類が替わったら履歴を足し、同じ画面の中の動き（停留所・ファイル・絞り込み）は書き換える。
+ * replace = URL の画面を出している間（起動・戻る・進む）。そこで足すと、戻るたびに同じ画面の履歴が増える
+ */
+function syncUrl(state: AppState, replace: boolean): void {
+  const route = routeOf(state);
+  if (route === null) return;
+  const url = formatRoute(route);
+  if (url === window.location.pathname + window.location.search) return;
+  if (replace || sameEntry(here(), route)) window.history.replaceState(null, '', url);
+  else window.history.pushState(null, '', url);
+}
 
 export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: string | undefined }) {
   const stateRef = useRef<AppState>(initialState());
@@ -46,6 +63,10 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
   const askAbort = useRef<AbortController | null>(null);
   /** GitHub の Viewed の付ける・外すは、押した順に 1 つずつ送る（付けてすぐ外したときに入れ替わらない。12.1） */
   const githubQueue = useRef<Promise<void>>(Promise.resolve());
+  /** URL の画面を出している間（起動・戻る・進む）は 1 以上。その間は URL を書き換えるだけで履歴を足さない */
+  const applying = useRef(0);
+  /** URL の画面を出すたびに進む。解析を読んでいる間に次の戻る・進むが来たら、前の画面は出さない */
+  const showing = useRef(0);
 
   const load = useCallback(
     async (key: string, headSha: string, view?: 'closing') => {
@@ -215,6 +236,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       if (state !== stateRef.current) {
         stateRef.current = state;
         rerender();
+        syncUrl(state, applying.current > 0);
       }
       for (const e of effects) run(e, state);
     },
@@ -222,25 +244,60 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
   );
   dispatchRef.current = dispatch;
 
-  // 起動: 解析の一覧・UI 設定・表示設定（ondina.config.yaml）を取り、初期選択（?pr=<key> か最新）を読む
+  /** URL の画面を出す。別の解析・バージョンなら読んでから。呼ぶ側が applying を上げておく */
+  const show = useCallback(
+    async (route: Route) => {
+      const n = ++showing.current;
+      const s = stateRef.current;
+      if (route.kind === 'prs') {
+        // PR 一覧の後ろでも最新の解析を開いておく（上の帯の全体図などを押せるように。起動したときだけ）
+        const latest = s.analyses[0];
+        if (s.current === null && latest) await load(latest.key, latest.headSha);
+        if (n === showing.current) dispatch({ id: 'view.prs' });
+        return;
+      }
+      const t = routeTarget(s.analyses, route);
+      if (t === null) return;
+      if (s.current?.key !== t.summary.key || s.current.headSha !== t.summary.headSha) await load(t.summary.key, t.summary.headSha);
+      if (n === showing.current) dispatch({ id: 'route.go', page: t.page });
+    },
+    [dispatch, load],
+  );
+
+  // 起動: 解析の一覧・UI 設定・表示設定（ondina.config.yaml）を取り、URL の画面を出す（initialKey はその key の最新の説明タブ）
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const [analyses, ui, config] = await Promise.all([api.listAnalyses(), api.getUi(), api.getConfig()]);
       if (cancelled) return;
-      dispatch({ id: 'analyses.loaded', analyses });
-      dispatch({ id: 'ui.loaded', ui });
-      dispatch({ id: 'config.loaded', config });
-      // 画面を読み直したとき、serve で解析・AI レビューをしていればその進みに戻る
-      pollJobs();
-      const wanted = initialKey ?? new URLSearchParams(window.location.search).get('pr') ?? undefined;
-      const pick = (wanted && analyses.find((a) => a.key === wanted)) || analyses[0];
-      if (pick) await load(pick.key, pick.headSha);
+      applying.current++;
+      try {
+        dispatch({ id: 'analyses.loaded', analyses });
+        dispatch({ id: 'ui.loaded', ui });
+        dispatch({ id: 'config.loaded', config });
+        // 画面を読み直したとき、serve で解析・AI レビューをしていればその進みに戻る
+        pollJobs();
+        await show(initialKey === undefined ? here() : { kind: 'analysis', key: initialKey, sha: null, page: { kind: 'explain' } });
+      } finally {
+        applying.current--;
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [api, dispatch, load, pollJobs, initialKey]);
+  }, [api, dispatch, pollJobs, show, initialKey]);
+
+  // ブラウザの戻る・進む: その URL の画面へ
+  useEffect(() => {
+    const onPop = () => {
+      applying.current++;
+      void show(here()).finally(() => {
+        applying.current--;
+      });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [show]);
 
   // タブに戻ったら state を読み直し、開いている間に外から（ondina comments add）足した AI の下書きを並べる（12 章）。
   // 解析の一覧も読み直す（開いている間にターミナルの ondina analyze が足した解析を左上に出す）。
