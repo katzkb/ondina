@@ -104,7 +104,7 @@ describe('reducer: 道順の歩・再生・速さ', () => {
   const loaded = (): AppState => {
     const a = fixtureAnalysis();
     const summary = { key: 'local', headSha: a.pr.headSha, pr: a.pr, mtime: 1, repoName: 'order-service' };
-    return reduce(initialState(), { id: 'data.loaded', summary, analysis: a, review: emptyReview() }).state;
+    return reduce(reduce(initialState(), { id: 'data.loaded', summary, analysis: a, review: emptyReview() }).state, { id: 'home.tab', tab: 'map' }).state;
   };
   const sel5 = () => reduce(loaded(), { id: 'home.select', courseId: 5 }).state;
 

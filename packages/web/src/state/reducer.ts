@@ -355,7 +355,7 @@ export interface Reduced {
 }
 
 export function initialState(): AppState {
-  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'map', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false }, course: null, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
+  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false }, course: null, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
 }
 
 const none = (state: AppState): Reduced => ({ state, effects: [] });
@@ -692,7 +692,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return { effects, state: {
         ...state,
         view: command.view ?? keep?.view ?? 'home',
-        home: { tab: 'map', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false },
+        home: { tab: 'text', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false },
         memo: NO_MEMO,
         draftText: {},
         current: command.summary,

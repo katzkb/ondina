@@ -207,3 +207,4 @@ Unordered. Remove when resolved.
 - [ ] Known limit of hunk extraction: Myers diff algorithm matches `}` to another declaration (design chapter 17). Has not occurred in the fixture
 - [ ] Split alignment (`alignRows`) runs in the UI. Move to core if it becomes heavy (design 18.4)
 - [ ] Verify on a real machine whether `jetbrains://` accepts repository-relative `path` (can try diff list's `IDEA で開く`)
+- [x] Order the home tabs as explain, then map — 2026-11-04. On opening a PR, the reviewer wants to read the explanation first and look at the map after. The tabs now read explain, map, and opening an analysis lands on the explain tab. Keys follow the order: explain `1` / map `2` (design 3.1)
