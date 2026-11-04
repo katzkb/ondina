@@ -21,6 +21,12 @@ vi.mock('../src/map/elk.js', async () => {
 /** 読み込んで入口が出るのを待つ */
 const ready = () => screen.findByLabelText('入口');
 
+/** 閉じて、別の窓で / から開き直す（App は今の画面を URL に書くので、cleanup だけだと読み直しになる） */
+function restart() {
+  cleanup();
+  window.history.replaceState(null, '', '/');
+}
+
 /** 入口の地図タブへ（起動時は説明タブ。キー 2） */
 async function openMap() {
   await act(async () => {
@@ -463,7 +469,7 @@ describe('App（入口の説明タブ。3.1）', () => {
     a.summary = { problem: 'p。', approach: '一。二。', untouched: '三。', beforeAfter: [] };
     await renderExplain(fakeApi(a).api);
     expect(screen.getByText(/この解析は前の形の説明です/)).toBeInTheDocument();
-    cleanup();
+    restart();
     await renderExplain(fakeApi(fixtureAnalysis({ text: false })).api);
     expect(screen.getByText(/説明はありません/)).toBeInTheDocument();
   });
@@ -609,7 +615,7 @@ describe('App（2 回目の LLM が動かなかった知らせ。3.1）', () => 
     render(<App api={fakeApi(fixtureAnalysis()).api} />);
     await ready();
     expect(screen.queryByRole('status')).toBeNull();
-    cleanup();
+    restart();
     render(<App api={fakeApi(fixtureAnalysis({ text: false })).api} />);
     await ready();
     expect(screen.queryByRole('status')).toBeNull();
@@ -731,7 +737,7 @@ describe('App（入口と上の帯。3.0 / 3.1）', () => {
     await screen.findByText('開いている PR はありません。');
     await waitFor(() => expect(document.documentElement.dataset['flavor']).toBe('frappe'));
     expect(document.documentElement.dataset['accent']).toBe('blue');
-    cleanup();
+    restart();
     render(<App api={fakeApi(fixtureAnalysis(), { config, ui: { theme: { mode: 'light', light: 'latte', dark: 'mocha', accent: 'teal' } } }).api} />);
     await ready();
     // テーマは描いた後の effect で付く。「入口」が出た直後はまだ前の値のことがある（CI で落ちた）
@@ -1534,7 +1540,7 @@ describe('App（コース。3.3）', () => {
     expect(one).toHaveLength(1);
     expect(one[0]!.querySelector('p.why')!.textContent).toBe(tour.steps[1]!.guide);
     expect(one[0]!.textContent).toContain(tour.steps[1]!.say!);
-    cleanup();
+    restart();
     const b = structuredClone(old);
     const step = b.tours.find((t) => t.howId === 3)!.steps[1]!;
     delete step.say;
@@ -3556,5 +3562,96 @@ describe('⌘F（差分の列の中の検索。2026-10-27）', () => {
     });
     expect(container.querySelector('.dfind')).toBeNull();
     cleanup();
+  });
+});
+
+describe('App（画面ごとの URL。2026-11-04）', () => {
+  const a = fixtureAnalysis();
+  const sha7 = a.pr.headSha.slice(0, 7);
+  const course3 = a.hows.find((h) => h.id === 3)!.title;
+  const url = () => window.location.pathname + window.location.search;
+  const key = async (k: string) => {
+    await act(async () => {
+      fireEvent.keyDown(window, { key: k });
+    });
+  };
+  /** 出している停留所（コースの題と「n / m」） */
+  const stopShown = (container: HTMLElement) => [container.querySelector('.cbar b')?.textContent, container.querySelector('.code .chd .chip')?.textContent];
+  /** 上の帯で今の画面のボタン */
+  const onScreen = () => within(screen.getByRole('navigation', { name: '画面' })).getByRole('button', { current: 'page' }).textContent;
+  /** ブラウザの戻る（popstate は後から届く） */
+  const back = async () => {
+    await act(async () => {
+      window.history.back();
+    });
+  };
+
+  it('/ は最新の解析の説明タブ。読み込んだら URL をその画面のものに書き換え、履歴は足さない', async () => {
+    window.history.pushState(null, '', '/');
+    const before = window.history.length;
+    render(<App api={fakeApi(a).api} />);
+    await ready();
+    await waitFor(() => expect(url()).toBe(`/local/${sha7}/explain`));
+    expect(screen.getByRole('tab', { name: /説明/ })).toHaveAttribute('aria-selected', 'true');
+    expect(window.history.length).toBe(before);
+  });
+
+  it('コースの停留所で読み直すと、同じ停留所に戻る', async () => {
+    const fake = fakeApi(a);
+    const { container } = render(<App api={fake.api} />);
+    await ready();
+    await key('2');
+    fireEvent.click(container.querySelectorAll('.ccard .pick')[2]!);
+    fireEvent.click(container.querySelector('.ccard.sel .go')!);
+    fireEvent.click(container.querySelector('.brief .bgo .btn')!);
+    await key('j');
+    expect(stopShown(container)).toEqual([course3, '2 / 4']);
+    expect(url()).toBe(`/local/${sha7}/course/3/2`);
+    cleanup();
+    const again = render(<App api={fake.api} />);
+    await waitFor(() => expect(stopShown(again.container)).toEqual([course3, '2 / 4']));
+    expect(url()).toBe(`/local/${sha7}/course/3/2`);
+  });
+
+  it('画面を移ると履歴を足し、ブラウザの戻るで前の画面に戻る。同じ画面の中でファイルを移っても履歴は足さない', async () => {
+    window.history.pushState(null, '', '/');
+    const before = window.history.length;
+    render(<App api={fakeApi(a).api} />);
+    await ready();
+    await press(/^差分一覧/);
+    const first = url();
+    expect(first).toMatch(new RegExp(`^/local/${sha7}/diff\\?file=`));
+    expect(window.history.length).toBe(before + 1);
+    await key(']');
+    expect(url()).not.toBe(first);
+    expect(url()).toMatch(/\/diff\?file=/);
+    expect(window.history.length).toBe(before + 1);
+    await back();
+    await waitFor(() => expect(url()).toBe(`/local/${sha7}/explain`));
+    expect(onScreen()).toMatch(/^全体図/);
+    expect(screen.getByRole('tab', { name: /説明/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('パスの sha のバージョンを開き、戻るで前のバージョンに戻る。知らない sha はその key の最新、無いコースは説明タブ', async () => {
+    const fake = fakeApi(a);
+    const next = fixtureAnalysis();
+    next.pr = { ...next.pr, headSha: 'c'.repeat(40) };
+    fake.addVersion(next);
+    window.history.pushState(null, '', `/local/${sha7}/hows`);
+    render(<App api={fake.api} />);
+    await waitFor(() => expect(onScreen()).toMatch(/^目的ごと/));
+    expect(url()).toBe(`/local/${sha7}/hows`);
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('解析を切り替える'), { target: { value: `local/${next.pr.headSha}` } });
+    });
+    await waitFor(() => expect(url()).toBe('/local/ccccccc/hows'));
+    await back();
+    await waitFor(() => expect(screen.getByLabelText('解析を切り替える')).toHaveValue(`local/${a.pr.headSha}`));
+    expect(url()).toBe(`/local/${sha7}/hows`);
+    expect(onScreen()).toMatch(/^目的ごと/);
+    cleanup();
+    window.history.replaceState(null, '', '/local/1234567/course/99');
+    render(<App api={fake.api} />);
+    await waitFor(() => expect(url()).toBe('/local/ccccccc/explain'));
   });
 });

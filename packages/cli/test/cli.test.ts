@@ -373,7 +373,7 @@ describe('ondina serve --background（設計書 12 章）', () => {
   const bg = (over: object) => ({
     probe: async () => ({ kind: 'free' as const }),
     spawn: () => ({ pid: 4321, exitCode: () => undefined }),
-    readLog: () => 'ondina serve: http://127.0.0.1:4177/?pr=12\n',
+    readLog: () => 'ondina serve: http://127.0.0.1:4177/pr/12\n',
     sleep: async () => {},
     ...over,
   });
@@ -381,24 +381,24 @@ describe('ondina serve --background（設計書 12 章）', () => {
   it('起動したら URL を標準出力に、pid と止め方を標準エラーに出して exit 0', async () => {
     const o = { ...io(repo), background: bg({}) };
     expect(await run(['serve', '--background', '12'], o)).toBe(0);
-    expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:4177/?pr=12\n');
+    expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:4177/pr/12\n');
     expect(o.err.join('')).toMatch(/pid 4321.*ondina serve stop 4177/);
   });
 
   it('このリポジトリの serve が動いていれば、そう出して同じ形の URL を出す', async () => {
     const o = { ...io(repo), background: bg({ probe: async () => ({ kind: 'ondina', repo, pid: 999 }) }) };
     expect(await run(['serve', '--background', '12'], o)).toBe(0);
-    expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:4177/?pr=12\n');
+    expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:4177/pr/12\n');
     expect(o.err.join('')).toMatch(/動いています.*pid 999/);
   });
 
   it('ポートを別のリポジトリの serve が使っていれば、そう出して空いているポートで起動する', async () => {
     const o = {
       ...io(repo),
-      background: bg({ probe: async () => ({ kind: 'ondina', repo: '/somewhere/else', pid: 999 }), readLog: () => 'ondina serve: http://127.0.0.1:50123/?pr=12\n' }),
+      background: bg({ probe: async () => ({ kind: 'ondina', repo: '/somewhere/else', pid: 999 }), readLog: () => 'ondina serve: http://127.0.0.1:50123/pr/12\n' }),
     };
     expect(await run(['serve', '--background', '12'], o)).toBe(0);
-    expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:50123/?pr=12\n');
+    expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:50123/pr/12\n');
     expect(o.err.join('')).toContain('4177 番は別のリポジトリの serve（/somewhere/else）が使っています。空いているポートで起動しました');
   });
 
@@ -408,10 +408,10 @@ describe('ondina serve --background（設計書 12 章）', () => {
     try {
       const o = {
         ...io(wt),
-        background: bg({ probe: async () => ({ kind: 'ondina', repo, pid: 999 }), readLog: () => 'ondina serve: http://127.0.0.1:50123/?pr=local\n' }),
+        background: bg({ probe: async () => ({ kind: 'ondina', repo, pid: 999 }), readLog: () => 'ondina serve: http://127.0.0.1:50123/local\n' }),
       };
       expect(await run(['serve', '--background', 'local'], o)).toBe(0);
-      expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:50123/?pr=local\n');
+      expect(o.out.join('')).toBe('ondina serve: http://127.0.0.1:50123/local\n');
       expect(o.err.join('')).toContain(`4177 番は同じリポジトリの別の worktree（${repo}）の serve が使っています。PR のない変更はその画面に表示できないので、空いているポートで起動しました`);
     } finally {
       rmSync(wt, { recursive: true, force: true });

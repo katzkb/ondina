@@ -3,6 +3,8 @@ import { afterEach } from 'vitest';
 import { resetOs } from './osAppearance.js';
 
 afterEach(resetOs);
+// App は今の画面を URL に書く（2026-11-04）。jsdom の窓はファイルの中のテストで共有なので、次のテストは / から開く
+afterEach(() => window.history.replaceState(null, '', '/'));
 
 // jsdom はレイアウトしないので offsetHeight / getBoundingClientRect が常に 0 になり、
 // 仮想リスト（@tanstack/react-virtual）が 1 行も描かない。スクロール要素（.dscroll）と仮想行（.vrow）にだけ寸法を与える。
