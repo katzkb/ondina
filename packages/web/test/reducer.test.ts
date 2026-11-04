@@ -16,10 +16,10 @@ function loaded(): AppState {
 }
 
 describe('reduce', () => {
-  it('data.loaded で最初のファイルと hunk が選ばれ、入口の地図タブに着く（3.1）', () => {
+  it('data.loaded で最初のファイルと hunk が選ばれ、入口の説明タブに着く（3.1）', () => {
     const s = loaded();
     expect(s.view).toBe('home');
-    expect(s.home).toEqual({ tab: 'map', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false });
+    expect(s.home).toEqual({ tab: 'text', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false });
     expect(s.selectedFile).toBe('src/main/kotlin/com/example/admin/OrderAdminView.kt');
     expect(s.selectedHunk).toBe(s.analysis!.hunks.find((h) => h.path === s.selectedFile)!.id);
   });

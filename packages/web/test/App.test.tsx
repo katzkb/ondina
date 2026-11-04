@@ -21,6 +21,13 @@ vi.mock('../src/map/elk.js', async () => {
 /** 読み込んで入口が出るのを待つ */
 const ready = () => screen.findByLabelText('入口');
 
+/** 入口の地図タブへ（起動時は説明タブ。キー 2） */
+async function openMap() {
+  await act(async () => {
+    fireEvent.keyDown(window, { key: '2' });
+  });
+}
+
 /** 上の帯のボタンを押す */
 async function press(name: string | RegExp) {
   await act(async () => {
@@ -78,13 +85,10 @@ async function renderClosing(api: Api) {
   return r;
 }
 
-/** 入口の説明タブ（キー 2） */
+/** 入口の説明タブ（起動時に開く。キー 1） */
 async function renderExplain(api: Api) {
   const r = render(<App api={api} />);
   await ready();
-  await act(async () => {
-    fireEvent.keyDown(window, { key: '2' });
-  });
   await screen.findByText('この PR の説明');
   return r;
 }
@@ -388,7 +392,7 @@ describe('App（差分一覧の画面）', () => {
 });
 
 describe('App（入口の説明タブ。3.1）', () => {
-  it('キー 2 で開き、左は 1 背景（要点）から。n で 2 この PR（例と流れの図）に替わる。右は仕様（チケット未指定）・作者の説明にマーカー', async () => {
+  it('起動時に開き、左は 1 背景（要点）から。n で 2 この PR（例と流れの図）に替わる。右は仕様（チケット未指定）・作者の説明にマーカー', async () => {
     const a = fixtureAnalysis();
     const { container } = await renderExplain(fakeApi(a).api);
     expect(screen.getByRole('tab', { name: /背景/ })).toHaveAttribute('aria-selected', 'true');
@@ -495,10 +499,8 @@ describe('App（入口の説明タブ。3.1）', () => {
     expect(screen.getByText(/でやり直せます/)).toBeInTheDocument();
     // コースが無いので、開始ボタンはコース外から
     expect(screen.getByRole('button', { name: /コース外から始める/ })).toBeInTheDocument();
-    // 説明タブでも同じ場所に出る
-    await act(async () => {
-      fireEvent.keyDown(window, { key: '2' });
-    });
+    // 地図タブでも同じ場所に出る
+    await openMap();
     expect(screen.getByRole('status')).toBeInTheDocument();
     await press('LLM コマンドを設定する');
     expect(screen.getByRole('dialog', { name: '設定' })).toBeInTheDocument();
@@ -511,6 +513,7 @@ describe('App（地図の知らせ。層と関連の線）', () => {
   const entry = async (a: ReturnType<typeof fixtureAnalysis>) => {
     render(<App api={fakeApi(a).api} />);
     await ready();
+    await openMap();
   };
 
   it('層を推定できなかった解析では、理由と採り直し方を出す', async () => {
@@ -1262,6 +1265,7 @@ describe('App（コース。3.3）', () => {
     const fake = fakeApi(analysis);
     const r = render(<App api={fake.api} />);
     await ready();
+    await openMap();
     return { ...r, fake };
   }
 

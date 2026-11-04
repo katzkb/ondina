@@ -30,9 +30,9 @@ describe('resolveKey', () => {
     expect(resolveKey(key, null)).toEqual({ command: { id }, pending: null });
   });
 
-  it('1 / 2 は入口のタブ（地図 / 説明）。3 / 4 は何もしない', () => {
-    expect(resolveKey('1', null)).toEqual({ command: { id: 'home.tab', tab: 'map' }, pending: null });
-    expect(resolveKey('2', null)).toEqual({ command: { id: 'home.tab', tab: 'text' }, pending: null });
+  it('1 / 2 は入口のタブ（説明 / 地図）。3 / 4 は何もしない', () => {
+    expect(resolveKey('1', null)).toEqual({ command: { id: 'home.tab', tab: 'text' }, pending: null });
+    expect(resolveKey('2', null)).toEqual({ command: { id: 'home.tab', tab: 'map' }, pending: null });
     expect(resolveKey('3', null)).toEqual({ command: null, pending: null });
     expect(resolveKey('4', null)).toEqual({ command: null, pending: null });
   });
@@ -97,7 +97,7 @@ describe('変えたキー（bindingsOf と resolveKey）', () => {
   it('入口のタブも 1 つずつ変えられる', () => {
     const b = bindingsOf({ 'home.tab.text': ['t'] });
     expect(resolveKey('t', null, {}, b)).toEqual({ command: { id: 'home.tab', tab: 'text' }, pending: null });
-    expect(resolveKey('1', null, {}, b)).toEqual({ command: { id: 'home.tab', tab: 'map' }, pending: null });
+    expect(resolveKey('2', null, {}, b)).toEqual({ command: { id: 'home.tab', tab: 'map' }, pending: null });
   });
 
   it('スペースは Space と書く', () => {

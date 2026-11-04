@@ -1,5 +1,5 @@
 // 入口（全体図。設計書 3.1）。承認したデモ（2026-09-29）の screenIntro が画面の正。
-// 上: タブ（地図 1 / 説明 2）・題・件数・コースごとの割合・開始ボタン。題の下に LLM が動かなかった知らせ（1 回目か 2 回目）。
+// 上: タブ（説明 1 / 地図 2。説明を読んでから地図を見る順）・題・件数・コースごとの割合・開始ボタン。題の下に LLM が動かなかった知らせ（1 回目か 2 回目）。
 // 中: 地図タブ = 変更のまとまりの地図（GroupMap。押すと中に入る。丸の色と番号 = コース。選んだコースが通る所だけを残し、他を沈め、道順を流す）/ 説明タブ = 差分から生成した説明。
 //     まとまりの無い古い解析は、前の形の地図（CourseMap。変更した場所を全部並べ、選んだコースの道順を出す）。
 // 下: コースの並び。押すとそのコースを選び（道順が出る）、選んだカードの「入る」でコースに入る。ここは描くだけで、押した物は全部コマンド（原則 6）。
@@ -69,11 +69,11 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
     <section className="view home" aria-label="入口">
       <div className="hubhd">
         <span className="seg" role="tablist" aria-label="入口のタブ">
-          <button type="button" role="tab" aria-selected={home.tab === 'map'} className={home.tab === 'map' ? 'on' : ''} onClick={() => dispatch({ id: 'home.tab', tab: 'map' })}>
-            地図 <Key action="home.tab.map" />
-          </button>
           <button type="button" role="tab" aria-selected={home.tab === 'text'} className={home.tab === 'text' ? 'on' : ''} onClick={() => dispatch({ id: 'home.tab', tab: 'text' })}>
             説明 <Key action="home.tab.text" />
+          </button>
+          <button type="button" role="tab" aria-selected={home.tab === 'map'} className={home.tab === 'map' ? 'on' : ''} onClick={() => dispatch({ id: 'home.tab', tab: 'map' })}>
+            地図 <Key action="home.tab.map" />
           </button>
         </span>
         <h2>{analysis.pr.title}</h2>
