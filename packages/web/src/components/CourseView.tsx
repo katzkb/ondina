@@ -19,7 +19,7 @@ import { FileView, type FilePlace, type LineMarks } from '../diff/FileView.js';
 import { courseChecks, placeLabel, type CourseCheck } from '../brief.js';
 import { BriefBody, BriefPill, CourseMeter, StopChecks, StopNotes, SummaryChecks } from './CourseChecks.js';
 import { CourseMap } from '../map/CourseMap.js';
-import { OffDiffChip } from './MemoBox.js';
+import { DraftNote, OffDiffChip } from './MemoBox.js';
 import { Narr } from './Narr.js';
 import type { ElkLike } from '../map/layout.js';
 import { GROUP_PREFIX, layerText, mapNodeOf } from '../map/graph.js';
@@ -697,6 +697,7 @@ function CourseDrafts({ course, drafts, githubDiff, dispatch }: { course: Course
             </button>
           </div>
           <p>{c.body}</p>
+          <DraftNote note={c.note} />
         </div>
       ))}
     </div>

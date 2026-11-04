@@ -375,7 +375,10 @@ export interface CommentDraft {
   /** 範囲の始まり（GitHub の `start_line` / `start_side`）。1 行なら無い */
   startLine?: number;
   startSide?: 'LEFT' | 'RIGHT';
+  /** GitHub に送る本文。宛先は PR を書いた人 */
   body: string;
+  /** AI の下書きだけ: レビュアーに向けた説明（なぜそう言えるか）。GitHub には送らない。本文を短くするために分けた（2026-11-04） */
+  note?: string;
   /** "reviewer"（レビュアー自身のメモ。3.3）| "claude-code" | "coderabbit" | … */
   source: string;
   /** sent は GitHub に送った後（12 章）。再送しない */
@@ -888,7 +891,8 @@ export type OndinaConfig = AnalysisConfig & DisplayConfig;
 export interface CommentsInput {
   source: string;
   headSha: string;
-  comments: Array<{ path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }>;
+  /** body は PR を書いた人に送る本文、note はレビュアーだけが読む説明（送信対象外） */
+  comments: Array<{ path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string; note?: string }>;
 }
 
 /** `GET /api/analyses` の 1 件。.ondina/<key>/<headSha>.json のメタ情報 */

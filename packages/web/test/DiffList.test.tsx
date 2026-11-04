@@ -1,6 +1,6 @@
 // diff 列（設計書 3.4）。hunk 要素は hunk-<id>（18.5）、行番号、追加・削除の背景、対の無い側は斜線（x）。
 import type { CommentDraft, FileText, Hunk, TokenLine } from '@ondina/model';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DiffPane } from '../src/components/DiffPane.js';
 import { DiffList } from '../src/diff/DiffList.js';
@@ -311,6 +311,20 @@ describe('DiffList のメモ（差分一覧で書く。3.3 / 3.4）', () => {
       ['本文 m2', ''],
       ['本文 m3', ''],
     ]);
+  });
+
+  it('AI の下書きの説明（note）は本文と分けて「説明（送信対象外）」の下に出す。直している間も出し、直す枠には本文だけを入れる', () => {
+    const d1 = memo('d1', 10, 'RIGHT', { source: 'codex', state: 'draft', note: '30 行目でも保存している' });
+    const view = (c: CommentDraft) => render(<DiffList hunks={[hunk()]} mode="uni" viewed={[]} selectedHunk={null} dispatch={() => {}} memo={{ comments: [c], ui: NO, githubDiff: undefined, draftText: {} }} />).container;
+    const box = view(d1).querySelector('.mbox.ai')!;
+    expect(box.querySelector('p')!.textContent).toBe('本文 d1');
+    expect(box.querySelector('.dnote')!.textContent).toBe('説明（送信対象外）30 行目でも保存している');
+    cleanup();
+    const editing = view({ ...d1, state: 'edit' }).querySelector('.mbox.ai')!;
+    expect((editing.querySelector('textarea') as HTMLTextAreaElement).value).toBe('本文 d1');
+    expect(editing.querySelector('.dnote')!.textContent).toContain('30 行目でも保存している');
+    cleanup();
+    expect(view(memo('d2', 10, 'RIGHT', { source: 'codex', state: 'draft' })).querySelector('.dnote')).toBeNull();
   });
 
   it('統合: 行ごとに 1 つ「+」（コースの画面と同じく old 列の行番号）', () => {

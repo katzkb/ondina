@@ -28,6 +28,17 @@ export function OffDiffChip({ comment: c, githubDiff }: { comment: CommentDraft;
   );
 }
 
+/** AI の下書きの、レビュアーに向けた説明（12 章。2026-11-04）。送るのは本文だけなので、本文と分けて「送信対象外」と書く。直している間も出す */
+export function DraftNote({ note }: { note: string | undefined }) {
+  if (!note) return null;
+  return (
+    <div className="dnote">
+      <span className="dl">説明（送信対象外）</span>
+      <p>{note}</p>
+    </div>
+  );
+}
+
 /**
  * 行番号の印。GitHub の差分に出る行は「+」（メモを書く）、出ない行は点線の「?」（聞くだけ）。
  * どちらも押すと同じ memo.pick で、押したまま上下になぞると範囲。印が違うだけで、書く枠と聞く枠は MemoEditor が分ける
@@ -214,6 +225,7 @@ export function DraftBox({ draft: c, text, githubDiff, dispatch }: { draft: Comm
         {sent && <span className="chip h">送信済み</span>}
       </div>
       {c.state === 'edit' ? <textarea aria-label="コメント本文" value={body} onChange={(e) => dispatch({ id: 'comment.text', commentId: c.id, body: e.target.value })} /> : <p>{c.body}</p>}
+      <DraftNote note={c.note} />
       {!sent && (
         <div className="ma">
           {c.state === 'draft' && (

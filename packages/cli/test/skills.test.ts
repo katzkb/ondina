@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { COMMENT_WRITING_RULES } from '@ondina/core';
 import { SUBCOMMANDS } from '../src/completion.js';
 
 const SKILLS = path.resolve(import.meta.dirname, '../../../skills');
@@ -34,6 +35,11 @@ describe('skills/', () => {
   it('ondina-comments は解析しない（解析して開くのは ondina）', () => {
     const text = readFileSync(path.join(SKILLS, 'ondina-comments', 'SKILL.md'), 'utf8');
     expect(text).not.toContain('ondina analyze');
+  });
+
+  it('ondina-comments の本文と説明の書き方は、PR 一覧の AI レビューの指示文と同じ文', () => {
+    const text = readFileSync(path.join(SKILLS, 'ondina-comments', 'SKILL.md'), 'utf8');
+    expect(text).toContain(COMMENT_WRITING_RULES);
   });
 
   it.each(['ondina', 'ondina-comments'])('%s: PR 番号を言われなければ、今いるブランチの PR を番号なしの gh pr view で探し、無ければ止まる', (name) => {
