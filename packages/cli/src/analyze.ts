@@ -175,11 +175,20 @@ async function runAnalysis(
     const baseline = graph.symbols.filter((s) => !s.changed).length;
     info.push(`関連の線 ${graph.edges.length} 本（層を飛び越える ${crossing} 本）、経路上の未変更シンボル ${baseline} 件、呼び出し関係を取得できなかったシンボル ${graph.unmeasured} 件`);
   }
-  // 変わる前の呼び出し辺（流れの地図の ① 背景。2026-11-05）。base にだけある未変更シンボルは symbols に足す
+  // 変わる前の呼び出し辺（流れの地図の ① 背景。2026-11-05）。base にだけある未変更シンボルは symbols に足す。
+  // base の本文も head と同じく、初めて聞かれたときに答えに出たファイルをまとめて読む
+  const baseTexts = new Map<string, string | undefined>();
+  const readBase = (rel: string): string | undefined => {
+    if (!baseTexts.has(rel)) {
+      const want = [...new Set([rel, ...callGraphPaths(lspResult?.callGraphBase)])].filter((p) => !baseTexts.has(p));
+      readBlobs(repo, refs.baseSha, want).forEach((text, i) => baseTexts.set(want[i]!, text ?? undefined));
+    }
+    return baseTexts.get(rel);
+  };
   const baseGraph =
     lspResult?.callGraphBase === undefined
       ? undefined
-      : buildBaseCallEdges(lspResult.callGraphBase, { hunks: tokenized, symbols: symbolsBase, layers: layering.rules, layerProvenance: layering.provenance, allowedDependencies: analysisConfig.allowedDependencies, readHead: (rel) => readBlobs(repo, refs.baseSha, [rel])[0] ?? undefined });
+      : buildBaseCallEdges(lspResult.callGraphBase, { hunks: tokenized, symbols: symbolsBase, layers: layering.rules, layerProvenance: layering.provenance, allowedDependencies: analysisConfig.allowedDependencies, readHead: readBase });
   if (baseGraph !== undefined) {
     const known = new Set(graph.symbols.map((s) => s.id));
     graph.symbols.push(...baseGraph.symbols.filter((s) => !known.has(s.id)));
