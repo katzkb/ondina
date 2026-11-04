@@ -20,6 +20,7 @@ import { ideaUrl } from '../ide.js';
 import { isMemo, memoPlace, memoStop, mergeDraft, newMemo, onGithubDiff, pickFor, pickRange, spanLabel, stopShows, type MemoPick, type PickScreen } from '../memo.js';
 import { DEFAULT_PR_FILTER, reviewActive, type DetailTab, type PrFilter } from '../prs.js';
 import { enqueue, finished, isActive, jobOf, mergeJobs, NO_REANALYZE, type ReanalyzeUi } from '../reanalyze.js';
+import type { Page } from '../route.js';
 import { DEFAULT_THEME, parseTheme } from '../theme.js';
 
 /** PR 一覧（3.11）/ 入口（全体図。3.1）/ 目的ごとに分けた画面（How 分解。3.2）/ コース（3.3）/ 差分一覧（3.4）/ 締め（3.9） */
@@ -1067,6 +1068,39 @@ function startHome(state: Loaded): Reduced {
   return all[0] ? enterCourse(state, all[0].id) : none(state);
 }
 
+/** URL の画面（route.go）へ。画面を移すコマンドと同じ処理で移る。無いコース・停留所・目的・ファイルは入口の説明タブ */
+function goTo(state: Loaded, page: Page): Reduced {
+  const via = (...commands: Command[]): Reduced =>
+    commands.reduce((r, c) => {
+      const next = reduceAll(r.state, c);
+      return { state: next.state, effects: [...r.effects, ...next.effects] };
+    }, none(state));
+  const explain = () => via({ id: 'view.home' }, { id: 'home.tab', tab: 'text' });
+  switch (page.kind) {
+    case 'explain':
+      return explain();
+    case 'map':
+      return via({ id: 'view.home' }, { id: 'home.tab', tab: 'map' });
+    case 'hows': {
+      if (page.how !== null && !state.analysis.hows.some((h) => h.id === page.how)) return explain();
+      const r = via({ id: 'view.hows' });
+      return { ...r, state: { ...r.state, selectedHow: page.how } };
+    }
+    case 'course': {
+      const n = courseOf(courses(state.analysis), page.course)?.steps.length ?? 0;
+      if (n === 0) return explain();
+      if (page.at.kind === 'brief') return enterCourse(state, page.course);
+      if (page.at.kind === 'summary') return none(toStop(state, { id: page.course, i: n - 1, screen: 'summary' }));
+      return page.at.i >= 0 && page.at.i < n ? enterCourse(state, page.course, page.at.i) : explain();
+    }
+    case 'diff':
+      if (page.file === null) return via({ id: 'view.diff' });
+      return state.analysis.hunks.some((h) => h.path === page.file) ? via({ id: 'view.diff' }, { id: 'file.select', path: page.file }) : explain();
+    case 'closing':
+      return via({ id: 'view.closing' });
+  }
+}
+
 function withReview(state: Loaded, review: ReviewState): Reduced {
   return { state: { ...state, review }, effects: [{ type: 'saveState' }] };
 }
@@ -1559,6 +1593,8 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
       if (cur === null) return none(state);
       return none({ ...state, showPalette: true, paletteFrom: cur.symbolId, showKeymap: false });
     }
+    case 'route.go':
+      return goTo(state, command.page);
     case 'hunk.select':
       return select(state, command.hunkId);
     case 'diff.open':

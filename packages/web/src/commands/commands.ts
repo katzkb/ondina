@@ -5,6 +5,7 @@ import type { DetailTab } from '../prs.js';
 import type { KeyChange } from './keymap.js';
 import type { PaletteTarget } from '../palette.js';
 import type { RelDir } from '../rel.js';
+import type { Page } from '../route.js';
 
 export type Command =
   /** PR 一覧（3.11）へ。開くたびに GitHub から取り直す。解析が無くても開ける */
@@ -48,6 +49,8 @@ export type Command =
   | { id: 'view.course' }
   /** 締め（3.9）へ。いたコースの場所は残す */
   | { id: 'view.closing' }
+  /** URL の画面（route.ts）へ。起動したときと、ブラウザの戻る・進む。無いコース・停留所・目的・ファイルは入口の説明タブへ */
+  | { id: 'route.go'; page: Page }
   /** 差分一覧の画面でその hunk を選ぶ（締めの「見ていない差分」の「開く」） */
   | { id: 'diff.open'; hunkId: string }
   /**
