@@ -1,4 +1,4 @@
-// 上の帯の下の 1 行（設計書 3.0。2026-10-13）。新しいコミットを見つけた・順番待ち・解析し直している・できた・切り替えた・失敗した を知らせる。
+// 上の帯の下の 1 行（設計書 3.0。2026-10-13）。新しいコミットを見つけた・順番待ち・解析し直している・できた・切り替えた・同じ版を解析し直した・失敗した を知らせる。
 // 知らせることが無ければ出さない。置き場所と出し方は動く見本を比べて決めた（帯の下に 1 行・知らせて待つ）。
 import { useEffect, useReducer } from 'react';
 import type { Command } from '../commands/commands.js';
@@ -64,6 +64,19 @@ export function ReanalyzeStrip({ strip, dispatch }: { strip: Strip | null; dispa
           <span className="sp">
             <button type="button" className="btn sm primary" onClick={() => dispatch({ id: 'reanalyze.switch' })}>
               切り替える
+            </button>
+          </span>
+        </div>
+      );
+    case 'redone':
+      return (
+        <div className="reanalyze ok" role="status" aria-label="解析し直しました">
+          <span>
+            <b>{short(strip.to)}</b> を解析し直して、表示を新しい解析に入れ替えました。
+          </span>
+          <span className="sp">
+            <button type="button" className="x" aria-label="閉じる" onClick={() => dispatch({ id: 'reanalyze.dismiss' })}>
+              ×
             </button>
           </span>
         </div>

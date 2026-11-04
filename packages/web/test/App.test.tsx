@@ -28,6 +28,13 @@ async function press(name: string | RegExp) {
   });
 }
 
+/** 知らせの 1 行の中のボタンを押す（上の帯にも同じ名前のボタンがある） */
+async function pressIn(el: HTMLElement, name: string | RegExp) {
+  await act(async () => {
+    fireEvent.click(within(el).getByRole('button', { name }));
+  });
+}
+
 /** 起動時は入口なので、読み込みを待ってから上の帯の「差分一覧」へ（ボタンにキー D が付く） */
 async function renderDiffList(api: Api) {
   const r = render(<App api={api} />);
@@ -2959,7 +2966,7 @@ describe('App（解析し直す。3.0 の帯の下の 1 行）', () => {
     await press(/^差分一覧/);
     expect(await strip('新しいコミット')).toHaveTextContent(`新しいコミットが 2 件あります（${OLD.slice(0, 7)} → fffffff）`);
 
-    await press('解析し直す');
+    await pressIn(await strip('新しいコミット'), '解析し直す');
     expect(fake.started).toEqual([{ key: '42', from: OLD }]);
     act(() => fake.setJobs([{ status: 'running', key: '42', from: OLD, startedAt: Date.now(), line: '差分を切り出しています' }]));
     expect(await within(await strip('解析し直しています')).findByText('差分を切り出しています', {}, { timeout: 3000 })).toBeInTheDocument();
@@ -2991,7 +2998,7 @@ describe('App（解析し直す。3.0 の帯の下の 1 行）', () => {
     render(<App api={fake.api} />);
     await ready();
     await strip('新しいコミット');
-    await press('解析し直す');
+    await pressIn(await strip('新しいコミット'), '解析し直す');
     act(() => fake.setJobs([{ status: 'failed', key: '42', from: OLD, reason: 'gh pr view 42 に失敗しました: HTTP 401' }]));
     const alert = await strip('解析できませんでした');
     expect(alert).toHaveTextContent('解析できませんでした: gh pr view 42 に失敗しました: HTTP 401');
@@ -3006,9 +3013,32 @@ describe('App（解析し直す。3.0 の帯の下の 1 行）', () => {
     render(<App api={fake.api} />);
     await ready();
     await strip('新しいコミット');
-    await press('解析し直す');
+    await pressIn(await strip('新しいコミット'), '解析し直す');
     expect(await strip('順番待ち')).toHaveTextContent('PR #42 の解析は順番待ちです（前に 1 件）');
     expect(fake.started).toEqual([{ key: '42', from: fixtureAnalysis().pr.headSha }]);
+  });
+
+  it('上の帯の［解析し直す］は新しいコミットが無くても押せ、解析中は押せない。同じ版でできたら読み直して知らせ、× で閉じる', async () => {
+    const analysis = fixtureAnalysis();
+    const OLD = analysis.pr.headSha;
+    const fake = fakeApi(analysis, { key: '42' });
+    render(<App api={fake.api} />);
+    await ready();
+    await press(/^差分一覧/);
+    const button = within(screen.getByRole('banner')).getByRole('button', { name: '解析し直す' });
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(fake.started).toEqual([{ key: '42', from: OLD }]);
+    expect(button).toBeDisabled();
+    act(() => fake.setJobs([{ status: 'running', key: '42', from: OLD, startedAt: Date.now() }]));
+    await strip('解析し直しています');
+    act(() => fake.setJobs([{ status: 'done', key: '42', from: OLD, headSha: OLD }]));
+    expect(await strip('解析し直しました')).toHaveTextContent(`${OLD.slice(0, 7)} を解析し直して、表示を新しい解析に入れ替えました。`);
+    expect(button).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^差分一覧/ })).toHaveAttribute('aria-current', 'page');
+    await press('閉じる');
+    expect(screen.queryByRole('status', { name: '解析し直しました' })).toBeNull();
   });
 
   it('今のバージョンが最新なら何も出さない', async () => {

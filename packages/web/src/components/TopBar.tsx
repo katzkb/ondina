@@ -1,9 +1,10 @@
-// 共通シェルのトップバー（設計書 3.0）。PR 切替、完了メーター、画面の行き先（PR 一覧 / 全体図 / 目的ごと / 差分一覧 / 締め。2026-09-30 に左の列から移した）、
+// 共通シェルのトップバー（設計書 3.0）。PR 切替、解析し直す（2026-11-04）、完了メーター、画面の行き先（PR 一覧 / 全体図 / 目的ごと / 差分一覧 / 締め。2026-09-30 に左の列から移した）、
 // ⌘K、動いている処理（解析と AI レビュー。2026-10-22）、設定（歯車 → モーダル）。「GitHub で承認」は 2026-10-03 に締め（3.9）の中へ移した。
 import type { AnalysisSummary, AnalyzeJob, ReviewJob } from '@ondina/model';
 import type { Command } from '../commands/commands.js';
 import type { Meter, Ratio } from '../meter.js';
 import type { CourseAt, View } from '../state/reducer.js';
+import { isActive, jobOf } from '../reanalyze.js';
 import { Key, useKey } from './Key.js';
 
 export interface TopBarProps {
@@ -46,6 +47,7 @@ export function TopBar({ analyses, current, meter, view, course, loaded, jobs, r
       ) : (
         <span className="num">{current ? label(current) : 'ondina'}</span>
       )}
+      {current && view !== 'prs' && <ReanalyzeButton busy={isActive(jobOf(jobs, current.key))} dispatch={dispatch} />}
       {/* PR 一覧は開いている解析の画面ではないので、その題名・ブランチ・メーターを出さない */}
       {current && view !== 'prs' && (
         <>
@@ -90,6 +92,15 @@ export function TopBar({ analyses, current, meter, view, course, loaded, jobs, r
         ⚙
       </button>
     </header>
+  );
+}
+
+/** 開いている版をいつでも解析し直す（設定を変えた・前の ondina で作った解析を作り直すとき）。順番待ちか解析中の間は押せない */
+function ReanalyzeButton({ busy, dispatch }: { busy: boolean; dispatch: (c: Command) => void }) {
+  return (
+    <button type="button" className="btn sm" disabled={busy} title={busy ? 'この PR を解析しています' : '開いているバージョンを解析し直します'} onClick={() => dispatch({ id: 'reanalyze.start', now: Date.now() })}>
+      解析し直す
+    </button>
   );
 }
 
