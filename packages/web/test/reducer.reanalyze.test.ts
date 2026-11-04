@@ -156,3 +156,28 @@ describe('切り替える', () => {
     expect(stripOf(r.state)).toBeNull();
   });
 });
+
+describe('同じ版を解析し直す（上の帯のボタン）', () => {
+  it('新しいコミットが無くても start できる', () => {
+    const r = reduce(loaded(), { id: 'reanalyze.start', now: 1000 });
+    expect(r.effects).toEqual([{ type: 'startAnalyze', key: '42', from: OLD }]);
+    expect(stripOf(r.state)).toEqual({ kind: 'running', startedAt: 1000 });
+  });
+
+  it('同じ head で終わったら、今の解析を読み直して「解析し直しました」。閉じると消える', () => {
+    const s = run(loaded(), { id: 'reanalyze.start', now: 1000 }, { id: 'reanalyze.job', jobs: [running] });
+    const r = reduce(s, { id: 'reanalyze.job', jobs: [{ status: 'done', key: '42', from: OLD, headSha: OLD }] });
+    expect(r.effects).toEqual([{ type: 'refreshAnalyses' }, { type: 'loadAnalysis', key: '42', headSha: OLD }]);
+    expect(stripOf(r.state)).toEqual({ kind: 'redone', to: OLD });
+    const again = run(r.state, { id: 'data.loaded', summary: summary(), analysis, review: emptyReview() });
+    expect(stripOf(again)).toEqual({ kind: 'redone', to: OLD });
+    expect(stripOf(run(again, { id: 'reanalyze.dismiss' }))).toBeNull();
+  });
+
+  it('別の PR を開いたら「解析し直しました」は出さず、元の PR に戻っても出さない', () => {
+    const s = run(loaded(), { id: 'reanalyze.job', jobs: [running] }, { id: 'reanalyze.job', jobs: [{ status: 'done', key: '42', from: OLD, headSha: OLD }] });
+    const other = run(s, { id: 'data.loaded', summary: summary(OLD, '7'), analysis, review: emptyReview() });
+    expect(stripOf(other)).toBeNull();
+    expect(stripOf(run(other, { id: 'data.loaded', summary: summary(), analysis, review: emptyReview() }))).toBeNull();
+  });
+});

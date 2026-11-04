@@ -14,9 +14,11 @@ export interface ReanalyzeUi {
   latest: LatestFor | null;
   /** serve の解析（key ごとの最新。並びは serve と同じ 順番待ち → 解析中 → 終わったもの）と、serve に頼めなかった失敗 */
   jobs: AnalyzeJob[];
+  /** 同じ版を解析し直して読み直した（上の帯のボタン）。閉じるか別の版を開くまで知らせる */
+  redone: { key: string; headSha: string } | null;
 }
 
-export const NO_REANALYZE: ReanalyzeUi = { latest: null, jobs: [] };
+export const NO_REANALYZE: ReanalyzeUi = { latest: null, jobs: [], redone: null };
 
 /** 順番待ちか解析中 */
 export const isActive = (j: AnalyzeJob | undefined): boolean => j?.status === 'queued' || j?.status === 'running';
@@ -55,6 +57,8 @@ export type Strip =
   | { kind: 'noticed'; from: string; to: string; newCommits?: number; workingTree?: true }
   /** 新しいバージョンの解析がある。changed は変わった差分の数（聞き直す前は無い） */
   | { kind: 'ready'; to: string; changed?: number }
+  /** 同じ版を解析し直して読み直した */
+  | { kind: 'redone'; to: string }
   /** 前のバージョンから引き継いだ。reset = 未確認に戻した差分の数、courses = 未完了に戻したコース、left = 前のバージョンに残したメモの数 */
   | { kind: 'switched'; to: string; reset: number; courses: number[]; left: number };
 
@@ -71,6 +75,8 @@ export function stripOf(s: { current: AnalysisSummary | null; review: ReviewStat
     if (h.analyzed) return { kind: 'ready', to: h.headSha, ...(h.changed === undefined ? {} : { changed: h.changed }) };
     return { kind: 'noticed', from: cur.headSha, to: h.headSha, ...(h.newCommits === undefined ? {} : { newCommits: h.newCommits }), ...(cur.pr.workingTree ? { workingTree: true as const } : {}) };
   }
+  const r = s.reanalyze.redone;
+  if (r !== null && r.key === cur.key && r.headSha === cur.headSha) return { kind: 'redone', to: cur.headSha };
   const c = s.review?.carried;
   if (c !== undefined && c.dismissed !== true) return { kind: 'switched', to: cur.headSha, reset: c.reset.length, courses: c.coursesReset, left: c.left.length };
   return null;

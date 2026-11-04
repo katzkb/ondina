@@ -371,7 +371,7 @@ type Place = Pick<AppState, 'view' | 'selectedFile' | 'selectedHunk' | 'selected
  */
 function sameVersionPlace(state: AppState, to: AnalysisSummary, analysis: Analysis, review: ReviewState, files: readonly FileEntry[]): Place | undefined {
   // PR 一覧から開いたときは入口へ（PR 一覧は解析の中の場所ではない）
-  if (!state.current || state.current.key !== to.key || state.current.headSha === to.headSha || state.view === 'prs') return undefined;
+  if (!state.current || state.current.key !== to.key || state.view === 'prs') return undefined;
   const file = files.find((f) => f.path === state.selectedFile);
   const hunk = file?.hunks.find((h) => h.id === state.selectedHunk) ?? file?.hunks[0];
   const place = {
@@ -687,7 +687,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
         ...(key === 'local' ? [] : [{ type: 'githubRead', key, headSha, quiet: false } as const]),
         { type: 'checkLatest', key, headSha },
       ];
-      // 同じ PR の別のバージョン（解析し直して切り替えた・左上で選んだ）なら、今の画面と選んでいるファイルのまま。コースにいれば同じコースの最初の未確認の停留所へ
+      // 同じ PR のバージョン（解析し直して切り替えた・同じ版を解析し直した・左上で選んだ）なら、今の画面と選んでいるファイルのまま。コースにいれば同じコースの最初の未確認の停留所へ
       const keep = sameVersionPlace(state, command.summary, command.analysis, review, files);
       return { effects, state: {
         ...state,
@@ -716,6 +716,8 @@ function reduceAll(state: AppState, command: Command): Reduced {
         paletteFrom: null,
         send: { status: 'idle' },
         github: { ...NO_GITHUB, seq: state.github.seq },
+        // 「解析し直しました」は、解析し直した版を読み直したときだけ残す（別の版を開いてから戻ったときには出さない）
+        reanalyze: { ...state.reanalyze, redone: state.reanalyze.redone?.key === key && state.reanalyze.redone.headSha === headSha ? state.reanalyze.redone : null },
         ask: NO_ASK,
         focusLine: null,
         treeShut: NO_TREE,
@@ -742,6 +744,9 @@ function reduceAll(state: AppState, command: Command): Reduced {
       const cur = state.current;
       const mine = cur ? done.find((j) => j.key === cur.key) : undefined;
       if (!cur || mine?.status !== 'done') return { state: next, effects: [{ type: 'refreshAnalyses' }] };
+      if (mine.headSha === cur.headSha) {
+        return { state: { ...next, reanalyze: { ...next.reanalyze, redone: { key: cur.key, headSha: cur.headSha } } }, effects: [{ type: 'refreshAnalyses' }, { type: 'loadAnalysis', key: cur.key, headSha: cur.headSha }] };
+      }
       // 今の PR の解析ができた。聞き直すまでは変わった差分の数が無いまま「できた」を出す
       const latest = { key: cur.key, headSha: cur.headSha, head: { headSha: mine.headSha, analyzed: true } };
       return { state: { ...next, reanalyze: { ...next.reanalyze, latest } }, effects: [{ type: 'refreshAnalyses' }, { type: 'checkLatest', key: cur.key, headSha: cur.headSha }] };
@@ -758,6 +763,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return { state, effects: [{ type: 'switchTo', key: cur.key, headSha: l.head.headSha }] };
     }
     case 'reanalyze.dismiss':
+      if (state.reanalyze.redone !== null) return none({ ...state, reanalyze: { ...state.reanalyze, redone: null } });
       if (!state.review?.carried || state.review.carried.dismissed) return none(state);
       return { state: { ...state, review: { ...state.review, carried: { ...state.review.carried, dismissed: true } } }, effects: [{ type: 'saveState' }] };
     case 'view.home':
