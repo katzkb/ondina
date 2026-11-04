@@ -8,7 +8,7 @@
 // - ただし依存の変化は拾わない（ビルドスクリプトに gson を足しても、gson の 5 か所に色が付かない）。そこで起動し直す（restart.ts）
 // - ソケット（--multi-client）で接続し直す形は、接続のたびに取り込みが走るので使わない。1 本の stdio 接続を持ち続ける
 // 2026-10-19: 起動するときは、保存したプロジェクト構造（lsp-model.ts）で Gradle の取り込みを省く。実際のプロジェクトでは、準備の大半が Gradle の取り込みだった
-import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, writeSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { firstRestartPath, type CallGraphSource, type DefinitionSource, type ImportNotificationRule, type ProbeTarget, type SemanticSource } from '@ondina/core';
@@ -57,7 +57,8 @@ export interface LspJobResult {
   /** 起動済みの言語サーバーを使ったか */
   reused: boolean;
   /** definitions は名前から定義への答え（3.6）。semantic には、その 2 段目で全体を聞いたファイルの分も入る */
-  result?: { semantic: SemanticSource; callGraph: CallGraphSource; definitions?: DefinitionSource };
+  /** callGraphBase は変わる前の worktree の呼び出し関係（2026-11-05）。古い serve の答えには無い */
+  result?: { semantic: SemanticSource; callGraph: CallGraphSource; callGraphBase?: CallGraphSource; definitions?: DefinitionSource };
 }
 
 export interface LspHolder {
@@ -273,9 +274,11 @@ export function createLspHolder(repo: string, o: { handleSignals?: boolean } = {
       try {
         const semantic = await collectSemanticTokens(session.client, session.legend, a.sides, roots);
         const callGraph = await collectCallGraph(session.client, { hunks: a.hunks, root: roots.head, isTestPath: a.isTestPath });
+        // 変わる前の呼び出し関係（流れの地図の ① 背景。2026-11-05）。base にあるファイルの hunk だけ、呼び出しだけ聞く
+        const callGraphBase = await collectCallGraph(session.client, { hunks: a.hunks.filter((h) => existsSync(path.join(roots.base, h.path))), root: roots.base, isTestPath: a.isTestPath, callsOnly: true, recordEnv: 'ONDINA_LSP_RECORD_BASE' });
         const changed = new Set(a.changed);
         const definitions = await collectDefinitions(session.client, { legend: session.legend, semantic, hunks: a.hunks, changed, worktrees: roots, unchanged: unchangedFiles(callGraph, changed), open: (abs) => session.open(abs) });
-        return { run: { command, status: 'ok', waitedMs }, reused, result: { semantic, callGraph, definitions } };
+        return { run: { command, status: 'ok', waitedMs }, reused, result: { semantic, callGraph, callGraphBase, definitions } };
       } catch (e) {
         // 準備完了はしていたが取り出しに失敗した。解析は止めず、事実として残す（9.5）
         if (!session.alive()) {

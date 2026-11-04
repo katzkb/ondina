@@ -41,7 +41,7 @@ export { createLspClient, type LspClient, type LspIo } from './lsp/client.js';
 export { cutExcerpt } from './lsp/excerpt.js';
 export { buildConfigPaths, firstRestartPath } from './lsp/restart.js';
 export { EXPORT_PROJECT_MODEL_COMMAND, outsideSourceDirs, placeProjectModel, PROJECT_MODEL_FILE, projectModelFiles, projectModelKey, projectModelSourceDirs, type BuildConfigFile } from './lsp/project-model.js';
-export { buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphContext, type CallGraphResult, type CallGraphSource, type CallItem, type DeclarationRange } from './lsp/edges.js';
+export { buildBaseCallEdges, buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphContext, type CallGraphResult, type CallGraphSource, type CallItem, type DeclarationRange } from './lsp/edges.js';
 export { buildDefinitions, defTargetOf, diffLines, drawerFiles, filesToAsk, libName, namePositions, placeTarget, shownAt, type DefinitionAnswer, type DefinitionSource, type DefSide, type NamePosition, type RawDefTarget } from './lsp/definitions.js';
 export { buildTours, type BuildToursArgs } from './tour/build.js';
 export { buildBehaviors, type BuildBehaviorsArgs } from './behavior/build.js';
