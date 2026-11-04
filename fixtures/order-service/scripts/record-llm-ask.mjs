@@ -1,12 +1,14 @@
 // 案内人に聞く（設計書 10.5）の答えを記録する。テストは LLM を起動せず、ここで記録した JSON を使う。
 //
-//   node fixtures/order-service/scripts/record-llm-ask.mjs [pr|symbol|hunk|lines ...]
+//   node fixtures/order-service/scripts/record-llm-ask.mjs [pr|symbol|hunk|lines|why ...]
 //   LLM_COMMAND='codex exec --skip-git-repo-check -s read-only -' node fixtures/order-service/scripts/record-llm-ask.mjs web
 //
 // 先に `pnpm build`（core の dist を使う）。入力はゴールデン expected/ask-input-<name>.json（core のテスト ask.input.test.ts が組む）なので、
 // 言語サーバーも fixture の git リポジトリも要らない。LLM コマンドは環境変数 LLM_COMMAND で差し替えられる（既定は analyze の既定と同じ claude -p …）。
 // 出力が読めなければ保存しない。かかった時間を記録に残す（設計書 10.5 の待ち時間）。
 // web（コードの外の問い「?: って何？」）は、ネットを調べられる codex で採る（既定の claude -p --tools "" は調べられない）。既定の 4 つには入れない。
+// why（PR の本文・チケット・背景のある入力で「なぜ」を聞く。2026-11-04）も既定の 4 つには入れない。
+// 答えの代わりに need（読みたいコード）が返ったら保存しない（読んで聞き直すのは serve だけ。ここは 1 回しか聞かない）。
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -33,6 +35,11 @@ for (const name of names) {
   const parsed = parseAskOutput(run.stdout);
   if ('error' in parsed) {
     process.stderr.write(`出力が読めません: ${parsed.error}\n${run.stdout.slice(0, 2000)}\n`);
+    failed = true;
+    continue;
+  }
+  if ('need' in parsed) {
+    process.stderr.write(`答えの代わりに need が返りました（保存しません）: ${JSON.stringify(parsed.need)}\n`);
     failed = true;
     continue;
   }

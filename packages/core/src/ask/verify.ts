@@ -8,10 +8,11 @@ import type { AskInput, AskInputLines, AskOutput } from './types.js';
 
 const LINE = /^([hb])(\d+) /;
 
-/** 材料に出した行の場所の集合（path\0side\0line） */
+/** 材料に出した行の場所の集合（path\0side\0line）。頼まれて読んだ物（reads）も材料 */
 function materialLines(input: AskInput): Set<string> {
   const p = input.place;
-  const blocks: AskInputLines[] = p.kind === 'pr' ? p.hunks : p.kind === 'course' ? p.stops : [...(p.file ? [{ path: p.path, lines: p.file }] : []), ...p.hunks, ...p.related, ...(p.selected ? [p.selected] : [])];
+  const place: AskInputLines[] = p.kind === 'pr' ? p.hunks : p.kind === 'course' ? p.stops : [...(p.file ? [{ path: p.path, lines: p.file }] : []), ...p.hunks, ...p.related, ...(p.selected ? [p.selected] : [])];
+  const blocks = [...place, ...(input.reads ?? [])];
   const out = new Set<string>();
   for (const b of blocks) {
     for (const l of b.lines) {

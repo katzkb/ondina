@@ -1,9 +1,10 @@
 // 案内人に聞く（設計書 3.10 / 10.5）の材料を、Analysis と「何について」から組む。決定的。
-// ゴールデンは expected/ask-input-{pr,symbol,hunk,lines,web}.json（record-llm-ask.mjs がこれを LLM コマンドに渡す）。
+// ゴールデンは expected/ask-input-{pr,symbol,hunk,lines,web,why}.json（record-llm-ask.mjs がこれを LLM コマンドに渡す）。
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Analysis, AskEntry, Hunk } from '@ondina/model';
-import { buildAskInput, excerptLines, fileLines, hunkLines } from '../src/ask/input.js';
+import type { Analysis, AskEntry, Background, Hunk, Ticket } from '@ondina/model';
+import { ASK_TEXT_LIMIT, buildAskInput, excerptLines, fileLines, hunkLines } from '../src/ask/input.js';
 import { FIXTURE_ROOT } from './fixture.js';
 import { fixtureAnalysis } from './fixture-analysis.js';
 
@@ -150,6 +151,60 @@ describe('buildAskInput', () => {
       { question: 'q3', answer: 'l3\ni3\nt3' },
       { question: 'q4', answer: 'l4\ni4\nt4' },
     ]);
+  });
+});
+
+// 2026-11-04: 題しか渡さなかったので、「なぜ」の理由が PR の本文とチケットにあっても分からないと答えた
+describe('PR の本文・チケット・背景', () => {
+  const fixtureText = (rel: string) => readFileSync(path.join(FIXTURE_ROOT, rel), 'utf8');
+  const jira = JSON.parse(fixtureText('ticket/jira-issue.json')) as { fields: { summary: string }; renderedFields: { description: string } };
+  const spec = JSON.parse((JSON.parse(fixtureText('llm/spec-output.json')) as { stdout: string }).stdout) as { why: string[]; parentWhy: string[] };
+  const written = JSON.parse(fixtureText('expected/text.json')) as { background: Background };
+  const jiraTicket: Ticket = { ref: 'SHOP-421', source: 'jira', at: '2026-10-29T00:00:00.000Z', key: 'SHOP-421', url: 'https://example.atlassian.net/browse/SHOP-421', title: jira.fields.summary, body: jira.renderedFields.description, format: 'html' };
+  const background: Background = { why: spec.why, project: { parent: { key: 'SHOP-400', url: 'https://example.atlassian.net/browse/SHOP-400', via: 'epic' }, why: spec.parentWhy, children: ['SHOP-421'] }, ...written.background };
+  const withPr = (pr: Partial<Analysis['pr']>, extra: Partial<Analysis> = {}): Analysis => ({ ...analysis, pr: { ...analysis.pr, ...pr }, ...extra });
+
+  it('本文はそのまま（前後の空白を除く）。空なら渡さない', () => {
+    const body = fixtureText('pr-body.md');
+    expect(buildAskInput(withPr({ body }), { kind: 'pr' }, 'Q').pr).toEqual({ title: 'main..feature/discount', body: body.trim() });
+    expect(buildAskInput(withPr({ body: ' \n' }), { kind: 'pr' }, 'Q').pr).toEqual({ title: 'main..feature/discount' });
+  });
+
+  it(`長い本文は ${ASK_TEXT_LIMIT} 字で切って末尾に ⋯（チケットの本文も同じ）`, () => {
+    const long = 'あ'.repeat(ASK_TEXT_LIMIT + 10);
+    const { pr } = buildAskInput(withPr({ body: long, ticket: { ...jiraTicket, body: long, format: 'markdown' } }), { kind: 'pr' }, 'Q');
+    expect(pr.body).toBe(`${'あ'.repeat(ASK_TEXT_LIMIT)}\n⋯`);
+    expect(pr.ticket!.body).toBe(`${'あ'.repeat(ASK_TEXT_LIMIT)}\n⋯`);
+  });
+
+  it('チケット: 番号と題と本文。Jira の HTML はタグを外した文字にする', () => {
+    const { ticket } = buildAskInput(withPr({ ticket: jiraTicket }), { kind: 'pr' }, 'Q').pr;
+    expect(ticket).toMatchObject({ ref: 'SHOP-421', title: '注文に割引コードを適用できるようにする' });
+    expect(ticket!.body).not.toMatch(/<[a-z/]/);
+    expect(ticket!.body!.split('\n')).toEqual(expect.arrayContaining(['背景', '春のキャンペーン（SHOP-400）で割引コードを配る。今は注文に割引を付ける手段が無い。', '- 知らないコードは割引しない（小計のまま）']));
+  });
+
+  it('取れなかったチケットは ref だけ', () => {
+    const failed: Ticket = { ref: 'SHOP-421', source: 'jira', at: '', key: 'SHOP-421', error: '401 Unauthorized' };
+    expect(buildAskInput(withPr({ ticket: failed }), { kind: 'pr' }, 'Q').pr.ticket).toEqual({ ref: 'SHOP-421' });
+  });
+
+  it('背景: チケットの理由・親チケットの目的・前からあるもの（名前とパス）・言葉。案件の PR の一覧などは渡さない', () => {
+    const input = buildAskInput(withPr({}, { background }), { kind: 'pr' }, 'Q');
+    expect(input.background).toEqual({
+      why: spec.why,
+      projectWhy: spec.parentWhy,
+      existing: written.background.existing!.map((e) => ({ names: e.names.map(({ fqName, path }) => ({ fqName, path })), text: e.text, removed: e.removed })),
+      terms: written.background.terms,
+    });
+    expect(buildAskInput(withPr({}, { background: {} }), { kind: 'pr' }, 'Q')).not.toHaveProperty('background');
+    expect(buildAskInput(analysis, { kind: 'pr' }, 'Q')).not.toHaveProperty('background');
+  });
+
+  it('ゴールデン: コース 3 の 1 か所目 domain.Order: なぜ promo を消して discount にしたの？', async () => {
+    const withAll = withPr({ body: fixtureText('pr-body.md'), ticket: jiraTicket }, { background });
+    const json = JSON.stringify(buildAskInput(withAll, { kind: 'symbol', symbolId: ORDER, courseId: 3 }, 'なぜ promo を消して discount にしたの？'), null, 2) + '\n';
+    await expect(json).toMatchFileSnapshot(path.join(FIXTURE_ROOT, 'expected/ask-input-why.json'));
   });
 });
 

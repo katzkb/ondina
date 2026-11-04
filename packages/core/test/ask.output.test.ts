@@ -18,8 +18,23 @@ const input: AskInput = buildAskInput(fixtureAnalysis(), { kind: 'symbol', symbo
 describe('renderAskPrompt', () => {
   const p = renderAskPrompt(input);
 
-  it('判断を書かない・リポジトリのファイルを読まない・JSON 1 個だけ', () => {
-    for (const s of ['評価語', 'リポジトリのファイルを読まない', 'コマンドを実行しない', 'JSON オブジェクト 1 つだけ', '材料からは分からない', 'Markdown', '常体', '文の中に h12 や b6 の番号を書かない', 'field → フィールド', '直訳しない', 'サンプル']) expect(p, s).toContain(s);
+  it('判断を書かない・リポジトリのファイルを自分で読まない・JSON 1 個だけ', () => {
+    for (const s of ['評価語', 'リポジトリのファイルを自分で読まない', 'コマンドを実行しない', 'JSON オブジェクト 1 つだけ', 'Markdown', '常体', '文の中に h12 や b6 の番号を書かない', 'field → フィールド', '直訳しない', 'サンプル']) expect(p, s).toContain(s);
+  });
+
+  // 2026-11-04: 「材料からは分からない」と書かせていたので、材料の外のコードを読まずに断り、「なぜ」も本文とチケットを見ずに分からないと答えた
+  it('材料に無いコードは need で頼む。「なぜ」は PR の本文・チケット・背景から答え、どこに書いてあるかを示す', () => {
+    expect(p).not.toContain('材料からは分からない');
+    for (const s of ['"need"', '"files"', '"search"', 'reads', 'pr.body', 'pr.ticket', 'background', 'PR の本文に', '頼んで読んだあとも見つからないときだけ']) expect(p, s).toContain(s);
+  });
+
+  it('最後の回は、もう頼めないと書き、出力の形から need を外す', () => {
+    const schemaOf = (prompt: string) => prompt.slice(prompt.indexOf('出力の形（JSON Schema）:'), prompt.lastIndexOf('入力:\n'));
+    const last = renderAskPrompt(input, { last: true });
+    expect(last).toContain('もう読みたいものを頼めない');
+    expect(schemaOf(last)).not.toContain('"need"');
+    expect(p).not.toContain('もう読みたいものを頼めない');
+    expect(schemaOf(p)).toContain('"need"');
   });
 
   it('コードの外のことにも答え、材料に無いことはネットで調べる（2026-10-15。材料だけに縛ると「これって何？」に答えなかった）', () => {
@@ -67,6 +82,16 @@ describe('parseAskOutput', () => {
     });
   });
 
+  it('lead が無く need があれば、読みたいもの（空・重なり・文字列でない物を除き、それぞれ 5 つまで）', () => {
+    expect(parseAskOutput('{"need":{"files":["a.kt"," a.kt ","",3],"search":["legacyPromo"]}}')).toEqual({ need: { files: ['a.kt'], search: ['legacyPromo'] } });
+    expect(parseAskOutput('{"need":{"files":["1","2","3","4","5","6","7"]}}')).toEqual({ need: { files: ['1', '2', '3', '4', '5'], search: [] } });
+    expect(parseAskOutput('{"need":{"files":[],"search":[" "]}}')).toEqual({ error: 'lead がありません' });
+  });
+
+  it('lead があれば need が一緒にあっても答えを採る', () => {
+    expect(parseAskOutput('{"lead":"x","items":[],"need":{"files":["a.kt"]}}')).toEqual({ output: { lead: 'x', items: [] } });
+  });
+
   it('items が無ければ空。文の無い項目は捨てる。cite の line が null でも読む（検証で外す）', () => {
     const r = parseAskOutput('{"lead":"x","items":[{"text":""},{"text":"b","cite":{"path":"p","side":"base","line":null}},"c"]}');
     expect(r).toEqual({ output: { lead: 'x', items: [{ text: 'b', cite: { path: 'p', side: 'base', line: null } }] } });
@@ -101,6 +126,14 @@ describe('verifyAskAnswer', () => {
     expect(verifyAskAnswer(out([{ text: 'a', cite }]), withLines).items[0]).toEqual({ text: 'a', unverified: true });
     const picked: AskInput = { ...withLines, place: { ...withLines.place, selected: { path: ORDER_KT, from: 'h1', to: 'h1', lines: ['h1   package com.example.order.domain'] } } };
     expect(verifyAskAnswer(out([{ text: 'a', cite }]), picked).items[0]).toEqual({ text: 'a', cite });
+  });
+
+  it('頼んで読んだもの（reads）の行も材料に数える', () => {
+    const P = 'src/main/kotlin/com/example/order/domain/Money.kt';
+    const read: AskInput = { ...input, reads: [{ kind: 'file', request: P, path: P, lines: ['h1   package com.example.order.domain', 'h2   '] }] };
+    expect(verifyAskAnswer(out([{ text: 'a', cite: { path: P, side: 'head', line: 2 } }]), input).items[0]).toEqual({ text: 'a', unverified: true });
+    expect(verifyAskAnswer(out([{ text: 'a', cite: { path: P, side: 'head', line: 2 } }]), read).items[0]).toEqual({ text: 'a', cite: { path: P, side: 'head', line: 2 } });
+    expect(verifyAskAnswer(out([{ text: 'a', cite: { path: P, side: 'head', line: 3 } }]), read).items[0]).toEqual({ text: 'a', unverified: true });
   });
 
   it('材料に無い行・パス・side、line が null なら場所を外して印を付ける', () => {
@@ -196,11 +229,11 @@ describe('verifyAskAnswer', () => {
 
 describe('記録した答え（fixtures/order-service/llm/ask-*.json。record-llm-ask.mjs）', () => {
   const read = (rel: string) => JSON.parse(readFileSync(path.join(FIXTURE_ROOT, rel), 'utf8')) as unknown;
-  for (const name of ['pr', 'symbol', 'hunk', 'lines']) {
+  for (const name of ['pr', 'symbol', 'hunk', 'lines', 'why']) {
     it(`${name}: 読めて、行の場所は全部材料にある`, () => {
       const rec = read(`llm/ask-${name}.json`) as { stdout: string };
       const parsed = parseAskOutput(rec.stdout);
-      if ('error' in parsed) throw new Error(parsed.error);
+      if (!('output' in parsed)) throw new Error(JSON.stringify(parsed));
       const answer = verifyAskAnswer(parsed.output, read(`expected/ask-input-${name}.json`) as AskInput);
       // 行の場所を付けない事実もある（「22 件の中で形が違う」など）。付けた場所は全部材料にある
       expect(answer.items.filter((i) => i.cite !== undefined).length).toBeGreaterThanOrEqual(2);
@@ -213,7 +246,7 @@ describe('記録した答え（fixtures/order-service/llm/ask-*.json。record-ll
   it('symbol: promo を消した行は base 側の Order.kt 6 行目', () => {
     const rec = read('llm/ask-symbol.json') as { stdout: string };
     const parsed = parseAskOutput(rec.stdout);
-    if ('error' in parsed) throw new Error(parsed.error);
+    if (!('output' in parsed)) throw new Error(JSON.stringify(parsed));
     const answer = verifyAskAnswer(parsed.output, read('expected/ask-input-symbol.json') as AskInput);
     expect(answer.items.map((i) => i.cite)).toContainEqual({ path: ORDER_KT, side: 'base', line: 6 });
   });
@@ -224,17 +257,28 @@ describe('記録した答え（fixtures/order-service/llm/ask-*.json。record-ll
     // 本当に調べた跡（記録には codex の stderr のうち web search の行だけ残す）
     expect(rec.stderr).toContain('web search: https://kotlinlang.org/');
     const parsed = parseAskOutput(rec.stdout);
-    if ('error' in parsed) throw new Error(parsed.error);
+    if (!('output' in parsed)) throw new Error(JSON.stringify(parsed));
     const answer = verifyAskAnswer(parsed.output, read('expected/ask-input-web.json') as AskInput);
     expect(answer.items.some((i) => i.web !== undefined && new URL(i.web.url).hostname === 'kotlinlang.org')).toBe(true);
     expect(answer.items.map((i) => i.cite)).toContainEqual({ path: 'src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt', side: 'head', line: 16 });
     expect(answer.items.every((i) => i.unverified === undefined)).toBe(true);
   });
 
+  // 2026-11-04: 題しか渡さなかったときは「理由は分からない」と答えた。本文とチケットを渡し、どこに書いてあるかを文で示させた
+  it('why（PR の本文・チケット・背景のある入力）: 理由を PR の本文から答え、チケットの事実も挙げる', () => {
+    const rec = read('llm/ask-why.json') as { stdout: string };
+    const parsed = parseAskOutput(rec.stdout);
+    if (!('output' in parsed)) throw new Error(JSON.stringify(parsed));
+    const answer = verifyAskAnswer(parsed.output, read('expected/ask-input-why.json') as AskInput);
+    expect(answer.lead).toContain('PR の本文に');
+    expect(answer.lead).not.toContain('分からない');
+    expect(answer.items.some((i) => i.text.includes('チケットに') && i.cite === undefined && i.known === undefined)).toBe(true);
+  });
+
   it('lines: 選んだ 8〜11 行目の中の行を指す', () => {
     const rec = read('llm/ask-lines.json') as { stdout: string };
     const parsed = parseAskOutput(rec.stdout);
-    if ('error' in parsed) throw new Error(parsed.error);
+    if (!('output' in parsed)) throw new Error(JSON.stringify(parsed));
     const answer = verifyAskAnswer(parsed.output, read('expected/ask-input-lines.json') as AskInput);
     expect(answer.items.some((i) => i.cite?.path === ORDER_KT && i.cite.side === 'head' && i.cite.line >= 8 && i.cite.line <= 11)).toBe(true);
   });

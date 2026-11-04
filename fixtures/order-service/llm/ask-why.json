@@ -1,0 +1,7 @@
+{
+  "command": "claude -p --tools \"\" --max-turns 1 --model opus",
+  "stdout": "{\"lead\":\"PR の本文に、Order が割引額を自分で持ち、計算をドメインに閉じるためとある。\",\"items\":[{\"text\":\"変更前は promo を持ち、getDiscount が promo の額を返していた\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"base\",\"line\":6,\"endLine\":8}},{\"text\":\"変更後は discount をプロパティとして持ち、初期値は Money.ZERO\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":6}},{\"text\":\"applyDiscount が割引コードから割引率を引き、小計に掛けて discount に入れる\",\"cite\":{\"path\":\"src/main/kotlin/com/example/order/domain/Order.kt\",\"side\":\"head\",\"line\":8,\"endLine\":11}},{\"text\":\"チケットに、割引額は注文と一緒に保存し、注文の応答に含めるとある\"}],\"tail\":\"promo という値そのものをやめた理由は、PR の本文にもチケットにも書いていない。\"}\n",
+  "stderr": "",
+  "ms": 8086,
+  "recordedAt": "2026-11-04T11:55:29.034Z"
+}

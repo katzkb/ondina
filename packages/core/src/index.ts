@@ -32,7 +32,7 @@ export { buildAskInput, hunkLines, fileLines, excerptLines } from './ask/input.j
 export { renderAskPrompt } from './ask/prompt.js';
 export { parseAskOutput, ASK_OUTPUT_SCHEMA } from './ask/schema.js';
 export { verifyAskAnswer } from './ask/verify.js';
-export type { AskInput, AskInputHunk, AskInputLines, AskInputPlace, AskInputRelated, AskInputStop, AskOutput } from './ask/types.js';
+export type { AskInput, AskInputHunk, AskInputLines, AskInputPlace, AskInputRead, AskInputRelated, AskInputStop, AskNeed, AskOutput } from './ask/types.js';
 export { encodeMessage, createMessageReader, type LspMessage } from './lsp/protocol.js';
 export { lastServerLogLine } from './lsp/server-log.js';
 export { createReadyWatcher, describePending, KOTLIN_IMPORT_NOTIFICATION, READY_GRACE_MS, type ImportNotificationRule, type Pending, type ReadyState, type ReadyWatcher } from './lsp/ready.js';

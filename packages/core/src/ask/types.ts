@@ -65,12 +65,37 @@ export interface AskInputSelected extends AskInputLines {
 }
 
 export interface AskInput {
-  pr: { title: string };
+  /** body = 作者の説明（PR 本文か --body）、ticket = チケット（取れなかったときは ref だけ。Jira の HTML は文字にする）。長い本文は切って末尾に ⋯ */
+  pr: { title: string; body?: string; ticket?: { ref: string; title?: string; body?: string } };
+  /** 説明タブの背景（3.1）。why = チケットの「なぜ」、projectWhy = 親チケットの目的、existing = 前からあるもの、terms = 言葉。無い = 背景が無い解析 */
+  background?: {
+    why?: string[];
+    projectWhy?: string[];
+    existing?: Array<{ names: Array<{ fqName: string; path: string }>; text: string; removed: boolean }>;
+    terms?: Array<{ word: string; code: string; meaning?: string }>;
+  };
   courses: Array<{ id: number; title: string; why: string }>;
   place: AskInputPlace;
+  /** 案内人が need で頼み、serve が head から読んだ物（頼んだ順）。無い = まだ頼んでいない */
+  reads?: AskInputRead[];
   /** 同じ場所で前に聞いたこと（古い順、直前の 3 問まで）。answer は答えの文をつないだもの */
   history: Array<{ question: string; answer: string }>;
   question: string;
+}
+
+/**
+ * 頼まれて読んだ物 1 つ。file = request のファイル全体（path も同じ）、search = request の文字列が当たった行（path ごとに 1 つ）。
+ * lines が空 = 無かった（パスが無い・1 か所も当たらない。search の path は空）。上限で切った所は ⋯
+ */
+export interface AskInputRead extends AskInputLines {
+  kind: 'file' | 'search';
+  request: string;
+}
+
+/** 材料が足りないときに案内人が返す、読みたい物。files はリポジトリ直下からのパス、search はそのまま探す文字列 */
+export interface AskNeed {
+  files: string[];
+  search: string[];
 }
 
 /** LLM の出力（検証前）。cite の line が null や欠けでも読んでおき、検証で場所を外す。web の url も形だけ読み、検証で http / https だけ採る */

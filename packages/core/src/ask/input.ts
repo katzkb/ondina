@@ -2,14 +2,18 @@
 // - 差分・全文・抜粋の行には番号を付ける（h12 = head 側の 12 行目、b6 = base 側の 6 行目）。LLM はこの番号で行の場所を書き、検証は材料にある番号だけを採る
 //   （2026-10-08 に測った: 番号の無い材料では、答えの行の場所が全部 null になった）
 // - 束のメンバーは代表と逸脱だけ渡す（1 回目の LLM の入力と同じ絞り方）
-// - ファイルを読ませないので、要る行は全部ここで入れる
-import type { Analysis, AskEntry, AskLines, AskPlace, ExcerptBlock, Hunk, Symbol as OndinaSymbol, TokenLine } from '../model.js';
+// - この場所の行はここで全部入れる。足りなければ案内人が need で頼み、serve が head から読んで reads に足す（2026-11-04）
+// - PR の本文・チケット・背景も入れる（2026-11-04。題しか渡さなかったときは、理由が本文とチケットにあっても「材料からは分からない」と答えた）
+import type { Analysis, AskEntry, AskLines, AskPlace, Background, ExcerptBlock, Hunk, Symbol as OndinaSymbol, Ticket, TokenLine } from '../model.js';
+import { ticketPlainText } from '../spec/input.js';
 import type { AskInput, AskInputHunk, AskInputPlace, AskInputRelated, AskInputSelected, AskInputStop } from './types.js';
 
 /** 周りの場所（呼ぶ・呼ばれる・テスト）の上限。大きなシンボルでもプロンプトが膨らみすぎないように */
 const MAX_RELATED = 12;
 /** 続けて聞くときに渡す前の問いの数 */
 const MAX_HISTORY = 3;
+/** PR の本文とチケットの本文の上限（字）。超えたら切って末尾に ⋯ */
+export const ASK_TEXT_LIMIT = 4000;
 
 const OUTSIDE = 0;
 
@@ -69,13 +73,40 @@ function selectedLines(listing: readonly string[], lines: AskLines): AskInputSel
 
 
 export function buildAskInput(analysis: Analysis, place: AskPlace, question: string, history: readonly AskEntry[] = []): AskInput {
+  const body = clip(analysis.pr.body ?? '');
+  const ticket = analysis.pr.ticket;
+  const background = analysis.background === undefined ? undefined : backgroundInput(analysis.background);
   return {
-    pr: { title: analysis.pr.title },
+    pr: { title: analysis.pr.title, ...(body === '' ? {} : { body }), ...(ticket === undefined ? {} : { ticket: ticketInput(ticket) }) },
+    ...(background === undefined ? {} : { background }),
     courses: analysis.hows.map((w) => ({ id: w.id, title: w.title, why: w.why })),
     place: buildPlace(analysis, place),
     history: history.slice(-MAX_HISTORY).map((e) => ({ question: e.question, answer: [e.answer.lead, ...e.answer.items.map((i) => i.text), ...(e.answer.tail ? [e.answer.tail] : [])].join('\n') })),
     question,
   };
+}
+
+const clip = (s: string): string => {
+  const t = s.trim();
+  return t.length > ASK_TEXT_LIMIT ? `${t.slice(0, ASK_TEXT_LIMIT)}\n⋯` : t;
+};
+
+/** 取れなかったチケット（error）は ref だけ */
+function ticketInput(t: Ticket): NonNullable<AskInput['pr']['ticket']> {
+  const body = t.error === undefined ? clip(ticketPlainText(t)) : '';
+  return { ref: t.ref, ...(t.title === undefined ? {} : { title: t.title }), ...(body === '' ? {} : { body }) };
+}
+
+/** 案件の PR の一覧や探した番号は渡さない（問いに答える元にならない）。空の欄は渡さず、全部空なら undefined */
+function backgroundInput(b: Background): AskInput['background'] {
+  const projectWhy = b.project?.why ?? [];
+  const out: NonNullable<AskInput['background']> = {
+    ...(b.why?.length ? { why: b.why } : {}),
+    ...(projectWhy.length > 0 ? { projectWhy } : {}),
+    ...(b.existing?.length ? { existing: b.existing.map((e) => ({ names: e.names.map(({ fqName, path }) => ({ fqName, path })), text: e.text, removed: e.removed })) } : {}),
+    ...(b.terms?.length ? { terms: b.terms.map(({ word, code, meaning }) => ({ word, code, ...(meaning === undefined ? {} : { meaning }) })) } : {}),
+  };
+  return Object.keys(out).length === 0 ? undefined : out;
 }
 
 function buildPlace(analysis: Analysis, place: AskPlace): AskInputPlace {
