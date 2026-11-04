@@ -716,6 +716,8 @@ function reduceAll(state: AppState, command: Command): Reduced {
         paletteFrom: null,
         send: { status: 'idle' },
         github: { ...NO_GITHUB, seq: state.github.seq },
+        // 「解析し直しました」は、解析し直した版を読み直したときだけ残す（別の版を開いてから戻ったときには出さない）
+        reanalyze: { ...state.reanalyze, redone: state.reanalyze.redone?.key === key && state.reanalyze.redone.headSha === headSha ? state.reanalyze.redone : null },
         ask: NO_ASK,
         focusLine: null,
         treeShut: NO_TREE,

@@ -174,9 +174,10 @@ describe('同じ版を解析し直す（上の帯のボタン）', () => {
     expect(stripOf(run(again, { id: 'reanalyze.dismiss' }))).toBeNull();
   });
 
-  it('別の PR を開いたら「解析し直しました」は出さない', () => {
+  it('別の PR を開いたら「解析し直しました」は出さず、元の PR に戻っても出さない', () => {
     const s = run(loaded(), { id: 'reanalyze.job', jobs: [running] }, { id: 'reanalyze.job', jobs: [{ status: 'done', key: '42', from: OLD, headSha: OLD }] });
     const other = run(s, { id: 'data.loaded', summary: summary(OLD, '7'), analysis, review: emptyReview() });
     expect(stripOf(other)).toBeNull();
+    expect(stripOf(run(other, { id: 'data.loaded', summary: summary(), analysis, review: emptyReview() }))).toBeNull();
   });
 });
