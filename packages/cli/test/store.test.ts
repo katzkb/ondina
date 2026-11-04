@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AskEntry, CommentDraft } from '@ondina/model';
 import { analyzeLocal } from '../src/analyze.js';
-import { addComments, appendAsk, isAskRequest, isReviewState, isUiSettings, isWaiting, keepOutsideDrafts, keyDir, markWaiting, OffDiffError, readAsk, listAnalyses, prUrlFromRemote, readAnalysis, readState, readUi, returnComments, sendComments, takeReturned, writeState, writeUi } from '../src/store.js';
+import { addComments, appendAsk, isAskRequest, isCommentsInput, isReviewState, isUiSettings, isWaiting, keepOutsideDrafts, keyDir, markWaiting, OffDiffError, readAsk, listAnalyses, prUrlFromRemote, readAnalysis, readState, readUi, returnComments, sendComments, takeReturned, writeState, writeUi } from '../src/store.js';
 import { buildFixtureRepo, FIXTURE_ROOT, git } from './fixture-repo.js';
 
 let repo: string;
@@ -125,6 +125,24 @@ describe('addComments', () => {
   it('同じ入力を二度足しても増えない（id は内容から決める）', () => {
     expect(addComments(repo, input()).added).toBe(0);
     expect(readState(repo, 'local', headSha).comments).toHaveLength(2);
+  });
+
+  it('レビュアーへの説明（note）は本文と分けて持つ。空の説明は持たない', () => {
+    const path = 'src/main/kotlin/com/example/order/domain/Order.kt';
+    addComments(repo, {
+      source: 'codex',
+      headSha,
+      comments: [
+        { path, line: 3, side: 'RIGHT', body: '[must] 2 回保存されます', note: 'execute の中でも save() を呼ぶ（UseCase.kt 30 行目）' },
+        { path, line: 4, side: 'RIGHT', body: '[ask] ここは意図どおりですか', note: '  ' },
+      ],
+    });
+    const mine = readState(repo, 'local', headSha).comments.filter((c) => c.source === 'codex');
+    expect(mine.map((c) => [c.body, c.note])).toEqual([
+      ['[must] 2 回保存されます', 'execute の中でも save() を呼ぶ（UseCase.kt 30 行目）'],
+      ['[ask] ここは意図どおりですか', undefined],
+    ]);
+    expect(isCommentsInput({ source: 'codex', headSha, comments: [{ path, line: 3, side: 'RIGHT', body: 'x', note: 1 }] })).toBe(false);
   });
 
   it('知らない headSha はエラー', () => {
@@ -269,7 +287,7 @@ describe('isUiSettings', () => {
 });
 
 describe('sendComments', () => {
-  // PR 42 の解析を用意し、採用 2 件・下書き 1 件・破棄 1 件の state を置く
+  // PR 42 の解析を用意し、採用 2 件・下書き 1 件・破棄 1 件の state を置く。レビュアーへの説明（note）は送らない
   const prSha = 'e'.repeat(40);
   const draft = (id: string, state: 'draft' | 'adopted' | 'discarded' | 'sent', line: number) => ({
     id,
@@ -277,6 +295,7 @@ describe('sendComments', () => {
     line,
     side: 'RIGHT' as const,
     body: `コメント ${id}`,
+    note: `説明 ${id}`,
     source: 'claude-code',
     state,
   });

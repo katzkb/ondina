@@ -23,6 +23,11 @@ describe('renderReviewPrompt', () => {
     for (const s of ['@@ の塊の中', '1 件に付けるのは 1 行だけ', '"RIGHT"', '"LEFT"', '[must]', '[imo]', '[ask]', '日本語で書く']) expect(p, s).toContain(s);
   });
 
+  it('本文（body）は PR を書いた人へ短く、根拠はレビュアーだけが読む説明（note）に分ける。例にも両方がある', () => {
+    const p = renderReviewPrompt(input);
+    for (const s of ['PR を書いた人に GitHub で送る', 'レビュアーだけが読む説明で、GitHub には送らない', '"note":']) expect(p, s).toContain(s);
+  });
+
   it('出力は source / headSha / comments の JSON 1 つだけ。GitHub に送らず、ファイルを書き換えない', () => {
     const p = renderReviewPrompt(input);
     for (const s of ['JSON オブジェクト 1 つだけ', '"source"', `"headSha":"${HEAD}"`, '"comments"', 'GitHub に送らない', 'ファイルを書き換えない']) expect(p, s).toContain(s);

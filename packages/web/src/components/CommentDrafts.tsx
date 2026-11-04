@@ -7,7 +7,7 @@ import type { Command } from '../commands/commands.js';
 import { shortPath } from '../files.js';
 import { isMemo, onGithubDiff, spanLabel } from '../memo.js';
 import type { MemoUi, SendStatus } from '../state/reducer.js';
-import { MemoEditor, OffDiffChip } from './MemoBox.js';
+import { DraftNote, MemoEditor, OffDiffChip } from './MemoBox.js';
 
 export function CommentDrafts({
   comments,
@@ -175,6 +175,7 @@ function Draft({
         </button>
       </div>
       {c.state === 'edit' ? <textarea aria-label="コメント本文" value={text} onChange={(e) => dispatch({ id: 'comment.text', commentId: c.id, body: e.target.value })} /> : <p>{c.body}</p>}
+      <DraftNote note={c.note} />
       <div className="act">
         {c.state === 'draft' && (
           <>

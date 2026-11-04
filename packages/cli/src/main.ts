@@ -478,7 +478,7 @@ async function comments(args: string[], io: Io): Promise<number> {
     const text = from === '-' ? (io.stdin ?? (() => readFileSync(0, 'utf8')))() : readFileSync(from, 'utf8');
     const input: unknown = JSON.parse(text);
     if (!isCommentsInput(input)) {
-      io.stderr('ondina comments add: JSON の形式が違います（source / headSha / comments[{path, line, side, body}]）\n');
+      io.stderr('ondina comments add: JSON の形式が違います（source / headSha / comments[{path, line, side, body, note?}]）\n');
       return 1;
     }
     const r = addComments(repo, input);

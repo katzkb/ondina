@@ -205,7 +205,8 @@ export function addComments(repo: string, input: CommentsInput, key?: string): {
     const id = commentId(input.source, c);
     if (known.has(id)) continue;
     known.add(id);
-    fresh.push({ id, path: c.path, line: c.line, side: c.side, body: c.body, source: input.source, state: 'draft' });
+    const note = c.note?.trim();
+    fresh.push({ id, path: c.path, line: c.line, side: c.side, body: c.body, ...(note ? { note } : {}), source: input.source, state: 'draft' });
   }
   if (fresh.length > 0) writeState(repo, target.key, target.headSha, { ...state, comments: [...state.comments, ...fresh] });
   return { key: target.key, headSha: target.headSha, added: fresh.length };
@@ -413,7 +414,7 @@ export function isCommentsInput(x: unknown): x is CommentsInput {
     typeof x['source'] === 'string' &&
     typeof x['headSha'] === 'string' &&
     Array.isArray(x['comments']) &&
-    x['comments'].every((c) => isObj(c) && typeof c['path'] === 'string' && typeof c['line'] === 'number' && (c['side'] === 'LEFT' || c['side'] === 'RIGHT') && typeof c['body'] === 'string')
+    x['comments'].every((c) => isObj(c) && typeof c['path'] === 'string' && typeof c['line'] === 'number' && (c['side'] === 'LEFT' || c['side'] === 'RIGHT') && typeof c['body'] === 'string' && (c['note'] === undefined || typeof c['note'] === 'string'))
   );
 }
 

@@ -558,6 +558,7 @@ interface CommentDraft {
   id: string; path: string; line: number; side: 'LEFT' | 'RIGHT';   // 範囲なら line / side は最後の行
   startLine?: number; startSide?: 'LEFT' | 'RIGHT';                // 範囲の始まり（GitHub の start_line / start_side）。1 行なら無い
   body: string; source: string;            // "reviewer"（自分のメモ。3.3。id は m1, m2, …）| "claude-code" | "coderabbit" | …
+  note?: string;                           // AI の下書きだけ。レビュアーに向けた説明（なぜそう言えるか）。GitHub には送らない（12 章。2026-11-04）
   state: 'draft' | 'edit' | 'adopted' | 'discarded' | 'sent';  // sent = GitHub に送った後（12章）。再送しない。メモは保存した時点で adopted
 }
 
@@ -1470,10 +1471,13 @@ ide: { scheme: jetbrains, product: idea, project: order-service }
   "headSha": "…",
   "comments": [
     { "path": "src/main/kotlin/com/example/order/api/OrderController.kt", "line": 21, "side": "RIGHT",
-      "body": "repository.save() は ApplyDiscountUseCase.execute の中でも呼ばれるため、この経路では 2 回保存される。" }
+      "body": "[must] この経路では注文が 2 回保存される。",
+      "note": "21 行目の repository.save() の前に呼ぶ ApplyDiscountUseCase.execute も、中で repository.save() を呼んでいる（ApplyDiscountUseCase.kt 18 行目）。" }
   ]
 }
 ```
+
+- **本文と説明を分ける**（2026-11-04）: `body` は PR を書いた人に GitHub で送る文、`note`（任意）はレビュアーだけが読む説明で送らない。AI が本文に根拠を書きすぎ、書いた本人には要らない説明まで送ることになっていた。本文は何が起きるか・どうしてほしいかだけを短く、根拠（どの行・どの呼び出しからそう言えるか）は説明に書かせる。書き方の決まりはスキル `ondina-comments` と AI レビューの指示文（3.11）で同じ文（core の `COMMENT_WRITING_RULES`。cli のテストが一致を確かめる）。画面は下書きの本文の下に説明を薄い字で「説明（送信対象外）」として出す（行の下の箱・締め・コースの総括）。編集できるのは本文だけ。送る・AI に返すのは本文だけ。空白だけの説明は持たない。id は今どおり本文から作り、説明は入れない
 
 - CLI: `ondina comments add --from comments.json`（`-` で標準入力）
 - serve 中: `POST /api/comments`

@@ -62,7 +62,13 @@ git show <baseSha>:<path>   # base 側のファイル全体
   "source": "codex",
   "headSha": "<手順 1 の headSha（40 桁）>",
   "comments": [
-    { "path": "src/main/kotlin/com/example/order/api/OrderController.kt", "line": 21, "side": "RIGHT", "body": "[must] repository.save() は ApplyDiscountUseCase.execute の中でも呼ばれるため、この経路では 2 回保存される。" }
+    {
+      "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+      "line": 21,
+      "side": "RIGHT",
+      "body": "[must] この経路では注文が 2 回保存される。",
+      "note": "21 行目の repository.save() の前に呼ぶ ApplyDiscountUseCase.execute も、中で repository.save() を呼んでいる（ApplyDiscountUseCase.kt 18 行目）。"
+    }
   ]
 }
 ```
@@ -74,15 +80,17 @@ git show <baseSha>:<path>   # base 側のファイル全体
   - 消した行は `"LEFT"` で、base 側のファイルの行番号
 - 行は差分に出る行（`git diff` の `@@` の塊の中。変更の前後 3 行を含む）から選ぶ。塊の外の行には GitHub がコメントを付けられないので、ondina が受け取らない（1 件でもあると、1 件も入らない）
 - 1 件に付けられるのは 1 行だけ（範囲は付けられない）
+- `note` は省ける。省くと、ondina の画面には本文だけが出る
 
-本文の書き方:
-
-- 頭にラベルを 1 つ付ける
-  - `[must]`: 直さないとマージできないこと
-  - `[imo]`: 意見・提案。直すかは作者が決めてよい
-  - `[ask]`: 質問。意図や前提が読み取れないこと
+本文（body）と説明（note）は分けて書く:
+- body は PR を書いた人に GitHub で送る文。相手は自分で書いたコードなので中身を知っている。コードの働きや経緯は書かず、何が起きるか・どうしてほしいかだけを 1〜2 文で書く
+- note はレビュアーだけが読む説明で、GitHub には送らない。レビュアーが採用するかを決めるための根拠（どの行・どの呼び出しからそう言えるか、どう確かめたか）を書く
+- body の頭にラベルを 1 つ付ける
+  - [must]: 直さないとマージできないこと
+  - [imo]: 意見・提案。直すかは作者が決めてよい
+  - [ask]: 質問。意図や前提が読み取れないこと
 - 日本語で書く
-- 1 件に 1 つのことだけ書く。何が起きるかと、そう言える根拠（どの行・どの呼び出しか）を書く
+- 1 件に 1 つのことだけ書く
 
 ### 4. ondina に渡す
 
@@ -97,7 +105,7 @@ JSON
 失敗したとき:
 
 - `headSha … の解析が .ondina/ にありません`: 手順 1 の headSha を使っているか確かめる
-- `JSON の形が違います`: `source`・`headSha`・`comments[{path, line, side, body}]` が揃っているか、`line` が数か、`side` が `RIGHT` か `LEFT` かを確かめる
+- `JSON の形が違います`: `source`・`headSha`・`comments[{path, line, side, body}]` が揃っているか、`line` が数か、`side` が `RIGHT` か `LEFT` か、`note` が文字列かを確かめる
 - `GitHub の差分に出ない行へのコメントが n 件あります`: 下に並んだ行は `@@` の塊の外。1 件も入っていない。それぞれ塊の中の行（その指摘に一番近い変更の行）に付け直すか、ほかのコメントにまとめてから、全部をもう一度渡す
 
 ### 5. レビュアーに伝える

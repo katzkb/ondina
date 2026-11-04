@@ -498,6 +498,11 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .mbox.ai .mh .who{font-weight:600;color:var(--accent-ink)}
 .mbox.ai.ad{border:1.5px solid var(--ok)}
 .mbox.ai.ad .mh{background:var(--ok-soft)}
+/* AI の下書きの、レビュアーに向けた説明（MemoBox の DraftNote。2026-11-04）: 送る本文の下に、薄い字で分けて置く */
+.dnote{margin:0 10px 8px;padding:5px 8px;border-left:2px solid var(--line-2);background:var(--panel-2);border-radius:0 4px 4px 0}
+.dnote .dl{display:block;font-size:11px;color:var(--faint)}
+.dnote p,.mbox .dnote p,.cm .dnote p{margin:2px 0 0;padding:0;font-size:12px;color:var(--muted);white-space:pre-wrap}
+.cm .dnote{margin:0 0 8px}
 .aigone{display:flex;align-items:center;gap:8px;max-width:760px;padding:4px 10px;border:1px dashed var(--line-2);border-radius:6px;font-size:12px;color:var(--faint)}
 .aigone .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 変わった行から離れた行の帯（2026-10-13。diff/FoldBand.tsx。差分一覧・目的ごと・停留所で同じ）。左の 96px（行番号 2 列分）に ↓ ↑ ↕、右に行数。見本と同じ薄い青 */

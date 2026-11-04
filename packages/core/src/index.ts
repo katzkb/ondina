@@ -63,4 +63,4 @@ export { applySpecs, MAX_SPECS, type SpecResult } from './spec/verify.js';
 export type { SpecInput, SpecInputHow, SpecInputTicket, SpecOutput, SpecPrevious } from './spec/types.js';
 export { carryReview, changedHunks, mapLines, type CarrySource } from './review/carry.js';
 export { onGithubDiff } from './review/github-diff.js';
-export { renderReviewPrompt, type ReviewPromptInput } from './review/prompt.js';
+export { COMMENT_WRITING_RULES, renderReviewPrompt, type ReviewPromptInput } from './review/prompt.js';

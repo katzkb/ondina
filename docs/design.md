@@ -558,6 +558,7 @@ interface CommentDraft {
   id: string; path: string; line: number; side: 'LEFT' | 'RIGHT';   // 範囲なら line / side は最後の行
   startLine?: number; startSide?: 'LEFT' | 'RIGHT';                // 範囲の始まり（GitHub の start_line / start_side）。1 行なら無い
   body: string; source: string;            // "reviewer"（自分のメモ。3.3。id は m1, m2, …）| "claude-code" | "coderabbit" | …
+  note?: string;                           // AI drafts only. An explanation for the reviewer (why the claim holds). Never sent to GitHub (chapter 12, 2026-11-04)
   state: 'draft' | 'edit' | 'adopted' | 'discarded' | 'sent';  // sent = GitHub に送った後（12章）。再送しない。メモは保存した時点で adopted
 }
 
@@ -1470,10 +1471,13 @@ External AI agents only pass JSON. The UI lists it as drafts and sends only thos
   "headSha": "…",
   "comments": [
     { "path": "src/main/kotlin/com/example/order/api/OrderController.kt", "line": 21, "side": "RIGHT",
-      "body": "repository.save() は ApplyDiscountUseCase.execute の中でも呼ばれるため、この経路では 2 回保存される。" }
+      "body": "[must] この経路では注文が 2 回保存される。",
+      "note": "21 行目の repository.save() の前に呼ぶ ApplyDiscountUseCase.execute も、中で repository.save() を呼んでいる（ApplyDiscountUseCase.kt 18 行目）。" }
   ]
 }
 ```
+
+- **Body and note are separate** (2026-11-04): `body` is the text sent to the PR author on GitHub. `note` (optional) is an explanation only the reviewer reads and is never sent. The AI was putting too much reasoning in the body, which meant sending the author explanations they do not need. The body says only what happens or what to change, briefly. The reasoning (which line or call shows it) goes in the note. The writing rules are the same text in the `ondina-comments` skill and the AI review prompt (3.11) (core's `COMMENT_WRITING_RULES`; a cli test checks they match). The screen shows the note under the draft's body in muted text labeled 「説明（送信対象外）」 (the box under the line, closing, and the course summary). Only the body is editable. Only the body is sent to GitHub or returned to the AI. A whitespace-only note is dropped. The id is still built from the body, not the note
 
 - CLI: `ondina comments add --from comments.json` (`-` for standard input)
 - While serve is running: `POST /api/comments`
