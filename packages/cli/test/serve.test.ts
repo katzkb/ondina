@@ -453,6 +453,58 @@ describe('/api/ask/:key/:sha（案内人に聞く。設計書 3.10）', () => {
     expect((await log()).length).toBe(before);
   });
 
+  describe('材料が足りないと need で頼み、serve が head から読んで聞き直す（2026-11-04）', () => {
+    const PROMO = 'src/main/kotlin/com/example/promo/PromoService.kt';
+    const need = { files: [PROMO, 'nope/Missing.kt'], search: ['legacyPromo', 'zzNoSuchThing'] };
+    type Call = { last: boolean; input: { reads?: Array<{ kind: string; request: string; path: string; lines: string[] }> } };
+    let inputs: string;
+    beforeAll(() => {
+      inputs = path.join(repo, '.ondina', 'fake-ask-inputs.jsonl');
+      process.env['FAKE_LLM_ASK_NEED'] = JSON.stringify(need);
+      process.env['FAKE_LLM_ASK_INPUT'] = inputs;
+    });
+    afterAll(() => {
+      delete process.env['FAKE_LLM_ASK_NEED'];
+      delete process.env['FAKE_LLM_ASK_INPUT'];
+    });
+    const calls = (): Call[] =>
+      readFileSync(inputs, 'utf8')
+        .split('\n')
+        .filter((l) => l !== '')
+        .map((l) => JSON.parse(l) as Call);
+
+    it('頼んだファイルと文字列を読んで reads に足し、読んだ行を指す答えを返す', async () => {
+      rmSync(inputs, { force: true });
+      const res = await withMode('need', () => ask({ key: 'pr', place: { kind: 'pr' }, question: 'legacyPromo は何をする？' }));
+      expect(res.status).toBe(200);
+      const entry = (await res.json()) as AskEntry;
+      // 偽の LLM は読んだ物があればその最初の行を場所にする。検証が読んだ行を材料に数えたので場所が残る
+      expect(entry.answer.items[0]).toEqual({ text: '材料にある行', cite: { path: PROMO, side: 'head', line: 1 } });
+      expect((await log()).at(-1)).toEqual(entry);
+      const [first, second, ...rest] = calls();
+      expect(rest).toEqual([]);
+      expect(first!.input.reads).toBeUndefined();
+      expect(second!.last).toBe(false);
+      expect(second!.input.reads!.map((r) => [r.kind, r.request, r.path, r.lines.length])).toEqual([
+        ['file', PROMO, PROMO, 15],
+        ['file', 'nope/Missing.kt', 'nope/Missing.kt', 0],
+        ['search', 'legacyPromo', PROMO, 2],
+        ['search', 'zzNoSuchThing', '', 0],
+      ]);
+      expect(second!.input.reads![2]!.lines[1]).toBe('h14       private fun legacyPromo(order: Order): Money = legacy.amountFor(order.id)');
+    });
+
+    it('頼み続けても LLM を呼ぶのは 3 回まで。最後の回は need を出させず、それでも need なら 502 で記録に足さない', async () => {
+      rmSync(inputs, { force: true });
+      const before = (await log()).length;
+      const res = await withMode('need-always', () => ask({ key: 'pr', place: { kind: 'pr' }, question: 'ずっと読みたい' }));
+      expect(res.status).toBe(502);
+      expect(await res.text()).toContain('2 回読んだあとも');
+      expect(calls().map((c) => c.last)).toEqual([false, false, true]);
+      expect((await log()).length).toBe(before);
+    });
+  });
+
   it('要求を切る（止める）と LLM をプロセスごと止め、記録に足さない', async () => {
     const before = (await log()).length;
     const pidFile = path.join(repo, '.ondina', 'fake-ask.pid');

@@ -4,6 +4,8 @@
 // FAKE_LLM_MODE は 1 回目、FAKE_LLM_TEXT_MODE は 2 回目に効く: ok（既定）| fail（exit 2 と stderr）| garbage（JSON でない stdout）。
 // FAKE_LLM_LOG: 起動のたびに 1 行追記する（1 回目は "label"、2 回目は "text"、案内人に聞くは "ask"、構成の推定は "structure"、チケット選びは "ticket"、要求の抜き出しは "spec"）
 // 案内人に聞く（入力に question がある。設計書 10.5）は FAKE_LLM_ASK_MODE: ok（既定）| fail | garbage | slow（FAKE_LLM_PID に pid を書いて 10 秒待つ）
+// | need（まだ読んでいなければ FAKE_LLM_ASK_NEED の JSON を need で返し、読んだ物があれば答える）| need-always（最後の回でも need を返す）。
+// FAKE_LLM_ASK_INPUT: 起動のたびに { last: 最後の回のプロンプトか, input } を 1 行追記する
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 
 const prompt = readFileSync(0, 'utf8');
@@ -11,6 +13,11 @@ const input = JSON.parse(prompt.slice(prompt.lastIndexOf('入力:\n') + '入力:
 if (typeof input.question === 'string') {
   if (process.env.FAKE_LLM_LOG) appendFileSync(process.env.FAKE_LLM_LOG, 'ask\n');
   const mode = process.env.FAKE_LLM_ASK_MODE ?? 'ok';
+  if (process.env.FAKE_LLM_ASK_INPUT) appendFileSync(process.env.FAKE_LLM_ASK_INPUT, JSON.stringify({ last: prompt.includes('\n最後の回:\n'), input }) + '\n');
+  if (mode === 'need-always' || (mode === 'need' && input.reads === undefined)) {
+    process.stdout.write(JSON.stringify({ need: JSON.parse(process.env.FAKE_LLM_ASK_NEED ?? '{}') }) + '\n');
+    process.exit(0);
+  }
   if (mode === 'fail') {
     process.stderr.write('boom: the guide is on strike\n');
     process.exit(2);
@@ -24,9 +31,10 @@ if (typeof input.question === 'string') {
     await new Promise((r) => setTimeout(r, 10_000));
     process.exit(0);
   }
-  // 材料の最初の番号付きの行（選んだ行があればその最初の行）を場所にした項目と、材料に無い場所の項目（検証で外れる）
+  // 材料の最初の番号付きの行（読んだ物があればその最初の行、選んだ行があればその最初の行）を場所にした項目と、材料に無い場所の項目（検証で外れる）
   const p = input.place;
-  const blocks = p.kind === 'pr' ? p.hunks : p.kind === 'course' ? p.stops : [...(p.selected ? [p.selected] : []), ...(p.file ? [{ path: p.path, lines: p.file }] : []), ...p.hunks];
+  const placeBlocks = p.kind === 'pr' ? p.hunks : p.kind === 'course' ? p.stops : [...(p.selected ? [p.selected] : []), ...(p.file ? [{ path: p.path, lines: p.file }] : []), ...p.hunks];
+  const blocks = [...(input.reads ?? []), ...placeBlocks];
   const hit = blocks.flatMap((b) => b.lines.map((l) => [b.path, /^([hb])(\d+) /.exec(l)])).find(([, m]) => m);
   const cite = hit ? { path: hit[0], side: hit[1][1] === 'h' ? 'head' : 'base', line: Number(hit[1][2]) } : undefined;
   const items = [{ text: '材料にある行', ...(cite ? { cite } : {}) }, { text: '材料に無い行', cite: { path: 'x/Nope.kt', side: 'head', line: 1 } }];

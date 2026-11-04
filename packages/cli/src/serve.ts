@@ -14,7 +14,8 @@
 //   GET  /api/github/viewed/:key/:sha   { viewed: パス[] }。GitHub の PR で Viewed のファイル（gh api graphql。12.1）。local は 400、gh の失敗は 502
 //   POST /api/github/viewed/:key/:sha   { mark, unmark } を GitHub の Viewed に付ける / 外す。PR の head が解析と違えば 409（送らない）
 //   GET  /api/ask/:key/:sha             案内人に聞くの会話（.ondina/<key>/ask/<sha>.json。3.10）
-//   POST /api/ask/:key/:sha             { key, place, question } を LLM コマンドに聞き、検証した答え（AskEntry）を返して記録に足す。失敗は 502 と理由
+//   POST /api/ask/:key/:sha             { key, place, question } を LLM コマンドに聞き、検証した答え（AskEntry）を返して記録に足す。失敗は 502 と理由。
+//                                       案内人が読みたいコードを頼んだら（need）head から読んで聞き直す（2 回まで）
 //   GET  /api/latest/:key/:sha          その版より新しい head があるか（LatestHead。PR は gh、local は git）。聞けなければ 502
 //   GET  /api/prs                       開いている PR の一覧（PrList。gh api graphql を 1 回。3.11）。gh の失敗は 502 と理由
 //   GET  /api/prs/:n                    PR の詳細（PrDetail。一覧と同じ宛先に gh api graphql を 1 回。3.11）。gh の失敗は 502 と理由、番号でなければ 404
@@ -37,6 +38,7 @@ import type { Analysis, AskEntry, PrDetail, PrList } from '@ondina/model';
 import { buildAskInput, defaultConfig, parseAskOutput, renderAskPrompt, splitConfig, verifyAskAnswer, type DisplayConfig } from '@ondina/core';
 import { readConfigFile } from './config.js';
 import { ASK_TIMEOUT_MS, resolveLlmCommand, runLlmCommand } from './llm.js';
+import { ASK_READ_ROUNDS, readForAsk } from './ask-read.js';
 import { HeadMismatchError, readViewed, setViewed, type ViewedChange } from './github-viewed.js';
 import { runGh as defaultRunGh, runGhAsync as defaultRunGhAsync, type GhTarget, type RunGh, type RunGhAsync } from './pr.js';
 import { fetchPrDetail } from './pr-detail.js';
@@ -387,7 +389,9 @@ export function createApp(repo: string, distDir: string, opts: AppOptions = {}):
     return resolveLlmCommand({ override: readUi(repo).llmCommand, env: process.env['ONDINA_LLM_COMMAND'], yaml });
   };
 
-  // 案内人に聞く（3.10 / 10.5）: 材料を組む → LLM → 検証 → 記録に足す。要求が切れたら（画面の「止める」）LLM をプロセスごと止める
+  // 案内人に聞く（3.10 / 10.5）: 材料を組む → LLM → 検証 → 記録に足す。要求が切れたら（画面の「止める」）LLM をプロセスごと止める。
+  // 案内人が need を返したら head から読んで reads に足し、聞き直す（ASK_READ_ROUNDS 回まで。最後の回は need を出させない）。
+  // 打ち切りは全部の回を合わせた時間（人が待つのは 1 問の答え）
   const ask = async (analysis: Analysis, key: string, sha: string, req: IncomingMessage, res: ServerResponse): Promise<void> => {
     let body: unknown;
     try {
@@ -398,31 +402,41 @@ export function createApp(repo: string, distDir: string, opts: AppOptions = {}):
     if (!isAskRequest(body)) return send(res, 400, '質問の形式ではありません（key / place / question）');
     const question = body.question.trim();
     const history = readAsk(repo, key, sha).entries.filter((e) => e.key === body.key);
-    const input = buildAskInput(analysis, body.place, question, history);
+    let input = buildAskInput(analysis, body.place, question, history);
     const command = llmCommand();
     const stop = new AbortController();
     res.on('close', () => {
       if (!res.writableFinished) stop.abort();
     });
     const started = Date.now();
-    const run = await runLlmCommand(command, renderAskPrompt(input), repo, opts.askTimeoutMs ?? ASK_TIMEOUT_MS, stop.signal);
-    if (run.aborted) return; // 画面が止めた。返す相手はもういない
-    if (run.timedOut) return send(res, 502, `${Math.round((opts.askTimeoutMs ?? ASK_TIMEOUT_MS) / 60000)} 分で終わりませんでした`);
-    if (run.exitCode !== 0) return send(res, 502, `終了コード ${run.exitCode ?? 'なし'}: ${run.stderr.trim().slice(0, 200) || '（stderr なし）'}`);
-    const parsed = parseAskOutput(run.stdout);
-    if ('error' in parsed) return send(res, 502, `出力を読めません: ${parsed.error}`);
-    const entry: AskEntry = {
-      id: randomUUID(),
-      key: body.key,
-      place: body.place,
-      question,
-      answer: verifyAskAnswer(parsed.output, input),
-      command,
-      ms: Date.now() - started,
-      at: new Date().toISOString(),
-    };
-    appendAsk(repo, key, sha, entry);
-    return json(res, 200, entry);
+    const timeoutMs = opts.askTimeoutMs ?? ASK_TIMEOUT_MS;
+    for (let round = 0; ; round++) {
+      const last = round === ASK_READ_ROUNDS;
+      const run = await runLlmCommand(command, renderAskPrompt(input, { last }), repo, Math.max(0, started + timeoutMs - Date.now()), stop.signal);
+      if (run.aborted) return; // 画面が止めた。返す相手はもういない
+      if (run.timedOut) return send(res, 502, `${Math.round(timeoutMs / 60000)} 分で終わりませんでした`);
+      if (run.exitCode !== 0) return send(res, 502, `終了コード ${run.exitCode ?? 'なし'}: ${run.stderr.trim().slice(0, 200) || '（stderr なし）'}`);
+      const parsed = parseAskOutput(run.stdout);
+      if ('error' in parsed) return send(res, 502, `出力を読めません: ${parsed.error}`);
+      if ('need' in parsed) {
+        if (last) return send(res, 502, `コードを ${ASK_READ_ROUNDS} 回読んだあとも、答えがありませんでした`);
+        input = { ...input, reads: [...(input.reads ?? []), ...(await readForAsk(repo, analysis.pr.headSha, parsed.need, stop.signal))] };
+        if (stop.signal.aborted) return;
+        continue;
+      }
+      const entry: AskEntry = {
+        id: randomUUID(),
+        key: body.key,
+        place: body.place,
+        question,
+        answer: verifyAskAnswer(parsed.output, input),
+        command,
+        ms: Date.now() - started,
+        at: new Date().toISOString(),
+      };
+      appendAsk(repo, key, sha, entry);
+      return json(res, 200, entry);
+    }
   };
 
   const serveStatic = (pathname: string, res: ServerResponse): void => {

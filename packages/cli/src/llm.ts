@@ -15,7 +15,7 @@ export const DEFAULT_LLM_COMMAND = 'claude -p --tools "" --max-turns 1 --model o
 /** 10 分。大きな PR でも打ち切られない程度 */
 export const LLM_TIMEOUT_MS = 10 * 60 * 1000;
 
-/** 案内人に聞く（3.10）の打ち切り。5 分（2026-10-08 に既定のコマンドで測った最長 56 秒の 5 倍強。人が待つので解析より短く） */
+/** 案内人に聞く（3.10）の打ち切り。5 分（2026-10-08 に既定のコマンドで測った最長 56 秒の 5 倍強。人が待つので解析より短く）。need で読んで聞き直す回も合わせた 1 問の時間（2026-11-04） */
 export const ASK_TIMEOUT_MS = 5 * 60 * 1000;
 
 /** 解決順: 引数（UI の .ondina/ui.json）> 環境変数 ONDINA_LLM_COMMAND > yaml の llm.command > 既定。空文字は無いものとして扱う */
