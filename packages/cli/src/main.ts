@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { analyzeLocal, analyzePr, type AnalyzeOptions } from './analyze.js';
-import { type BackgroundDeps, defaultBackgroundDeps, serveInBackground } from './background.js';
+import { type BackgroundDeps, defaultBackgroundDeps, pageUrl, serveInBackground } from './background.js';
 import { zshCompletion } from './completion.js';
 import { git } from './git.js';
 import { KEYCHAIN_SERVICE, type KeychainRead, readKeychain, readSecret, writeKeychain } from './keychain.js';
@@ -268,8 +268,7 @@ async function serve(args: string[], io: Io): Promise<number> {
   try {
     const version = selfCommit(io.selfRoot ?? selfRoot());
     const running = await startServer({ repo, port: parsed.port, ...(version === undefined ? {} : { version }) });
-    const url = parsed.initialKey === undefined ? running.url : `${running.url}?pr=${encodeURIComponent(parsed.initialKey)}`;
-    io.stdout(`ondina serve: ${url}\n`);
+    io.stdout(`ondina serve: ${pageUrl(running.url, parsed.initialKey)}\n`);
     await new Promise<void>((resolve) => {
       const stop = () => {
         void running.close().finally(resolve);

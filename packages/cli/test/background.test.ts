@@ -16,7 +16,7 @@ beforeAll(() => {
 });
 afterAll(() => rmSync(repo, { recursive: true, force: true }));
 
-function fake(over: Partial<BackgroundDeps> = {}, log = 'ondina serve: http://127.0.0.1:4177/?pr=12\n') {
+function fake(over: Partial<BackgroundDeps> = {}, log = 'ondina serve: http://127.0.0.1:4177/pr/12\n') {
   const spawned: Array<{ repo: string; args: string[]; logFile: string }> = [];
   const d: BackgroundDeps = {
     probe: async () => ({ kind: 'free' }),
@@ -37,26 +37,27 @@ describe('serveInBackground', () => {
     const { d, spawned } = fake();
     expect(await serveInBackground(repo, 4177, '12', d)).toEqual({
       status: 'started',
-      url: 'http://127.0.0.1:4177/?pr=12',
+      url: 'http://127.0.0.1:4177/pr/12',
       pid: 4321,
       log: path.join(repo, '.ondina', 'serve.log'),
     });
     expect(spawned).toEqual([{ repo, args: ['serve', '--port', '4177', '12'], logFile: path.join(repo, '.ondina', 'serve.log') }]);
   });
 
-  it('このリポジトリの serve が動いていれば起動せず、その URL を返す', async () => {
+  it('このリポジトリの serve が動いていれば起動せず、その URL を返す（PR は /pr/<番号>、local は /local）', async () => {
     const { d, spawned } = fake({ probe: async () => ({ kind: 'ondina', repo, pid: 999 }) });
-    expect(await serveInBackground(repo, 4177, '12', d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/?pr=12', pid: 999 });
+    expect(await serveInBackground(repo, 4177, '12', d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/pr/12', pid: 999 });
+    expect(await serveInBackground(repo, 4177, 'local', d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/local', pid: 999 });
     expect(await serveInBackground(repo, 4177, undefined, d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/', pid: 999 });
     expect(spawned).toEqual([]);
   });
 
   it('別のリポジトリの serve や別のものが使っていれば、空いているポートで起動する', async () => {
     for (const use of [{ kind: 'ondina', repo: '/somewhere/else', pid: 999 }, { kind: 'other' }] as const) {
-      const { d, spawned } = fake({ probe: async () => use }, 'ondina serve: http://127.0.0.1:50123/?pr=12\n');
+      const { d, spawned } = fake({ probe: async () => use }, 'ondina serve: http://127.0.0.1:50123/pr/12\n');
       expect(await serveInBackground(repo, 4177, '12', d)).toEqual({
         status: 'started',
-        url: 'http://127.0.0.1:50123/?pr=12',
+        url: 'http://127.0.0.1:50123/pr/12',
         pid: 4321,
         log: path.join(repo, '.ondina', 'serve.log'),
         movedFrom: 4177,
@@ -92,17 +93,17 @@ describe('serveInBackground', () => {
         [wt, wt2],
       ] as const) {
         const { d, spawned } = fake({ probe: async () => ({ kind: 'ondina', repo: serving, pid: 999 }) });
-        expect(await serveInBackground(here, 4177, '12', d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/?pr=12', pid: 999 });
+        expect(await serveInBackground(here, 4177, '12', d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/pr/12', pid: 999 });
         expect(await serveInBackground(here, 4177, undefined, d)).toEqual({ status: 'reused', url: 'http://127.0.0.1:4177/', pid: 999 });
         expect(spawned).toEqual([]);
       }
     });
 
     it('local（PR の無い変更）は、その worktree にしか無いので使わず、空いているポートで起動する', async () => {
-      const { d, spawned } = fake({ probe: async () => ({ kind: 'ondina', repo: main, pid: 999 }) }, 'ondina serve: http://127.0.0.1:50123/?pr=local\n');
+      const { d, spawned } = fake({ probe: async () => ({ kind: 'ondina', repo: main, pid: 999 }) }, 'ondina serve: http://127.0.0.1:50123/local\n');
       expect(await serveInBackground(wt, 4177, 'local', d)).toEqual({
         status: 'started',
-        url: 'http://127.0.0.1:50123/?pr=local',
+        url: 'http://127.0.0.1:50123/local',
         pid: 4321,
         log: path.join(wt, '.ondina', 'serve.log'),
         movedFrom: 4177,

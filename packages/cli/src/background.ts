@@ -48,10 +48,13 @@ export type BackgroundResult =
 
 const URL_LINE = /^ondina serve: (http\S+)$/m;
 
-function serveUrl(port: number, key: string | undefined): string {
-  const url = `http://127.0.0.1:${port}/`;
-  return key === undefined ? url : `${url}?pr=${encodeURIComponent(key)}`;
+/** 開く画面の URL。PR は /pr/<番号>、local は /local（画面の URL の形は packages/web/src/route.ts）。base は / で終わる */
+export function pageUrl(base: string, key: string | undefined): string {
+  if (key === undefined) return base;
+  return `${base}${key === 'local' ? 'local' : `pr/${encodeURIComponent(key)}`}`;
 }
+
+const serveUrl = (port: number, key: string | undefined): string => pageUrl(`http://127.0.0.1:${port}/`, key);
 
 function sameDir(a: string, b: string): boolean {
   try {
