@@ -203,8 +203,8 @@ export interface CollectDefinitionsArgs {
   worktrees: { head: string; base: string };
   /** 差分の無いシンボルのファイル（head。呼び出し関係の相手。コースの停留所と覗く箱に全文が出る。unchangedFiles） */
   unchanged: readonly string[];
-  /** didOpen（全体を聞くファイルを開く） */
-  open: (abs: string) => void;
+  /** didOpen（全体を聞くファイルを開く）。開けなければ false */
+  open: (abs: string) => boolean;
 }
 
 /**
@@ -247,8 +247,7 @@ export async function collectDefinitions(client: LspClient, args: CollectDefinit
     for (let i = 0; i < files.length; i += WHOLE_BATCH) {
       const batch = files.slice(i, i + WHOLE_BATCH).filter((f) => {
         try {
-          args.open(path.join(args.worktrees[f.side], f.path));
-          return true;
+          return args.open(path.join(args.worktrees[f.side], f.path));
         } catch {
           return false;
         }

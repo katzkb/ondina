@@ -194,8 +194,8 @@ export interface LspSession {
   failed(): string | undefined;
   /** 終わった子の理由。stderr の最後の 3 行を足す */
   died(what: string): Promise<string>;
-  /** didOpen。同じファイルは 1 回だけ */
-  open(abs: string): void;
+  /** didOpen。同じファイルは 1 回だけ。ファイルが無ければ開かずに false（PR で消したファイルは head に無い） */
+  open(abs: string): boolean;
   /** 開いたファイルを全部 didClose する。開いたままだと、次の PR でも開いたときの中身を使われる */
   closeAll(): void;
   /** shutdown → exit → プロセスグループごと殺す */
@@ -388,12 +388,13 @@ export async function startLspSession(a: StartLspArgs): Promise<{ session: LspSe
     client.notify('initialized', {});
     // 準備完了を待つ前に全部開く（実測がその順。開いたファイルから先にインデックスが進む）
     const opened = new Set<string>();
-    const open = (abs: string): void => {
-      if (opened.has(abs)) return;
+    const open = (abs: string): boolean => {
+      if (opened.has(abs)) return true;
+      if (!existsSync(abs)) return false;
       opened.add(abs);
       client.notify('textDocument/didOpen', {
         textDocument: { uri: pathToFileURL(abs).href, languageId: 'kotlin', version: 1, text: readFileSync(abs, 'utf8') },
-      });
+      });      return true;
     };
     for (const t of a.targets) open(path.join(a.roots.head, t.path));
     for (const abs of a.openFiles) open(abs);
