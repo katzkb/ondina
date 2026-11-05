@@ -663,6 +663,11 @@ export interface Analysis {
   hows: How[];
   symbols: Symbol[];
   edges: Edge[];
+  /**
+   * 変わる前（base の worktree）の呼び出し辺（2026-11-05。流れの地図の ① 背景の材料）。kind は call だけ、lines は base のファイルの行（1 始まり）。
+   * 端のシンボルは symbols にある（base にだけある未変更シンボルも足してある）。無い = 古い解析か、言語サーバーが無かった解析
+   */
+  edgesBase?: Edge[];
   tours: Tour[];
   specs: Spec[];
   claims: Claim[];

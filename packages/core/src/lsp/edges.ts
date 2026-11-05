@@ -64,6 +64,12 @@ export interface CallGraphContext {
   allowedDependencies: Record<string, readonly string[]>;
   /** head のファイル本文（repo 相対パス）。未変更シンボルの行を切り出すのに使う。無い・読めなければ excerpt を付けない */
   readHead?: (repoRelative: string) => string | undefined;
+  /**
+   * どちらの側の答えか（既定 head）。base は変わる前の worktree に聞いた答え（2026-11-05。流れの地図の ① に使う）:
+   * 呼んでいる行は base のファイルの行で、差分の無い相手への呼び出しは消した行（- の行）に当たるものだけ使う。
+   * readHead には base のファイル本文を渡す
+   */
+  side?: 'head' | 'base';
 }
 
 export interface CallGraphResult {
@@ -156,7 +162,8 @@ export function buildCallGraph(src: CallGraphSource, ctx: CallGraphContext): Cal
   // 変わらない行からの呼び出しや、クラス丸ごとの hunk で同じクラスのほかのメソッドからの呼び出しは、差分と関係しない。
   // 位置が無い（位置の無い記録）・空（言語サーバーが返さなかった）・hunk が引けないときは残す（測れていないものを隠さない。原則 2）。
   // 位置は呼び出しの名前の行なので、名前の行が変わらず次の行の引数だけ変えた呼び出しは落ちる（9.6 の既知の穴）
-  const addedLines = new Map(ctx.hunks.map((h) => [h.id, new Set(changedLines(h).newLines)]));
+  // base の答えでは、同じ判定を消した行（- の行）でする
+  const addedLines = new Map(ctx.hunks.map((h) => [h.id, new Set(ctx.side === 'base' ? changedLines(h).oldLines : changedLines(h).newLines)]));
   const fromDiff = (call: CallGraphSource['calls'][number]): boolean => {
     const from = changedOf(call.from);
     if (from === undefined || changedOf(call.to) !== undefined) return true;
@@ -255,6 +262,15 @@ export function buildCallGraph(src: CallGraphSource, ctx: CallGraphContext): Cal
     symbols: [...symbols, ...[...added.values()].sort((a, b) => cmp(a.id, b.id))],
     unmeasured: src.probes.filter((p) => p.item === undefined).length,
   };
+}
+
+/**
+ * 変わる前（base の worktree）の呼び出し辺（2026-11-05）。流れの地図の ① 背景を組む材料。
+ * 参照辺・テストの数・測れたかどうかは head の答えだけで持つので、ここでは呼び出し辺（kind: call）と、経路上の未変更シンボルだけ返す
+ */
+export function buildBaseCallEdges(src: CallGraphSource, ctx: Omit<CallGraphContext, 'side'>): { edges: Edge[]; symbols: OndinaSymbol[] } {
+  const r = buildCallGraph({ ...src, refs: {}, testRefs: {} }, { ...ctx, side: 'base' });
+  return { edges: r.edges.filter((e) => e.kind === 'call'), symbols: r.symbols.filter((s) => !s.changed) };
 }
 
 const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);

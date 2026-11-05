@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyBehaviorTitles, applyNarration, attachCalls, attachTokens, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
+import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyBehaviorTitles, applyNarration, attachCalls, attachTokens, buildBaseCallEdges, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
 import type { How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
 import { readConfigFile } from './config.js';
 import { changedFiles, git, githubDiff, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
@@ -175,6 +175,25 @@ async function runAnalysis(
     const baseline = graph.symbols.filter((s) => !s.changed).length;
     info.push(`関連の線 ${graph.edges.length} 本（層を飛び越える ${crossing} 本）、経路上の未変更シンボル ${baseline} 件、呼び出し関係を取得できなかったシンボル ${graph.unmeasured} 件`);
   }
+  // 変わる前の呼び出し辺（流れの地図の ① 背景。2026-11-05）。base にだけある未変更シンボルは symbols に足す。
+  // base の本文も head と同じく、初めて聞かれたときに答えに出たファイルをまとめて読む
+  const baseTexts = new Map<string, string | undefined>();
+  const readBase = (rel: string): string | undefined => {
+    if (!baseTexts.has(rel)) {
+      const want = [...new Set([rel, ...callGraphPaths(lspResult?.callGraphBase)])].filter((p) => !baseTexts.has(p));
+      readBlobs(repo, refs.baseSha, want).forEach((text, i) => baseTexts.set(want[i]!, text ?? undefined));
+    }
+    return baseTexts.get(rel);
+  };
+  const baseGraph =
+    lspResult?.callGraphBase === undefined
+      ? undefined
+      : buildBaseCallEdges(lspResult.callGraphBase, { hunks: tokenized, symbols: symbolsBase, layers: layering.rules, layerProvenance: layering.provenance, allowedDependencies: analysisConfig.allowedDependencies, readHead: readBase });
+  if (baseGraph !== undefined) {
+    const known = new Set(graph.symbols.map((s) => s.id));
+    graph.symbols.push(...baseGraph.symbols.filter((s) => !known.has(s.id)));
+    info.push(`変わる前の呼び出しの線 ${baseGraph.edges.length} 本`);
+  }
 
   // 名前から定義へ（3.6）。行き先のうち差分の列に無いファイルは引き出しに全文を出すので、head は files に、base（PR で変わったファイル）は baseFiles に入れる
   // 変わったファイルは言語サーバーの仕事に渡したもの（LspJobArgs.changed）と同じ集合
@@ -295,6 +314,7 @@ async function runAnalysis(
     hows,
     symbols,
     edges: graph.edges,
+    ...(baseGraph === undefined ? {} : { edgesBase: baseGraph.edges }),
     tours,
     specs,
     claims,
@@ -532,7 +552,7 @@ async function lspRun(
   refs: RefPair,
   tests: LspJobRequest['tests'],
   opts: Pick<AnalyzeOptions, 'lspEnv' | 'lspWaitReportMs' | 'progress' | 'worktreeRoot'>,
-): Promise<{ run: LspRun; reused: boolean; result?: { semantic: SemanticSource; callGraph: CallGraphSource; definitions?: DefinitionSource } }> {
+): Promise<{ run: LspRun; reused: boolean; result?: { semantic: SemanticSource; callGraph: CallGraphSource; callGraphBase?: CallGraphSource; definitions?: DefinitionSource } }> {
   const language = config.language ?? 'kotlin';
   // yaml に無ければ言語ごとの既定の起こし方（kotlin だけ）。コマンドは環境変数か、kotlin-lsp の置き場から取る
   const conf = config.lsp[language] ?? defaultLspConfig(language);

@@ -5,6 +5,7 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { KOTLIN_IMPORT_NOTIFICATION } from '@ondina/core';
+import type { Hunk } from '@ondina/model';
 import { createLspHolder, type LspJobArgs } from '../src/lsp-session.js';
 import { lspCacheDir, lspWorktreeRoot } from '../src/lsp.js';
 import { buildFixtureRepo, git } from './fixture-repo.js';
@@ -64,6 +65,20 @@ function job(shas: { base: string; head: string }, rec: { spawns: string; notes:
 }
 
 describe('createLspHolder', () => {
+  it('変わる前（base）の呼び出し関係も聞く。base に無いファイル（PR で足したファイル）の hunk は聞かない', async () => {
+    const rec = files();
+    const holder = createLspHolder(repo);
+    const hunk = (id: string, p: string, symbol: string): Hunk => ({ id, path: p, lang: 'kotlin', symbol, symbolFqName: `x.${symbol}`, symbolKind: 'function', kind: 'none', kindProvenance: 'ast', hows: [], n: 1, lnOld: 1, lnNew: 1, lines: [] });
+    try {
+      const r = await holder.job(job({ base: sha['main']!, head: sha['discount']! }, rec, { hunks: [hunk('h1', CONTROLLER, 'apply'), hunk('h2', 'src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt', 'discountCode')] }));
+      expect(r.run.status).toBe('ok');
+      expect(r.result?.callGraphBase?.probes.map((p) => p.hunkId)).toEqual(['h1']);
+      expect(r.result?.callGraph.probes.map((p) => p.hunkId)).toEqual(['h1', 'h2']);
+    } finally {
+      await holder.close();
+    }
+  });
+
   it('2 本目の PR は起動したまま使う。変わったファイルを知らせ、意味トークンも取れる', async () => {
     const rec = files();
     const holder = createLspHolder(repo);

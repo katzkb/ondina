@@ -53,6 +53,10 @@ export interface CollectCallGraphArgs {
   root: string;
   /** そのパスがテストか（設定の layers の Tests に当たるか） */
   isTestPath: (repoRelative: string) => boolean;
+  /** 呼び出し関係だけ聞く（参照を聞かない）。変わる前（base）の worktree に聞くとき（2026-11-05） */
+  callsOnly?: boolean;
+  /** 答えを書き出す先を指す環境変数の名前（既定 ONDINA_LSP_RECORD。fixture の採り直し用） */
+  recordEnv?: string;
 }
 
 /**
@@ -89,7 +93,7 @@ export async function collectCallGraph(client: LspClient, args: CollectCallGraph
 
     // 参照（プロパティ・クラスにも打つ。呼び出し関係が測れないシンボルでも参照は取れる。2026-09-23 実測）。
     // 位置は宣言そのもの。テストからの参照は囲っているテスト関数に丸めて数える（同じテストから 2 回参照しても 1 件）
-    const declaration = findDeclarationPosition(symbols, name);
+    const declaration = args.callsOnly === true ? undefined : findDeclarationPosition(symbols, name);
     if (declaration !== undefined) {
       const refs = (await client.request<Array<{ uri: string; range: { start: Position } }> | null>('textDocument/references', { textDocument: { uri }, position: declaration, context: { includeDeclaration: false } })) ?? [];
       const locations: Array<{ path: string; line: number }> = [];
@@ -140,7 +144,7 @@ export async function collectCallGraph(client: LspClient, args: CollectCallGraph
     if (signature !== undefined) src.signatures[fqName] = signature;
   }
 
-  const record = process.env['ONDINA_LSP_RECORD'];
+  const record = process.env[args.recordEnv ?? 'ONDINA_LSP_RECORD'];
   if (record !== undefined && record !== '') writeFileSync(record, JSON.stringify(src, null, 2) + '\n');
   return src;
 }

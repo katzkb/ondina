@@ -592,7 +592,7 @@ interface AskLog { entries: AskEntry[] }     // 古い順。失敗と止めた�
 
 interface Analysis {                         // パイプラインの成果物。JSON 1ファイル。headSha をキーにキャッシュ
   pr: { number: number; title: string; base: string; head: string; headSha: string; baseSha: string; body?: string; bodyCode?: BodyCode[]; ticket?: Ticket; ticketSearch?: TicketSearch };  // body は作者の説明の原文（3.1。2026-09-19）。bodyCode は本文のコードブロックの色（{ lang; code; tokens: TokenLine[] }。2026-10-10）。ticket は --ticket で指定したか題・ブランチ名・本文から LLM が選んだチケット（5.1。2026-10-12）。欄が無い = 指定も選んだものも無い。ticketSearch は --ticket が無いときに探した記録（欄が無い = --ticket の解析か古い解析）
-  hunks: Hunk[]; hows: How[]; symbols: Symbol[]; edges: Edge[]; tours: Tour[];
+  hunks: Hunk[]; hows: How[]; symbols: Symbol[]; edges: Edge[]; edgesBase?: Edge[]; tours: Tour[];  // edgesBase は変わる前（base）の呼び出し辺（9.2。2026-11-05）。欄が無い = 古い解析か言語サーバーが無かった
   specs: Spec[]; claims: Claim[]; summary: Summary;
   config: AnalysisConfig;                    // ondina.config.yaml の解析に効く部分（11章）。無ければ既定値
   llm?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // Stage 2 の 1 回目（目的ごとに分ける）の記録（5.3）。どのコマンドで出したか
@@ -1101,6 +1101,7 @@ kotlin-lsp textDocument/semanticTokens/full                        → 意味ト
 |---|---|
 | 意味ハイライト | `textDocument/semanticTokens/full` |
 | 呼び出し辺 | `textDocument/prepareCallHierarchy` → `callHierarchy/incomingCalls` / `callHierarchy/outgoingCalls`。宣言の行（`selectionRange` の開始）と呼んでいる位置（`fromRanges` の開始行。向きによらず呼ぶ側のファイル）も記録し、未変更シンボルの行の切り出しと、差分のない呼び出し先の絞り込み（9.6）に使う（3.3。2026-09-26 / 2026-10-12） |
+| 変わる前の呼び出し辺（流れの地図の ① 背景） | 同じ言語サーバーに、base の worktree の root で `prepareCallHierarchy` → `outgoingCalls` / `incomingCalls` を聞く。base にあるファイルの hunk だけ、呼び出しだけ（参照は聞かない）。差分の無い相手への呼び出しは、呼んでいる行が消した行（`-` の行）のものだけ使う（head の `+` の行と同じ規則）。結果は `Analysis.edgesBase`（行は base のファイル）。fixture で apply → execute → find、apply → OrderResponse の 3 本が取れることを kotlin-lsp 263.7084.0 で確かめた。記録は `ONDINA_LSP_RECORD_BASE` で書き出し、`fixtures/order-service/lsp/call-edges-base.json`（`core/src/lsp/edges.ts` の `buildBaseCallEdges`。2026-11-05） |
 | 辺ラベルの型 | `textDocument/hover`（戻り型を含むシグネチャが返る。9.3） |
 | 名前から定義へ（3.6） | `textDocument/definition`（2026-10-29）。名前の位置は `semanticTokens/full` の名前の種類（keyword・modifier・comment・string・number・regexp・operator を除く）。画面に出る行の名前（head は変わったファイルと、呼び出し関係に出た差分のないファイルの全体。base は差分の行）と、その行き先のうち差分の列にないファイル全体の名前に、64 本ずつ同時に投げる（fixture の実測で 1 段目 1441 か所が 1.6 秒、2 段目 274 か所が 0.2 秒、解析全体 8.6 秒。差分の行だけだったときは計 1329 か所が 1.5 秒、8.3 秒。2026-10-29）。応答の最初の場所（`LocationLink` は `targetSelectionRange`）を、worktree の下なら側と相対パス、外なら jar の名前（JDK はモジュール名）にする。パッケージの名前はフォルダを指すので応答なしにする。1 つの問い合わせが失敗しても応答なしにして続ける（`lsp-queries.ts` の `collectDefinitions`、規則は `core/src/lsp/definitions.ts`）。記録は `ONDINA_LSP_RECORD_DEFS` で書き出し、`fixtures/order-service/lsp/definitions.json`（ゴールデンは `expected/definitions.json`） |
 | シンボル一覧（hunk ↔ シンボル対応の補助） | `textDocument/documentSymbol` |

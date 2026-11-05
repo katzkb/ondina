@@ -23,7 +23,7 @@ export interface LspJobRequest extends Omit<LspJobArgs, 'isTestPath' | 'progress
 interface WireResult {
   run: LspRun;
   reused: boolean;
-  result?: { semantic: { legend: SemanticLegend; head: Array<[string, number[]]>; base: Array<[string, number[]]> }; callGraph: CallGraphSource; definitions?: DefinitionSource };
+  result?: { semantic: { legend: SemanticLegend; head: Array<[string, number[]]>; base: Array<[string, number[]]> }; callGraph: CallGraphSource; callGraphBase?: CallGraphSource; definitions?: DefinitionSource };
 }
 
 export type WireLine = { progress: string } | { done: WireResult };
@@ -33,7 +33,8 @@ export function toWire(r: LspJobResult): WireResult {
   const s = r.result.semantic;
   const pairs = (m: ReadonlyMap<string, readonly number[]>) => [...m].map(([k, v]) => [k, [...v]] as [string, number[]]);
   const defs = r.result.definitions === undefined ? {} : { definitions: r.result.definitions };
-  return { run: r.run, reused: r.reused, result: { semantic: { legend: s.legend, head: pairs(s.head), base: pairs(s.base) }, callGraph: r.result.callGraph, ...defs } };
+  const base = r.result.callGraphBase === undefined ? {} : { callGraphBase: r.result.callGraphBase };
+  return { run: r.run, reused: r.reused, result: { semantic: { legend: s.legend, head: pairs(s.head), base: pairs(s.base) }, callGraph: r.result.callGraph, ...base, ...defs } };
 }
 
 export function fromWire(w: WireResult): LspJobResult {
@@ -41,7 +42,8 @@ export function fromWire(w: WireResult): LspJobResult {
   const s = w.result.semantic;
   // 定義の答えを持たない古い serve の答えなら欄ごと無し（名前から移れない解析になる）
   const defs = w.result.definitions === undefined ? {} : { definitions: w.result.definitions };
-  return { run: w.run, reused: w.reused, result: { semantic: { legend: s.legend, head: new Map(s.head), base: new Map(s.base) }, callGraph: w.result.callGraph, ...defs } };
+  const base = w.result.callGraphBase === undefined ? {} : { callGraphBase: w.result.callGraphBase };
+  return { run: w.run, reused: w.reused, result: { semantic: { legend: s.legend, head: new Map(s.head), base: new Map(s.base) }, callGraph: w.result.callGraph, ...base, ...defs } };
 }
 
 /** serve の側で、本文から LspJobArgs を組む */

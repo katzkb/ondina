@@ -1,0 +1,385 @@
+{
+ "probes": [
+  {
+   "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c"
+  },
+  {
+   "hunkId": "7c3620df39b9ef5cf954a62175bf0def4361cf79"
+  },
+  {
+   "hunkId": "7d1f264e32ec64a4a8e87582280d3c51c0e9beca"
+  },
+  {
+   "hunkId": "079cc62bead02b816f5900d3da3accddb6cfc225"
+  },
+  {
+   "hunkId": "78b5e2fce82e915e87d96f07a36f818d0f441d27"
+  },
+  {
+   "hunkId": "3fe1dde4f7eced5e63034f751a8d7c51185a3395"
+  },
+  {
+   "hunkId": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+   "item": {
+    "name": "Logger.format(Logger.Level, String)",
+    "detail": "com.example.common",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "line": 5
+   }
+  },
+  {
+   "hunkId": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c"
+  },
+  {
+   "hunkId": "18ada3da5f913983c4b5036e21e96b3f03fb3a22"
+  },
+  {
+   "hunkId": "0ce459a50c74ffd6bb848b193e6801134ddd471d"
+  },
+  {
+   "hunkId": "34572795b5d3947558d3dffb3f15fcc32a885a0e"
+  },
+  {
+   "hunkId": "b6f9e151047a59c46732bb8dce91c63d9aab47ea"
+  },
+  {
+   "hunkId": "c44dfbbec354bf0fe7baa0e88955218093477d7b"
+  },
+  {
+   "hunkId": "60e94e42327d58a58d4908e5cd433da84e76966a"
+  },
+  {
+   "hunkId": "b5cb3f3cafeec60dca5a02876492d8c21fdee1c9"
+  },
+  {
+   "hunkId": "130e7d62f211839eec7c68582ae3565629d8c673",
+   "item": {
+    "name": "OrderController.apply(String)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "line": 15
+   }
+  },
+  {
+   "hunkId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+   "item": {
+    "name": "OrderDetailResponse.Companion.from(Order)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderDetailResponse.kt",
+    "line": 10
+   }
+  },
+  {
+   "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+   "item": {
+    "name": "OrderResponse.Companion.from(Order)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+    "line": 9
+   }
+  },
+  {
+   "hunkId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+   "item": {
+    "name": "OrderSummaryResponse.Companion.from(Order)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderSummaryResponse.kt",
+    "line": 9
+   }
+  },
+  {
+   "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99",
+   "item": {
+    "name": "ApplyDiscountUseCase.execute(OrderId)",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "line": 13
+   }
+  },
+  {
+   "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7"
+  },
+  {
+   "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+   "item": {
+    "name": "OrderRepositoryImpl.save(Order)",
+    "detail": "com.example.order.infra",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "line": 13
+   }
+  },
+  {
+   "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed",
+   "item": {
+    "name": "OrderRepositoryImpl.find(OrderId)",
+    "detail": "com.example.order.infra",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "line": 20
+   }
+  },
+  {
+   "hunkId": "cabe82f14a82b677e5ca8078b7b90f15609371e3"
+  },
+  {
+   "hunkId": "c2be2703a8cf8d8fc074f6967fe3d6f982f023b3"
+  },
+  {
+   "hunkId": "47dc9545806ff578b57ab0793821f2cc2c1b3a49"
+  },
+  {
+   "hunkId": "72d4dcabffd7c45c66c46d5698ac8c833e45f7e7"
+  },
+  {
+   "hunkId": "b11a01999b4ec95b9ff4e6f1c50932ae98a1b69c"
+  },
+  {
+   "hunkId": "0eebc3bdbdc8e7c08fdd7b740c68fbabc7e22506"
+  },
+  {
+   "hunkId": "9cfdbdf61c4a956c952939696c72096aa265c4bd"
+  },
+  {
+   "hunkId": "d4ebe4338bbc4cc8e92947fd0262f50bf585797a"
+  },
+  {
+   "hunkId": "9d6e9f791f8b693d7758aa240592b444cbf5e084"
+  },
+  {
+   "hunkId": "fc611ea6e00d7be77f29312964dd5facc0b2dccf"
+  },
+  {
+   "hunkId": "d81273406425493877cce76b6a078c2f3b98944f",
+   "item": {
+    "name": "ApplyDiscountUseCaseTest.throws when order is missing()",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "line": 16
+   }
+  },
+  {
+   "hunkId": "b89e25202d679c348f253ed8b3ab49f2833eedb5"
+  },
+  {
+   "hunkId": "a22e9a886a2fefed19df83983b21f8e1b09098ab"
+  },
+  {
+   "hunkId": "3c10228566fa653f9ff458cace7a9fea95c16ea9"
+  },
+  {
+   "hunkId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839"
+  },
+  {
+   "hunkId": "7826f5464b504df32d03817b1421873bc12479bd"
+  },
+  {
+   "hunkId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3"
+  }
+ ],
+ "calls": [
+  {
+   "from": {
+    "name": "Logger.log(Logger.Level, String)",
+    "detail": "com.example.common",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "line": 7
+   },
+   "to": {
+    "name": "Logger.format(Logger.Level, String)",
+    "detail": "com.example.common",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/common/Logger.kt",
+    "line": 5
+   },
+   "kind": "call",
+   "lines": [
+    7
+   ]
+  },
+  {
+   "from": {
+    "name": "OrderController.apply(String)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "line": 15
+   },
+   "to": {
+    "name": "ApplyDiscountUseCase.execute(OrderId)",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "line": 13
+   },
+   "kind": "call",
+   "lines": [
+    16
+   ]
+  },
+  {
+   "from": {
+    "name": "OrderController.apply(String)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "line": 15
+   },
+   "to": {
+    "name": "OrderResponse.Companion.from(Order)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+    "line": 9
+   },
+   "kind": "call",
+   "lines": [
+    17
+   ]
+  },
+  {
+   "from": {
+    "name": "OrderController.apply(String)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "line": 15
+   },
+   "to": {
+    "name": "OrderResponse.Companion.from(Order)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderResponse.kt",
+    "line": 9
+   },
+   "kind": "call",
+   "lines": [
+    17
+   ]
+  },
+  {
+   "from": {
+    "name": "ApplyDiscountUseCase.execute(OrderId)",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "line": 13
+   },
+   "to": {
+    "name": "OrderRepository.find(OrderId)",
+    "detail": "com.example.order.domain",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+    "line": 3
+   },
+   "kind": "call",
+   "lines": [
+    14
+   ]
+  },
+  {
+   "from": {
+    "name": "OrderController.apply(String)",
+    "detail": "com.example.order.api",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/api/OrderController.kt",
+    "line": 15
+   },
+   "to": {
+    "name": "ApplyDiscountUseCase.execute(OrderId)",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "line": 13
+   },
+   "kind": "call",
+   "lines": [
+    16
+   ]
+  },
+  {
+   "from": {
+    "name": "ApplyDiscountUseCase.execute(OrderId)",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "line": 13
+   },
+   "to": {
+    "name": "OrderRepositoryImpl.find(OrderId)",
+    "detail": "com.example.order.infra",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/infra/OrderRepositoryImpl.kt",
+    "line": 20
+   },
+   "kind": "call",
+   "lines": [
+    14
+   ]
+  },
+  {
+   "from": {
+    "name": "ApplyDiscountUseCaseTest.throws when order is missing()",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "line": 16
+   },
+   "to": {
+    "name": "OrderRepository.find(OrderId)",
+    "detail": "com.example.order.domain",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/domain/OrderRepository.kt",
+    "line": 3
+   },
+   "kind": "test",
+   "lines": [
+    17
+   ]
+  },
+  {
+   "from": {
+    "name": "ApplyDiscountUseCaseTest.throws when order is missing()",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/test/kotlin/com/example/order/application/ApplyDiscountUseCaseTest.kt",
+    "line": 16
+   },
+   "to": {
+    "name": "ApplyDiscountUseCase.execute(OrderId)",
+    "detail": "com.example.order.application",
+    "kind": 6,
+    "path": "src/main/kotlin/com/example/order/application/ApplyDiscountUseCase.kt",
+    "line": 13
+   },
+   "kind": "test",
+   "lines": [
+    18
+   ]
+  }
+ ],
+ "signatures": {
+  "com.example.common.Logger.format": "fun format(level: Logger.Level, msg: String): String",
+  "com.example.common.Logger.log": "fun log(level: Logger.Level, msg: String)",
+  "com.example.order.api.OrderController.apply": "@PostMapping\nfun apply(@PathVariable id: String): OrderResponse",
+  "com.example.order.application.ApplyDiscountUseCase.execute": "fun execute(id: OrderId): Order",
+  "com.example.order.api.OrderResponse.Companion.from": "fun from(o: Order): OrderResponse",
+  "com.example.order.api.OrderDetailResponse.Companion.from": "fun from(o: Order): OrderDetailResponse",
+  "com.example.order.api.OrderSummaryResponse.Companion.from": "fun from(o: Order): OrderSummaryResponse",
+  "com.example.order.domain.OrderRepository.find": "fun find(id: OrderId): Order?",
+  "com.example.order.infra.OrderRepositoryImpl.save": "override fun save(order: Order)",
+  "com.example.order.infra.OrderRepositoryImpl.find": "override fun find(id: OrderId): Order?",
+  "com.example.order.application.ApplyDiscountUseCaseTest.throws when order is missing": "@Test\nfun `throws when order is missing`()"
+ },
+ "testRefs": {},
+ "refs": {},
+ "ranges": {}
+}
