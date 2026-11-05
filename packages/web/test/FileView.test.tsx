@@ -21,6 +21,56 @@ const memoProp = (comments: CommentDraft[]) => ({ comments, ui: NO_MEMO, githubD
 const bands = (c: HTMLElement) => [...c.querySelectorAll('.fold .fl')].map((e) => e.textContent);
 const keys = (...ks: Array<string | [string, number, number]>) => ks.flatMap((k) => (typeof k === 'string' ? [k] : Array.from({ length: k[2] - k[1] + 1 }, (_, i) => `${k[0]}${k[1] + i}`)));
 
+describe('FileView の検索', () => {
+  it.each(['uni', 'sbs'] as const)('%s: 見つかった行は全部帯から出し、文字に印と件数を出す。閉じると印と欄を消す', (mode) => {
+    const props = { analysis: analysis(), path: PATH, hunkId: 'h1', symbol: undefined, full: false, mode, viewed: [], dispatch: vi.fn() };
+    const find = { open: true, query: 'l2', at: -1, n: 1 };
+    const { container, rerender } = render(<FileView {...props} find={find} />);
+    expect(screen.getByRole('searchbox', { name: 'このファイルの中を検索' })).toHaveValue('l2');
+    expect(screen.getByText('11 / 11')).toBeInTheDocument();
+    expect(container.querySelectorAll('mark')).toHaveLength(11);
+    expect(container.querySelector('mark.cur')?.closest('.mrow')).toHaveTextContent('l29');
+    if (mode === 'sbs') expect(container.querySelector('mark')?.closest('.mside')?.previousElementSibling).not.toBeNull();
+    rerender(<FileView {...props} find={{ ...find, open: false }} />);
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(container.querySelector('mark')).toBeNull();
+    expect(container.querySelector('.fv-body')).not.toHaveTextContent('l29');
+  });
+
+  it.each([['old19', 'r', false], ['new19', 'a', true]] as const)('左右: %s の印はその文字のある側だけ', (query, cls, right) => {
+    const { container } = render(<FileView analysis={analysis()} path={PATH} hunkId="h1" symbol={undefined} full mode="sbs" viewed={[]} dispatch={() => {}} find={{ open: true, query, at: 0, n: 1 }} />);
+    const hits = container.querySelectorAll('mark');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.closest('.cd')).toHaveClass(cls);
+    expect(hits[0]?.closest('.mside')?.previousElementSibling !== null).toBe(right);
+  });
+
+  it('今の印へ真ん中にスクロールする。件数で回ったとき・同じ件を開き直したときも動く', () => {
+    const scrolled: Element[] = [];
+    const original = Element.prototype.scrollIntoView;
+    const scroll = vi.fn(function (this: Element) { scrolled.push(this); });
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      const props = { analysis: analysis(), path: PATH, hunkId: 'h1', symbol: undefined, full: false, mode: 'uni' as const, viewed: [], dispatch: vi.fn() };
+      const find = { open: true, query: 'l2', at: 0, n: 1 };
+      const { container, rerender } = render(<FileView {...props} find={find} />);
+      expect(scrolled.at(-1)).toBe(container.querySelector('mark.cur'));
+      scroll.mockClear();
+      rerender(<FileView {...props} find={{ ...find, at: 11 }} />);
+      expect(scroll).toHaveBeenCalledWith({ block: 'center' });
+      scroll.mockClear();
+      rerender(<FileView {...props} find={{ ...find, at: 11, n: 2 }} />);
+      expect(scroll).toHaveBeenCalledWith({ block: 'center' });
+      rerender(<FileView {...props} find={{ ...find, query: 'old19' }} />);
+      expect(scrolled.at(-1)).toBe(container.querySelector('mark.cur'));
+      expect(scrolled.at(-1)).toHaveTextContent('old19');
+    } finally {
+      if (original) Element.prototype.scrollIntoView = original;
+      else Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+    }
+  });
+});
+
 describe('FileView の帯（変わった行から離れた行）', () => {
   it('見ている hunk の中の変わらない行も畳む。ファイルの先頭の帯は ↑ だけ、末尾の帯は ↓ だけ', () => {
     const dispatch = vi.fn();

@@ -13,11 +13,10 @@
 // 行の中の変わった語（2026-10-30。diff/wordDiff.ts）: 左右表示と同じ組の消した行と足した行で、変わった所を濃く塗る（統合でも同じ組）。
 import type { CommentDraft, FileText, GithubDiffFile, Hunk } from '@ondina/model';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Command } from '../commands/commands.js';
 import { DraftBox, LineMark, MemoEditor, MemoHoldSpace, MemoSaved } from '../components/MemoBox.js';
 import { hunkAt } from '../files.js';
-import { composingKey } from '../commands/keymap.js';
 import { isMemo, pickRange, pickSpan } from '../memo.js';
 import type { DiffJump, FindUi, FocusLine, MemoUi } from '../state/reducer.js';
 import { flashClass, litBy } from './FileView.js';
@@ -25,6 +24,7 @@ import type { Side } from './alignRows.js';
 import { curIndex, findHits, marksByRow, type FindCell, type FindMark } from './find.js';
 import { bodyStart, FILE_HEAD_H, layoutOf, revealPlan, stickyOf, viewportOf } from './follow.js';
 import { FoldBand } from './FoldBand.js';
+import { FindBar } from './FindBar.js';
 import { buildFileRows, buildRows, foldVirtual, withMemos, type DiffMode, type MemoItem, type VirtualRow } from './rows.js';
 import { Marked, TokenSpans } from './TokenSpans.js';
 import { wordDiff } from './wordDiff.js';
@@ -274,7 +274,7 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
           </div>
         </div>
       )}
-      {find?.open && <FindBar find={find} count={hits.length} cur={cur} below={list} dispatch={dispatch} />}
+      {find?.open && <FindBar label="差分の中を検索" find={find} count={hits.length} cur={cur} below={list} dispatch={dispatch} />}
       <div className="dbody" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((v) => {
           const row = rows[v.index]!;
@@ -492,53 +492,6 @@ function MemoRow({ row, mode, memo, dispatch }: { row: Extract<VirtualRow, { kin
     <div className="dmemo sbs">
       <div className="mhalf l">{row.left.map(item)}</div>
       <div className="mhalf r">{row.right.map(item)}</div>
-    </div>
-  );
-}
-
-/**
- * 列の中の検索欄（⌘F）。列の右上に重ねる（差分一覧は貼り付く見出しの下）。Enter で次、Shift+Enter で前、Esc で閉じる。
- * 入力欄の中のキーは App のキー操作に届かないので、ここで同じコマンドを出す（原則 6）
- */
-function FindBar({ find, count, cur, below, dispatch }: { find: FindUi; count: number; cur: number; below: boolean; dispatch: (c: Command) => void }) {
-  const ref = useRef<HTMLInputElement>(null);
-  // 開いたとき・開いている間にもう一度 ⌘F を押したときは、入れた文字を選んで入れ直せるように
-  useEffect(() => {
-    ref.current?.focus();
-    ref.current?.select();
-  }, [find.n]);
-  const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (composingKey(e.nativeEvent)) return;
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      dispatch({ id: e.shiftKey ? 'find.prev' : 'find.next' });
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      dispatch({ id: 'find.close' });
-    } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
-      // 検索欄の中の ⌘F はブラウザの検索を開かず、入れた文字を選び直す
-      e.preventDefault();
-      ref.current?.select();
-    }
-  };
-  const status = find.query === '' ? '' : count === 0 ? '見つかりません' : `${cur + 1} / ${count}`;
-  return (
-    <div className="dfind" style={below ? { top: FILE_HEAD_H } : undefined}>
-      <div className="fbox" role="search">
-        <input ref={ref} type="search" value={find.query} placeholder="差分の中を検索" aria-label="差分の中を検索" spellCheck={false} onChange={(e) => dispatch({ id: 'find.query', text: e.target.value })} onKeyDown={onKey} />
-        <span className={`fcount${find.query !== '' && count === 0 ? ' none' : ''}`} aria-live="polite">
-          {status}
-        </span>
-        <button type="button" className="ib" title="前へ（⇧Enter）" aria-label="前へ" disabled={count === 0} onClick={() => dispatch({ id: 'find.prev' })}>
-          ↑
-        </button>
-        <button type="button" className="ib" title="次へ（Enter）" aria-label="次へ" disabled={count === 0} onClick={() => dispatch({ id: 'find.next' })}>
-          ↓
-        </button>
-        <button type="button" className="ib" title="閉じる（Esc）" aria-label="閉じる" onClick={() => dispatch({ id: 'find.close' })}>
-          ×
-        </button>
-      </div>
     </div>
   );
 }

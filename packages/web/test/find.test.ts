@@ -1,7 +1,8 @@
 // 差分の列の中の検索（2026-10-27。diff/find.ts）。画面の外の行と帯に畳んだ行は DOM に無いので、畳む前の行列から探す
 import type { Hunk } from '@ondina/model';
 import { describe, expect, it } from 'vitest';
-import { cellsOf, curIndex, findHits, marksByRow, splitMarks } from '../src/diff/find.js';
+import { cellsOf, curIndex, findFileHits, findHits, marksByRow, splitMarks } from '../src/diff/find.js';
+import { fileRows } from '../src/diff/fileRows.js';
 import { buildFileRows, buildRows } from '../src/diff/rows.js';
 import { fixtureHunks } from './fixture.js';
 
@@ -52,6 +53,27 @@ describe('curIndex', () => {
     expect(curIndex(3, 3)).toBe(0);
     expect(curIndex(-1, 3)).toBe(2);
     expect(curIndex(5, 0)).toBe(-1);
+  });
+});
+
+describe('findFileHits', () => {
+  it('FileRow の文字をトークンの境目をまたいで探し、行と文字の順に返す。消した行・足した行も含む', () => {
+    const rows = fileRows([[['Total total', null, 0]]], [{ ...hunk(), lines: [' Total total', '-TOTAL', '+total'] }], 'h1', null);
+    rows[0]!.tokens = [['To', 'mauve', 0], ['tal total', null, 0]];
+    expect(findFileHits(rows, 'total')).toEqual([
+      { order: 0, from: 0, to: 5 },
+      { order: 0, from: 6, to: 11 },
+      { order: 1, from: 0, to: 5 },
+      { order: 2, from: 0, to: 5 },
+    ]);
+    expect(findFileHits(rows, '')).toEqual([]);
+    expect(findFileHits(rows, 'missing')).toEqual([]);
+  });
+
+  it('小文字にすると長さが変わる行でも元の文字の位置を返す', () => {
+    const rows = fileRows([[['İ Total Total', null, 0]]], [], null, null);
+    expect(findFileHits(rows, 'Total')).toEqual([{ order: 0, from: 2, to: 7 }, { order: 0, from: 8, to: 13 }]);
+    expect(findFileHits(rows, 'total')).toEqual([]);
   });
 });
 

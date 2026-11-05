@@ -31,7 +31,7 @@ import { paneStyle } from './panes.js';
 import { reviewActive } from './prs.js';
 import { isActive, stripOf } from './reanalyze.js';
 import { formatRoute, parseRoute, routeOf, routeTarget, sameEntry, type Route } from './route.js';
-import { canSend, diffModeOf, findable, initialState, overlayOpen, reduce, themeOf, type AppState, type Effect } from './state/reducer.js';
+import { canSend, diffModeOf, findable, findIn, initialState, overlayOpen, reduce, themeOf, type AppState, type Effect } from './state/reducer.js';
 import { flavorOf, useOsDark } from './theme.js';
 
 /** 新しい head を聞く間隔（画面を開いている間。画面に戻ったときにも聞く）。見本を比べて 2 分おきにした */
@@ -341,7 +341,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       const { command, pending: next } = resolveKey(e.key, pending.current, { meta: e.metaKey, ctrl: e.ctrlKey, alt: e.altKey }, bindingsOf(stateRef.current.ui.keymap));
       pending.current = next;
       if (command && overlayOpen(stateRef.current) && !OVERLAY_COMMANDS.has(command.id)) return;
-      // 差分の列を出していない画面の ⌘F は、ブラウザのページ内検索に任せる
+      // 差分の列も引き出しも出していない画面の ⌘F は、ブラウザのページ内検索に任せる
       if (command?.id === 'find.open' && !findable(stateRef.current)) return;
       if (command) {
         e.preventDefault();
@@ -421,7 +421,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
             repoName={s.current?.repoName ?? null}
             fold={s.fold}
             full={s.fullFile}
-            find={s.find}
+            {...(findIn(s) === 'list' ? { find: s.find } : {})}
             focusLine={s.focusLine}
             {...defBack}
             dispatch={dispatch}
@@ -447,7 +447,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
                 focusLine={s.focusLine}
                 open={listOpen}
                 full={s.fullFile}
-                find={s.find}
+                {...(findIn(s) === 'list' ? { find: s.find } : {})}
                 {...defBack}
                 dispatch={dispatch}
               />
@@ -463,10 +463,10 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
           </section>
         )}
       </main>
-      {s.rel && s.analysis && s.review && <RelDrawer analysis={s.analysis} rel={s.rel} viewed={s.review.viewed} memo={{ comments: s.review.comments, ui: s.memo, githubDiff: s.analysis.githubDiff, draftText: s.draftText }} focusLine={s.focusLine} dispatch={dispatch} />}
+      {s.rel && s.analysis && s.review && <RelDrawer {...(findIn(s) === 'drawer' ? { find: s.find } : {})} analysis={s.analysis} rel={s.rel} viewed={s.review.viewed} memo={{ comments: s.review.comments, ui: s.memo, githubDiff: s.analysis.githubDiff, draftText: s.draftText }} focusLine={s.focusLine} dispatch={dispatch} />}
       {s.def && s.analysis && (
         <DefLinks defs={s.analysis.defs} dispatch={dispatch}>
-          <DefDrawer analysis={s.analysis} def={s.def} viewed={s.review?.viewed ?? []} dispatch={dispatch} />
+          <DefDrawer {...(findIn(s) === 'drawer' ? { find: s.find } : {})} analysis={s.analysis} def={s.def} viewed={s.review?.viewed ?? []} dispatch={dispatch} />
         </DefLinks>
       )}
       {s.ask.open && s.analysis && <AskDrawer analysis={s.analysis} ask={s.ask} dispatch={dispatch} />}
