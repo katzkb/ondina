@@ -527,6 +527,22 @@ describe('analyzeLocal と LSP', () => {
     expect(info.some((s) => s.startsWith('LSP を使いませんでした: '))).toBe(true);
   });
 
+  it('PR で消したファイルがあっても LSP を使える（消したファイルは head に無いので、基準シンボルにも開くファイルにもしない）', async () => {
+    const own = buildFixtureRepo();
+    try {
+      git(own.dir, 'checkout', '-q', '-b', 'feature/drop', 'main');
+      git(own.dir, 'rm', '-q', 'src/main/kotlin/com/example/common/Logger.kt');
+      const item = path.join(own.dir, 'src/main/kotlin/com/example/cart/CartItem.kt');
+      writeFileSync(item, readFileSync(item, 'utf8').replace('val price: Money)', 'val price: Money, val qty: Int = 1)'));
+      git(own.dir, 'add', '-A');
+      git(own.dir, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', 'drop logger');
+      const { analysis } = await analyzeLocal(own.dir, 'main', 'feature/drop', { llm: 'off', lsp: true });
+      expect(analysis.lsp).toEqual({ command: expect.stringContaining('fake-lsp.mjs'), status: 'ok', waitedMs: expect.any(Number) });
+    } finally {
+      own.cleanup();
+    }
+  });
+
   it('yaml に lsp.kotlin が無くても、環境変数 ONDINA_LSP_COMMAND と既定の起こし方で起こす（9.1）', async () => {
     const { analysis } = await withYaml((y) => y.replace(/\nlsp:[\s\S]*?\n(?=theme:)/, '\n'), () => analyzeLocal(repo, 'main', 'feature/discount', { llm: 'off', lsp: true }));
     expect(analysis.lsp).toEqual({ command: expect.stringMatching(/fake-lsp\.mjs --stdio --system-path .*lsp\/workspace$/), status: 'ok', waitedMs: expect.any(Number) });

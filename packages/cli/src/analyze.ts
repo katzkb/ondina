@@ -574,6 +574,8 @@ async function lspRun(
     return { run: { command: '', status: 'unavailable', reason }, reused: false };
   }
   const ext = LSP_EXTENSIONS[language] ?? '';
+  // 基準シンボルは head で開いて確かめるので、head に残っているファイルからだけ選ぶ（PR で消したファイルを選ぶと ENOENT で LSP ごと使えなくなる。2026-11-05）
+  const inHead = new Set(files.filter((f) => f.after !== null).map((f) => f.path));
   const req: LspJobRequest = {
     language,
     command,
@@ -588,7 +590,7 @@ async function lspRun(
       base: files.filter((f) => f.path.endsWith(ext) && f.before !== null).map((f) => f.path),
     },
     changed: files.map((f) => f.path),
-    targets: chooseProbeTargets(hunks),
+    targets: chooseProbeTargets(hunks.filter((h) => inHead.has(h.path))),
     hunks: [...hunks],
     tests,
     ...(opts.lspEnv === undefined ? {} : { env: opts.lspEnv }),
