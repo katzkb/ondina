@@ -1,8 +1,8 @@
 {
   "summary": {
-    "headline": "注文に割引コードを適用できるようにする。",
+    "headline": "注文に割引コードを適用して、割引額を保存して返せるようにする。",
     "example": {
-      "text": "小計 1000 の注文に割引コード SPRING10 を適用すると、合計が 900 になる。存在しないコード NOPE では、合計は 1000 のままになる。",
+      "text": "小計 1000 の注文に割引コード SPRING10 を適用すると、合計が 900 になる。存在しない割引コード NOPE では、合計は 1000 のままになる。",
       "at": [
         {
           "symbolId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
@@ -15,7 +15,6 @@
         {
           "symbolId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
           "lines": [
-            22,
             23,
             24
           ]
@@ -31,37 +30,35 @@
               6
             ],
             "symbol": "130e7d62f211839eec7c68582ae3565629d8c673",
-            "before": "注文の id だけを受け取る。",
-            "after": "注文の id と割引コードを受け取る（SPRING10）。",
+            "before": "注文の id だけを受け付ける。",
+            "after": "リクエストの本文で割引コードも受け付ける（SPRING10）。",
             "untouched": [],
-            "pass": "割引コード SPRING10"
+            "pass": "注文の id と割引コード SPRING10"
           },
           {
             "title": "割引の適用",
             "howIds": [
-              5
+              5,
+              2
             ],
             "symbol": "a135ba90941c193b82bb22bc319e52347521ee99",
             "before": "注文を読んで、そのまま返す。",
-            "after": "注文を読み、割引を適用して保存してから返す。",
-            "untouched": [
-              "注文の保存の窓口"
-            ],
-            "pass": "DiscountCommand(SPRING10)"
+            "after": "注文を読んで割引コードを適用し、保存してから返す。",
+            "untouched": [],
+            "pass": "割引コード SPRING10"
           },
           {
             "title": "計算",
             "howIds": [
-              3,
-              2
+              3
             ],
             "symbol": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
-            "before": "割引額は販促の値から読む。合計は小計のまま。",
-            "after": "割引コードから割引額を出し、合計から引く（1000 → 900）。",
+            "before": "割引額は前からある販促の値から取る。合計は小計のまま。",
+            "after": "割引率から割引額を出し、小計から引く（1000 → 900）。",
             "untouched": [
               "割引率の決め方"
             ],
-            "pass": "割引額 100 を持つ注文"
+            "pass": "割引額 100"
           },
           {
             "title": "保存",
@@ -70,8 +67,8 @@
               1
             ],
             "symbol": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
-            "before": "注文の小計だけを読み書きする。",
-            "after": "小計と割引額を読み書きする（割引 100）。",
+            "before": "小計だけを書き込み、読み込む。",
+            "after": "割引額も書き込み、読み込む（100）。",
             "untouched": [],
             "pass": "割引額 100 を持つ注文"
           },
@@ -81,7 +78,7 @@
               7
             ],
             "symbol": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
-            "before": "応答に割引額がない。",
+            "before": "応答に割引額は載らない。",
             "after": "応答に割引額が載る（100）。",
             "untouched": []
           }
@@ -99,7 +96,7 @@
             "kind": "function"
           }
         ],
-        "text": "割引コードから割引率を返す。Order が割引額の計算に使う。",
+        "text": "割引コードから割引率を返す。差分では割引を適用するときにこれを呼ぶ。",
         "removed": false
       },
       {
@@ -115,30 +112,36 @@
             "kind": "function"
           }
         ],
-        "text": "注文に付いた販促の値から割引額を返していた。discount フィールドに置き換わる。",
+        "text": "販促の値から割引額を取る。この PR で、注文が持つ割引額のフィールドに置き換わる。",
         "removed": true
+      },
+      {
+        "names": [
+          {
+            "fqName": "com.example.order.domain.Money.Companion.ZERO",
+            "path": "src/main/kotlin/com/example/order/domain/Money.kt",
+            "kind": "property"
+          }
+        ],
+        "text": "金額 0 を表す。差分では割引額の初期値に使う。",
+        "removed": false
       }
     ],
     "terms": [
       {
         "word": "割引額",
         "code": "discount",
-        "meaning": "注文の小計から引く金額。小計 1000 で 10% なら 100。"
-      },
-      {
-        "word": "割引コード",
-        "code": "code",
-        "meaning": "割引の種類を表す文字列。例は SPRING10。"
+        "meaning": "小計から引く金額。小計 1000 に SPRING10 を適用すると 100 になる。"
       },
       {
         "word": "割引率",
         "code": "rate",
-        "meaning": "割引コードごとに決まる、小計に掛ける割合。"
+        "meaning": "割引コードごとに決まる、小計に掛ける率。"
       },
       {
-        "word": "小計",
-        "code": "subtotal",
-        "meaning": "割引を引く前の注文の金額。"
+        "word": "割引コード",
+        "code": "discountCode",
+        "meaning": "リクエストで受け取る割引の名前。例は SPRING10。"
       }
     ]
   },
@@ -150,36 +153,35 @@
           "symbolId": "40e1361cdc0e10bdf58a3323c633e282a8902036",
           "hunkId": "40e1361cdc0e10bdf58a3323c633e282a8902036",
           "call": "",
-          "role": "マイグレーション。orders テーブルの形を変える。"
+          "role": "データベースの移行。この PR で読み書きする割引額の置き場になる。"
         }
       ],
       "change": {
-        "before": "orders テーブルに割引額を置く列がない。",
-        "after": "割引額の列を持つ。前からある行の値は 0 になる。"
+        "before": "注文の行に割引額を入れる場所がない。",
+        "after": "注文の行に割引額の列ができる。前からある行の割引額は 0 になる。"
       },
       "checks": [
         {
-          "text": "orders テーブルに discount 列を足す",
+          "text": "orders テーブルを変える移行である",
           "at": [
             {
               "symbolId": "40e1361cdc0e10bdf58a3323c633e282a8902036",
               "lines": [
-                1,
-                2
+                1
               ],
-              "say": "テーブル名と列名はここ。"
+              "say": "変えるテーブルの名前はここ。"
             }
           ]
         },
         {
-          "text": "列は空を許さず、初期値を 0 にする",
+          "text": "discount 列は空を許さず、初期値が 0",
           "at": [
             {
               "symbolId": "40e1361cdc0e10bdf58a3323c633e282a8902036",
               "lines": [
                 2
               ],
-              "say": "NOT NULL と DEFAULT 0 はこの行。"
+              "say": "列の型と初期値はここ。"
             }
           ]
         }
@@ -192,22 +194,22 @@
           "symbolId": "08620bbd277424422d535274fc7a98e037583e4c",
           "hunkId": "08620bbd277424422d535274fc7a98e037583e4c",
           "call": "",
-          "role": "新しいファイルの頭。"
+          "role": "ファイルの頭。置き場所のパッケージを宣言する。"
         },
         {
           "symbolId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
           "hunkId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
           "call": "",
-          "role": "割引コードを入れる型の本体。"
+          "role": "割引コードの入れ物。割引を適用するときの引数になる。"
         }
       ],
       "change": {
-        "before": "割引コードをドメインへ渡す型がない。",
-        "after": "割引コードを包んで渡す型がある。"
+        "before": "割引コードをドメインに渡す入れ物がない。",
+        "after": "割引コードを 1 つ持つ入れ物で、ドメインに渡す。"
       },
       "checks": [
         {
-          "text": "ドメインのパッケージに置く",
+          "text": "domain パッケージに置く",
           "at": [
             {
               "symbolId": "08620bbd277424422d535274fc7a98e037583e4c",
@@ -219,14 +221,14 @@
           ]
         },
         {
-          "text": "割引コードを 1 つの文字列として持つ",
+          "text": "DiscountCommand は割引コードの文字列を 1 つだけ持つ",
           "at": [
             {
               "symbolId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
               "lines": [
                 3
               ],
-              "say": "持つ値は code だけ。"
+              "say": "持つ値はここ。"
             }
           ]
         }
@@ -239,62 +241,54 @@
           "symbolId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
           "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
           "call": "",
-          "role": "計算。注文が割引額を持ち、合計を出す。"
+          "role": "核。割引額を持ち、割引を適用して合計を出す。"
         },
         {
           "symbolId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
           "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
           "call": "",
-          "role": "同じ書き換え 22 か所のサンプル。PromoService.apply だけは、割引額が 0 のとき別の計算に回す形になっている。"
+          "role": "同じ書き換え 22 か所のサンプル。PromoService.apply() だけは差異あり。割引額が 0 のときは前からの販促の計算に回す。"
         },
         {
           "symbolId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
           "hunkId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
           "call": "",
-          "role": "小計 1000 に SPRING10 を適用し、合計 900 になることを確かめる。"
+          "role": "小計 1000 の注文に SPRING10 を適用したとき、合計 900 を期待する。"
         },
         {
           "symbolId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
           "hunkId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
           "call": "",
-          "role": "存在しないコード NOPE を適用し、合計 1000 のままになることを確かめる。"
+          "role": "存在しない割引コード NOPE を適用したとき、合計 1000 のままを期待する。"
         }
       ],
       "change": {
-        "before": "割引額は販促の値から読む。合計は小計のまま。",
-        "after": "割引コードから割引額を計算して持つ。合計は小計から割引額を引いた額になる。"
+        "before": "割引額は販促の値から取る。合計は小計のまま。",
+        "after": "割引コードから割引率を引き、小計に掛けて割引額にする。合計は小計から割引額を引いた値になる。"
       },
       "checks": [
         {
-          "text": "割引率は割引コードから DiscountPolicy で引く",
+          "text": "割引額は初期値 0 のフィールドとして持つ",
           "at": [
             {
               "symbolId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
               "lines": [
-                9
+                6
               ],
-              "say": "rateFor を呼ぶのはここ。"
+              "say": "販促の値の代わりに置いたフィールド。"
             }
           ]
         },
         {
-          "text": "割引額は小計に割引率を掛けた額になる",
+          "text": "割引コードから割引率を引き、小計に掛けて割引額にする",
           "at": [
             {
               "symbolId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
               "lines": [
+                9,
                 10
               ],
-              "say": "discount に入れるのはここ。"
-            },
-            {
-              "symbolId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
-              "lines": [
-                15,
-                16,
-                17
-              ],
-              "say": "小計 1000 と SPRING10 で合計 900 を期待している。"
+              "say": "割引率を引くのと、掛け算はここ。"
             }
           ]
         },
@@ -306,32 +300,40 @@
               "lines": [
                 13
               ],
-              "say": "total の式はこの行。"
+              "say": "合計の式はここ。"
             }
           ]
         },
         {
-          "text": "存在しないコードでは合計が小計のまま",
-          "at": [
-            {
-              "symbolId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
-              "lines": [
-                23,
-                24
-              ],
-              "say": "NOPE を適用して合計 1000 を期待している。"
-            }
-          ]
-        },
-        {
-          "text": "割引額の読み出しを getDiscount() から discount に書き換える",
+          "text": "getDiscount() の呼び出しを discount の読み取りに書き換える",
           "at": [
             {
               "symbolId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
               "lines": [
                 8
               ],
-              "say": "書き換えたあとの行はここ。"
+              "say": "束のサンプル。呼び出しをフィールドの読み取りに変える。"
+            }
+          ]
+        },
+        {
+          "text": "SPRING10 では合計が 1000 から 900 になり、NOPE では 1000 のまま",
+          "at": [
+            {
+              "symbolId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+              "lines": [
+                16,
+                17
+              ],
+              "say": "SPRING10 で 900 を期待している。"
+            },
+            {
+              "symbolId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+              "lines": [
+                23,
+                24
+              ],
+              "say": "NOPE で 1000 を期待している。"
             }
           ]
         }
@@ -344,40 +346,40 @@
           "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
           "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
           "call": "",
-          "role": "保存。注文を orders テーブルに書き込む。"
+          "role": "書き込み。注文の行を更新する。"
         },
         {
           "symbolId": "3b823c2027bd0957f11251555393d73cee9318ed",
           "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed",
           "call": "",
-          "role": "読み込み。id で 1 行を読み、注文を作る。"
+          "role": "読み込み。行から注文を組み立てる。"
         },
         {
           "symbolId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
           "hunkId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
           "call": "",
-          "role": "割引額 100 の注文を保存して読み戻すテスト。"
+          "role": "割引額 100 の注文を書き込んで読み直したとき、割引額 100 を期待する。"
         },
         {
           "symbolId": "7826f5464b504df32d03817b1421873bc12479bd",
           "hunkId": "7826f5464b504df32d03817b1421873bc12479bd",
           "call": "",
-          "role": "割引額を持たない注文が 0 で読み戻ることを確かめる。"
+          "role": "割引額を指定しない注文 o-2 を書き込んで読み直したとき、割引額 0 を期待する。"
         },
         {
           "symbolId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
           "hunkId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
           "call": "",
-          "role": "テスト用に、小計 1000 と指定した割引額の注文を作る。"
+          "role": "テスト用の注文を作る。小計 1000 と、指定した割引額を持つ。"
         }
       ],
       "change": {
-        "before": "注文の小計だけを読み書きする。",
-        "after": "小計と割引額を読み書きする。"
+        "before": "注文は小計だけを書き込み、読み込む。",
+        "after": "割引額も書き込み、読み込む。"
       },
       "checks": [
         {
-          "text": "保存で discount 列に割引額を書き込む",
+          "text": "書き込みで割引額の列も更新する",
           "at": [
             {
               "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
@@ -385,12 +387,12 @@
                 16,
                 20
               ],
-              "say": "列の指定と値の受け渡しはここ。"
+              "say": "更新する列と、渡す割引額はここ。"
             }
           ]
         },
         {
-          "text": "読み込みで discount 列を読み、注文の割引額に入れる",
+          "text": "読み込みで割引額の列も選び、注文に入れる",
           "at": [
             {
               "symbolId": "3b823c2027bd0957f11251555393d73cee9318ed",
@@ -398,12 +400,12 @@
                 27,
                 33
               ],
-              "say": "列を選ぶ行と、注文に入れる行。"
+              "say": "選ぶ列と、注文に入れるところ。"
             }
           ]
         },
         {
-          "text": "保存した割引額 100 を読み戻せる",
+          "text": "割引額 100 の注文を書き込むと、読み直した割引額も 100",
           "at": [
             {
               "symbolId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
@@ -411,12 +413,19 @@
                 20,
                 21
               ],
-              "say": "保存してから読み、100 を期待している。"
+              "say": "書き込みと読み直しはここ。"
+            },
+            {
+              "symbolId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+              "lines": [
+                31
+              ],
+              "say": "テスト用の注文の割引額はここで決まる。"
             }
           ]
         },
         {
-          "text": "割引額を指定しない注文は 0 で読み戻る",
+          "text": "割引額を指定しない注文は、読み直すと割引額 0",
           "at": [
             {
               "symbolId": "7826f5464b504df32d03817b1421873bc12479bd",
@@ -424,7 +433,7 @@
                 26,
                 27
               ],
-              "say": "小計 500 の注文で 0 を期待している。"
+              "say": "割引額なしで書き込み、0 を期待している。"
             }
           ]
         }
@@ -437,59 +446,59 @@
           "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
           "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99",
           "call": "",
-          "role": "入口。割引の適用をまとめて行う。"
+          "role": "入口。割引コードを受け取って注文に適用する。"
         },
         {
           "symbolId": "3b823c2027bd0957f11251555393d73cee9318ed",
           "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed",
           "call": "ApplyDiscountUseCase.execute → OrderRepositoryImpl.find(OrderId)",
-          "role": "読み込み。id で注文を読む。"
+          "role": "注文を読み込む。"
         },
         {
           "symbolId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
           "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
           "call": "ApplyDiscountUseCase.execute → domain.Order(DiscountCommand)",
-          "role": "計算。割引コードから割引額を出す。"
+          "role": "割引を適用して割引額を出す。"
         },
         {
           "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
           "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
           "call": "ApplyDiscountUseCase.execute → OrderRepositoryImpl.save(Order)",
-          "role": "保存。割引額を含めて書き込む。"
+          "role": "割引額を含めて注文を書き込む。"
         },
         {
           "symbolId": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
           "hunkId": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
           "call": "",
-          "role": "DiscountCommand の import を足す。"
+          "role": "ファイルの頭。割引コードの入れ物の import を足す。"
         },
         {
           "symbolId": "d81273406425493877cce76b6a078c2f3b98944f",
           "hunkId": "d81273406425493877cce76b6a078c2f3b98944f",
           "call": "",
-          "role": "存在しない注文 nope で OrderNotFound になることを確かめる。"
+          "role": "存在しない注文 nope に SPRING10 を渡したとき、OrderNotFound を期待する。"
         },
         {
           "symbolId": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
           "hunkId": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
           "call": "",
-          "role": "SPRING10 を適用したあとに保存が呼ばれることを確かめる。"
+          "role": "注文 o-1 に SPRING10 を適用したとき、保存が 1 回呼ばれることを期待する。"
         }
       ],
       "change": {
-        "before": "注文の id だけを受け取り、注文を読んで返す。",
-        "after": "割引コードも受け取る。割引を適用し、保存してから返す。"
+        "before": "注文を読み込んで、そのまま返す。",
+        "after": "割引コードも受け取る。注文に適用してから保存して返す。"
       },
       "checks": [
         {
-          "text": "注文の id と割引コードを受け取る",
+          "text": "割引コードを文字列で受け取る",
           "at": [
             {
               "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
               "lines": [
                 15
               ],
-              "say": "引数が 2 つになった行。"
+              "say": "引数が増えたところ。"
             }
           ]
         },
@@ -501,40 +510,45 @@
               "lines": [
                 16
               ],
-              "say": "読み込みと例外はこの行。"
+              "say": "注文を読み込むところ。この行は変えていない。"
             },
             {
               "symbolId": "d81273406425493877cce76b6a078c2f3b98944f",
               "lines": [
                 19
               ],
-              "say": "存在しない id で例外を期待している。"
+              "say": "存在しない注文で OrderNotFound を期待している。"
             }
           ]
         },
         {
-          "text": "割引を適用してから保存する",
+          "text": "読み込んだ注文に割引コードを適用する",
           "at": [
             {
               "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
               "lines": [
-                17,
-                18
+                17
               ],
-              "say": "適用と保存の順はここ。"
+              "say": "割引コードを入れ物に包んで渡す。"
             }
           ]
         },
         {
-          "text": "保存を 1 回だけ呼ぶ",
+          "text": "適用のあと注文を 1 回保存する",
           "at": [
+            {
+              "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
+              "lines": [
+                18
+              ],
+              "say": "保存の呼び出しはここ。"
+            },
             {
               "symbolId": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
               "lines": [
-                24,
                 25
               ],
-              "say": "save の呼び出しが 1 回であることを期待している。"
+              "say": "保存が 1 回だけ呼ばれることを期待している。"
             }
           ]
         }
@@ -547,109 +561,109 @@
           "symbolId": "130e7d62f211839eec7c68582ae3565629d8c673",
           "hunkId": "130e7d62f211839eec7c68582ae3565629d8c673",
           "call": "",
-          "role": "入口。割引の HTTP リクエストを受ける。"
+          "role": "入口。注文に割引を適用するリクエストを受け付ける。"
         },
         {
           "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
           "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99",
           "call": "OrderController.apply → ApplyDiscountUseCase.execute(OrderId, String)",
-          "role": "割引の適用と保存を行う。"
+          "role": "割引コードを受け取って注文に適用する。"
         },
         {
           "symbolId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
           "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
           "call": "OrderController.apply → OrderRepositoryImpl.save(Order)",
-          "role": "保存。入口から直接も呼ばれる。"
+          "role": "注文を書き込む。"
         },
         {
           "symbolId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
           "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
           "call": "OrderController.apply → api.OrderResponse(Order)",
-          "role": "応答。注文から返す値を作る。"
+          "role": "注文から応答を作る。"
         },
         {
           "symbolId": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
           "hunkId": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
           "call": "",
-          "role": "新しいファイルの頭。"
+          "role": "ファイルの頭。新しいファイルのパッケージを宣言する。"
         },
         {
           "symbolId": "89802175d3898bded24a787f90beee1a5312f3a7",
           "hunkId": "89802175d3898bded24a787f90beee1a5312f3a7",
           "call": "",
-          "role": "リクエストの本文の型。"
+          "role": "リクエストの本文の形。"
         },
         {
           "symbolId": "02e146608288f588fded777b8b37c3a6f5a00023",
           "hunkId": "02e146608288f588fded777b8b37c3a6f5a00023",
           "call": "",
-          "role": "RequestBody の import を足す。"
+          "role": "ファイルの頭。本文を受け取るための import を足す。"
         }
       ],
       "change": {
-        "before": "注文の id だけを受け取る。",
-        "after": "リクエストの本文で割引コードも受け取る。ユースケースのあとに、ここでも保存を呼ぶ。"
+        "before": "注文の id だけを受け取って割引の処理を呼ぶ。",
+        "after": "リクエストの本文で割引コードも受け取り、処理に渡す。そのあと注文を保存して応答を返す。"
       },
       "checks": [
         {
-          "text": "リクエストの本文から割引コードを受け取る",
+          "text": "リクエストの本文を ApplyDiscountRequest で受け取る",
           "at": [
             {
               "symbolId": "130e7d62f211839eec7c68582ae3565629d8c673",
               "lines": [
                 17
               ],
-              "say": "本文の引数を足した行。"
-            },
-            {
-              "symbolId": "89802175d3898bded24a787f90beee1a5312f3a7",
-              "lines": [
-                3
-              ],
-              "say": "本文が持つのは discountCode だけ。"
+              "say": "引数に本文が増えたところ。"
             }
           ]
         },
         {
-          "text": "割引コードをユースケースへ渡す",
+          "text": "本文の割引コードを execute() に渡す",
           "at": [
             {
               "symbolId": "130e7d62f211839eec7c68582ae3565629d8c673",
               "lines": [
                 18
               ],
-              "say": "execute の呼び出しはここ。"
+              "say": "割引コードを渡すところ。"
+            },
+            {
+              "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
+              "lines": [
+                15
+              ],
+              "say": "受け取る側の引数。"
             }
           ]
         },
         {
-          "text": "ユースケースの中とここの両方で save を呼ぶ",
+          "text": "execute() の中と、そのあとの入口の 2 か所で保存を呼ぶ",
           "at": [
             {
               "symbolId": "130e7d62f211839eec7c68582ae3565629d8c673",
               "lines": [
                 19
               ],
-              "say": "ここでの save の呼び出し。"
+              "say": "入口での保存。"
             },
             {
               "symbolId": "a135ba90941c193b82bb22bc319e52347521ee99",
               "lines": [
                 18
               ],
-              "say": "ユースケースの中での save の呼び出し。"
+              "say": "execute() の中での保存。"
             }
           ]
         },
         {
-          "text": "応答は OrderResponse で返す",
+          "text": "ApplyDiscountRequest は割引コードを 1 つ持つ",
           "at": [
             {
-              "symbolId": "130e7d62f211839eec7c68582ae3565629d8c673",
+              "symbolId": "89802175d3898bded24a787f90beee1a5312f3a7",
               "lines": [
-                20
+                3
               ],
-              "say": "応答を作る行。"
+              "say": "本文の形はここ。"
             }
           ]
         }
@@ -662,28 +676,28 @@
           "symbolId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
           "hunkId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
           "call": "",
-          "role": "注文の詳細の応答。"
+          "role": "注文の詳細の応答。小計と合計も持つ。"
         },
         {
           "symbolId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
           "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
           "call": "",
-          "role": "割引を適用したときに返す注文の応答。"
+          "role": "割引を適用したあとに返す応答。"
         },
         {
           "symbolId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
           "hunkId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
           "call": "",
-          "role": "注文の要約の応答。"
+          "role": "注文の要約の応答。合計も持つ。"
         }
       ],
       "change": {
-        "before": "どの応答にも割引額がない。",
-        "after": "詳細・注文・要約の 3 つの応答が割引額を返す。"
+        "before": "注文の応答に割引額は載らない。",
+        "after": "注文の詳細・割引の適用・要約の応答に割引額が載る。"
       },
       "checks": [
         {
-          "text": "詳細の応答に割引額を載せる",
+          "text": "詳細の応答に割引額を足し、注文の割引額を入れる",
           "at": [
             {
               "symbolId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
@@ -691,12 +705,12 @@
                 9,
                 16
               ],
-              "say": "フィールドと値の受け渡し。"
+              "say": "フィールドと、値を入れるところ。"
             }
           ]
         },
         {
-          "text": "注文の応答に割引額を載せる",
+          "text": "割引の適用の応答に割引額を足し、注文の割引額を入れる",
           "at": [
             {
               "symbolId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
@@ -704,12 +718,12 @@
                 8,
                 14
               ],
-              "say": "フィールドと値の受け渡し。"
+              "say": "フィールドと、値を入れるところ。"
             }
           ]
         },
         {
-          "text": "要約の応答に割引額を載せる",
+          "text": "要約の応答に割引額を足し、注文の割引額を入れる",
           "at": [
             {
               "symbolId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
@@ -717,19 +731,7 @@
                 8,
                 14
               ],
-              "say": "フィールドと値の受け渡し。"
-            }
-          ]
-        },
-        {
-          "text": "割引額は注文の discount の金額から取る",
-          "at": [
-            {
-              "symbolId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
-              "lines": [
-                16
-              ],
-              "say": "値の取り出し元はここ。"
+              "say": "フィールドと、値を入れるところ。"
             }
           ]
         }
@@ -737,8 +739,8 @@
     }
   ],
   "info": [
-    "案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 25（場所 29）",
+    "案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 24（場所 30）",
     "入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）",
-    "背景: 前からあるもの 2 行（候補 5）、言葉 4 個"
+    "背景: 前からあるもの 3 行（候補 5）、言葉 3 個"
   ]
 }

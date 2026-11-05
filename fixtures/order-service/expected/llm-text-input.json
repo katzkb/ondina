@@ -735,7 +735,12 @@
     {
       "id": "f1",
       "start": "com.example.order.api.OrderController.apply",
-      "calls": [
+      "before": [
+        "OrderController.apply: useCase.execute(OrderId(id))",
+        "ApplyDiscountUseCase.execute: repository.find(id)",
+        "OrderController.apply: OrderResponse.from(order)"
+      ],
+      "after": [
         "OrderController.apply: useCase.execute(OrderId(id), body.discountCode)",
         "ApplyDiscountUseCase.execute: repository.find(id)",
         "ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))",
@@ -743,6 +748,13 @@
         "ApplyDiscountUseCase.execute: repository.save(order)",
         "OrderController.apply: repository.save(order)",
         "OrderController.apply: OrderResponse.from(order)"
+      ],
+      "changes": [
+        "変えた OrderController.apply: useCase.execute(OrderId(id)) → useCase.execute(OrderId(id), body.discountCode)",
+        "足した ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))",
+        "足した domain.Order: DiscountPolicy.rateFor(cmd.code)",
+        "足した ApplyDiscountUseCase.execute: repository.save(order)",
+        "足した OrderController.apply: repository.save(order)"
       ]
     }
   ]

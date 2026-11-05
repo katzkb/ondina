@@ -163,12 +163,13 @@ describe('buildNarrationInput（fixture）', () => {
     flows: read<CallFlow[]>('expected/flows.json'),
   });
 
-  it('流れ: 変わった後の呼び出しを呼ぶ順に「呼ぶ側: 呼び出しの式」で渡す', () => {
+  it('流れ: 変わる前と後の呼び出しを呼ぶ順に「呼ぶ側: 呼び出しの式」で、変わった呼び出しは状態を頭に付けて渡す', () => {
     expect(input.behaviors).toEqual([
       {
         id: 'f1',
         start: 'com.example.order.api.OrderController.apply',
-        calls: [
+        before: ['OrderController.apply: useCase.execute(OrderId(id))', 'ApplyDiscountUseCase.execute: repository.find(id)', 'OrderController.apply: OrderResponse.from(order)'],
+        after: [
           'OrderController.apply: useCase.execute(OrderId(id), body.discountCode)',
           'ApplyDiscountUseCase.execute: repository.find(id)',
           'ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))',
@@ -176,6 +177,13 @@ describe('buildNarrationInput（fixture）', () => {
           'ApplyDiscountUseCase.execute: repository.save(order)',
           'OrderController.apply: repository.save(order)',
           'OrderController.apply: OrderResponse.from(order)',
+        ],
+        changes: [
+          '変えた OrderController.apply: useCase.execute(OrderId(id)) → useCase.execute(OrderId(id), body.discountCode)',
+          '足した ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))',
+          '足した domain.Order: DiscountPolicy.rateFor(cmd.code)',
+          '足した ApplyDiscountUseCase.execute: repository.save(order)',
+          '足した OrderController.apply: repository.save(order)',
         ],
       },
     ]);

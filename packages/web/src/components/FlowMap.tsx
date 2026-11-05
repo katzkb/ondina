@@ -16,6 +16,7 @@ import { along, flowLayout, midOf, moveMs, returnPath, snapSpeed, SPEED_MAX, SPE
 import { outsideOf } from '../map/flowmap/outside.js';
 import { allCalls, curStep, flowSteps, inCourse, inStage, pickFlow, scoped, statusCounts, stopsOf, type FlowStep, type Stage } from '../map/flowmap/steps.js';
 import { clampZoom, wheelZoom } from '../map/zoom.js';
+import { sentences } from '../text.js';
 import { Key } from './Key.js';
 
 export interface FlowMapProps {
@@ -34,6 +35,8 @@ export interface FlowMapProps {
   dispatch: (c: Command) => void;
   elk?: () => ElkLike;
 }
+
+const STAGE_KEY = { 1: 'before', 2: 'change', 3: 'after' } as const;
 
 const STAGES: Array<{ n: Stage; title: string; sub: string }> = [
   { n: 1, title: '① 背景', sub: '変わる前の流れ' },
@@ -140,6 +143,9 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
   const L = layout && !(layout instanceof Error) && layout.id === flow.id ? layout.L : null;
   const counts = statusCounts(flow);
   const mine = scope ? steps.filter((s) => s.dir === 'call' && inCourse(s, sel!)) : [];
+  // 段ごとの文（LLM）。コースの範囲の ② はコースの変更の数を出すので、流れ全体の文は出さない（見本どおり）
+  const say = scope ? undefined : flow.stages?.[STAGE_KEY[stage]];
+  const said = say === undefined ? [] : sentences(say);
 
   return (
     <div className="fmap" ref={rootRef} style={course ? ({ ['--cc' as string]: `var(--c${course.id})` } as CSSProperties) : undefined}>
@@ -180,6 +186,16 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
         )}
         {scope && <p>{mine.length > 0 ? `このコースの変更は、流れの中の ${mine.length} か所です。色の付いた線がこのコースの変更、灰色はほかのコースの変更です。` : 'このコースの変更は、この流れを通りません。'}</p>}
         {course && !scope && <p className="muted">コースの範囲は ② この PR で出します。</p>}
+        {said.length > 0 && (
+          <div className="narr ai fm-narr">
+            {said.map((t, k) => (
+              <p key={k}>
+                {k === 0 && <span className="chip ai">AI</span>}
+                {t}
+              </p>
+            ))}
+          </div>
+        )}
         {stage === 2 && !scope && (
           <div className="fm-chips">
             <span className="fc add">{`足された呼び出し ${counts.added}`}</span>

@@ -1718,6 +1718,31 @@ describe('App（コース。3.3）', () => {
       expect(map.querySelector('.fm-step .fm-code .hot')!.textContent!.trim()).toBe('val order = useCase.execute(OrderId(id), body.discountCode)');
     });
 
+    it('段ごとの文（AI）を地図の上に 1 文 1 行で出す。書かれていない段は出さない', async () => {
+      const b = structuredClone(a);
+      b.flows![0]!.stages = { before: '注文を読んで返す。割引はまだ計算しない。', after: '割引コードを受け取る → 注文を読む → 保存する → 返す。' };
+      const { map } = await fmap(b);
+      const narr = () => map.querySelector('.fm-say .narr.ai');
+      expect([...narr()!.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['AI注文を読んで返す。', '割引はまだ計算しない。']);
+      await key('n');
+      expect(narr()).toBeNull();
+      await key('n');
+      expect(narr()!.textContent).toBe('AI割引コードを受け取る → 注文を読む → 保存する → 返す。');
+    });
+
+    it('段ごとの文はコースの範囲の ② では出さない（コースの変更の数を出す）', async () => {
+      const b = structuredClone(a);
+      b.flows![0]!.stages = { change: '割引を計算して保存するようになる。' };
+      const { container: c, map } = await fmap(b);
+      await key('n');
+      expect(map.querySelector('.fm-say .narr.ai')!.textContent).toBe('AI割引を計算して保存するようになる。');
+      await act(async () => {
+        fireEvent.click(c.querySelectorAll('.ccard .pick')[4]!);
+      });
+      expect(pressed(map)).toBe('② この PR');
+      expect(map.querySelector('.fm-say .narr.ai')).toBeNull();
+    });
+
     it('② の横に流れの外の変更。押すと差分一覧のその場所へ', async () => {
       const { map } = await fmap();
       await act(async () => {

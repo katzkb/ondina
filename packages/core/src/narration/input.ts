@@ -3,8 +3,9 @@
 // - 停留所はプログラムが組んだ読む順番（tours）のまま。LLM に並びを決めさせない（10.3）
 // - 停留所は差分だけ（2026-10-11）。差分の無い呼び出しの相手はコースの related に名前だけ入れる（図の箱の「変えていない」の札の材料。文は書かせない）
 // - 前からあるものの候補（existing。説明タブの背景。2026-10-29）は related の out と、この PR で消える宣言（hunks/removed.ts）。LLM はここから選ぶ（原則 3）
-// - 流れ（2026-11-05。それまでは動き）は、変わった後の呼び出しの木を呼ぶ順に開き、「呼ぶ側の短い名前: 呼び出しの式」で渡す（入口が消えた流れは変わる前の木）。
-//   LLM は題を付けて見せる順に並べるだけ（呼ぶ順はプログラムが組んだ事実）。入力の欄の名前は behaviors のまま（プロンプトを変えない）
+// - 流れ（2026-11-05。それまでは動き）は、変わる前と変わった後の呼び出しの木をそれぞれ呼ぶ順に開き、「呼ぶ側の短い名前: 呼び出しの式」で渡す。
+//   変わった呼び出しは状態（足した / 変えた / 消した）を頭に付けて別の欄に並べる。LLM は題と段ごとの文を書き、見せる順に並べる
+//   （呼ぶ順と状態はプログラムが組んだ事実。原則 3）。入力の欄の名前は behaviors のまま
 // - 作者の説明・前回の結果・辺・層の無いパスは渡さない（文を書くのに要らない。入口の説明は差分だけから書く）
 import { shortName } from '../behavior/build.js';
 import { stageOf } from '../flow/build.js';
@@ -86,11 +87,24 @@ export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, 
   const nameOf = (id: string) => shortName(symbolOf.get(id) ?? { fqName: id });
   const callsOf = (c: FlowCall, side: 'before' | 'after'): string[] =>
     c.kids.flatMap((k) => [`${nameOf(k.from!)}: ${k[side]?.call?.text ?? nameOf(k.to)}`, ...callsOf(k, side)]);
-  const moves = flows.map((f): NarrationInputBehavior => {
-    const side = f.root.after === undefined ? 'before' : 'after';
-    const tree = stageOf(f.root, side);
-    return { id: f.id, start: symbolOf.get(f.root.to)?.fqName ?? f.root.to, calls: tree === undefined ? [] : callsOf(tree, side) };
-  });
+  const sideCalls = (root: FlowCall, side: 'before' | 'after'): string[] => {
+    const tree = stageOf(root, side);
+    return tree === undefined ? [] : callsOf(tree, side);
+  };
+  const changesOf = (c: FlowCall): string[] =>
+    c.kids.flatMap((k) => {
+      const pre = k.before?.call?.text;
+      const post = k.after?.call?.text;
+      const expr = k.status === 'removed' ? (pre ?? nameOf(k.to)) : k.status === 'changed' && pre !== undefined && post !== undefined && pre !== post ? `${pre} → ${post}` : (post ?? pre ?? nameOf(k.to));
+      return [...(k.status === 'same' ? [] : [`${CHANGE_WORD[k.status]} ${nameOf(k.from!)}: ${expr}`]), ...changesOf(k)];
+    });
+  const moves = flows.map((f): NarrationInputBehavior => ({
+    id: f.id,
+    start: symbolOf.get(f.root.to)?.fqName ?? f.root.to,
+    before: sideCalls(f.root, 'before'),
+    after: sideCalls(f.root, 'after'),
+    changes: changesOf(f.root),
+  }));
   const used = [...new Map(courses.flatMap((c) => c.related.filter((r) => r.dir === 'out')).map((r) => [r.symbol, r])).values()];
 
   return {
@@ -106,6 +120,8 @@ export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, 
     ...(moves.length === 0 ? {} : { behaviors: moves }),
   };
 }
+
+const CHANGE_WORD = { added: '足した', changed: '変えた', removed: '消した' } as const;
 
 /** 統合形式の行の頭に head の行番号と「|」を付ける。削除の行（"-"）は番号の代わりに空白。桁はいちばん大きい番号に揃える */
 function numberLines(lines: readonly string[], lnNew: number): string[] {
