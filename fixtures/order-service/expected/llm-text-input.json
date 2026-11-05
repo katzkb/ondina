@@ -733,7 +733,7 @@
   ],
   "behaviors": [
     {
-      "id": "b1",
+      "id": "f1",
       "start": "com.example.order.api.OrderController.apply",
       "calls": [
         "OrderController.apply: useCase.execute(OrderId(id), body.discountCode)",

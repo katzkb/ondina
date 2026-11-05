@@ -1,0 +1,206 @@
+[
+  {
+    "id": "f1",
+    "title": "OrderController.apply",
+    "titleProvenance": "ast",
+    "root": {
+      "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1",
+      "from": null,
+      "to": "130e7d62f211839eec7c68582ae3565629d8c673",
+      "status": "changed",
+      "before": {},
+      "after": {},
+      "courses": [
+        6
+      ],
+      "kids": [
+        {
+          "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>a135ba90941c193b82bb22bc319e52347521ee99#1",
+          "from": "130e7d62f211839eec7c68582ae3565629d8c673",
+          "to": "a135ba90941c193b82bb22bc319e52347521ee99",
+          "status": "changed",
+          "before": {
+            "line": 17,
+            "call": {
+              "text": "useCase.execute(OrderId(id))",
+              "exact": true,
+              "name": "execute",
+              "args": [
+                "OrderId(id)"
+              ]
+            },
+            "returns": "Order"
+          },
+          "after": {
+            "line": 18,
+            "call": {
+              "text": "useCase.execute(OrderId(id), body.discountCode)",
+              "exact": true,
+              "name": "execute",
+              "args": [
+                "OrderId(id)",
+                "body.discountCode"
+              ]
+            },
+            "returns": "Order"
+          },
+          "courses": [
+            6
+          ],
+          "kids": [
+            {
+              "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>a135ba90941c193b82bb22bc319e52347521ee99#1/a135ba90941c193b82bb22bc319e52347521ee99>3b823c2027bd0957f11251555393d73cee9318ed#1",
+              "from": "a135ba90941c193b82bb22bc319e52347521ee99",
+              "to": "3b823c2027bd0957f11251555393d73cee9318ed",
+              "status": "same",
+              "before": {
+                "line": 15,
+                "call": {
+                  "text": "repository.find(id)",
+                  "exact": true,
+                  "name": "find",
+                  "args": [
+                    "id"
+                  ]
+                },
+                "returns": "Order?"
+              },
+              "after": {
+                "line": 16,
+                "call": {
+                  "text": "repository.find(id)",
+                  "exact": true,
+                  "name": "find",
+                  "args": [
+                    "id"
+                  ]
+                },
+                "returns": "Order?"
+              },
+              "courses": [],
+              "kids": []
+            },
+            {
+              "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>a135ba90941c193b82bb22bc319e52347521ee99#1/a135ba90941c193b82bb22bc319e52347521ee99>98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7#1",
+              "from": "a135ba90941c193b82bb22bc319e52347521ee99",
+              "to": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+              "status": "added",
+              "after": {
+                "line": 17,
+                "call": {
+                  "text": "order.applyDiscount(DiscountCommand(code))",
+                  "exact": true,
+                  "name": "applyDiscount",
+                  "args": [
+                    "DiscountCommand(code)"
+                  ]
+                }
+              },
+              "courses": [
+                5
+              ],
+              "kids": [
+                {
+                  "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>a135ba90941c193b82bb22bc319e52347521ee99#1/a135ba90941c193b82bb22bc319e52347521ee99>98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7#1/98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7>2d34cf1c445b513eec0e31ad87b68bdaf5ab9cc8#1",
+                  "from": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+                  "to": "2d34cf1c445b513eec0e31ad87b68bdaf5ab9cc8",
+                  "status": "added",
+                  "after": {
+                    "line": 9,
+                    "call": {
+                      "text": "DiscountPolicy.rateFor(cmd.code)",
+                      "exact": true,
+                      "name": "rateFor",
+                      "args": [
+                        "cmd.code"
+                      ]
+                    },
+                    "returns": "Rate"
+                  },
+                  "courses": [
+                    3
+                  ],
+                  "kids": []
+                }
+              ]
+            },
+            {
+              "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>a135ba90941c193b82bb22bc319e52347521ee99#1/a135ba90941c193b82bb22bc319e52347521ee99>65f0737fe57031bdbcb137f75ab7ae4bdc7f026b#1",
+              "from": "a135ba90941c193b82bb22bc319e52347521ee99",
+              "to": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+              "status": "added",
+              "after": {
+                "line": 18,
+                "call": {
+                  "text": "repository.save(order)",
+                  "exact": true,
+                  "name": "save",
+                  "args": [
+                    "order"
+                  ]
+                }
+              },
+              "courses": [
+                5
+              ],
+              "kids": []
+            }
+          ]
+        },
+        {
+          "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>65f0737fe57031bdbcb137f75ab7ae4bdc7f026b#1",
+          "from": "130e7d62f211839eec7c68582ae3565629d8c673",
+          "to": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+          "status": "added",
+          "after": {
+            "line": 19,
+            "call": {
+              "text": "repository.save(order)",
+              "exact": true,
+              "name": "save",
+              "args": [
+                "order"
+              ]
+            }
+          },
+          "courses": [
+            6
+          ],
+          "kids": []
+        },
+        {
+          "key": ">130e7d62f211839eec7c68582ae3565629d8c673#1/130e7d62f211839eec7c68582ae3565629d8c673>009b597cd765e85db0dcc7fb4619c29e2adf98b7#1",
+          "from": "130e7d62f211839eec7c68582ae3565629d8c673",
+          "to": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+          "status": "same",
+          "before": {
+            "line": 18,
+            "call": {
+              "text": "OrderResponse.from(order)",
+              "exact": true,
+              "name": "from",
+              "args": [
+                "order"
+              ]
+            },
+            "returns": "OrderResponse"
+          },
+          "after": {
+            "line": 20,
+            "call": {
+              "text": "OrderResponse.from(order)",
+              "exact": true,
+              "name": "from",
+              "args": [
+                "order"
+              ]
+            },
+            "returns": "OrderResponse"
+          },
+          "courses": [],
+          "kids": []
+        }
+      ]
+    }
+  }
+]

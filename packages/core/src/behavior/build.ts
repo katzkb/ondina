@@ -22,7 +22,19 @@ export interface BuildBehaviorsArgs {
   layers: ReadonlyArray<{ name: string }>;
 }
 
-export function buildBehaviors(args: BuildBehaviorsArgs): Behavior[] {
+/** 呼ぶ側ごとの呼び出し（行ごとに 1 回）を呼ぶ順に並べたもの。動きと流れ（flow/build.ts）が使う */
+export interface CallsOut {
+  byId: Map<string, OndinaSymbol>;
+  /** 追従グループの代表でないメンバーのシンボル */
+  hidden: Set<string | undefined>;
+  /** 使う call の線（両端が symbols にあり、hidden でない） */
+  calls: Edge[];
+  outOf: Map<string, BehaviorMessage[]>;
+  /** 層の順 → FQ 名 → id */
+  order: (a: OndinaSymbol, b: OndinaSymbol) => number;
+}
+
+export function callsOutOf(args: BuildBehaviorsArgs): CallsOut {
   const byId = new Map(args.symbols.map((s) => [s.id, s]));
   const byHunk = new Map(args.symbols.filter((s) => s.hunkId !== undefined).map((s) => [s.hunkId!, s.id]));
   const layerIndex = (s: OndinaSymbol): number => {
@@ -52,6 +64,12 @@ export function buildBehaviors(args: BuildBehaviorsArgs): Behavior[] {
     }
     outOf.set(from, kept);
   }
+
+  return { byId, hidden, calls, outOf, order };
+}
+
+export function buildBehaviors(args: BuildBehaviorsArgs): Behavior[] {
+  const { byId, hidden, calls, outOf, order } = callsOutOf(args);
 
   const changedCallers = new Set(calls.filter((e) => byId.get(e.from)!.changed).map((e) => e.to));
   const starts = args.symbols.filter((s) => s.changed && !hidden.has(s.id) && !changedCallers.has(s.id) && (outOf.get(s.id)?.length ?? 0) > 0).sort(order);

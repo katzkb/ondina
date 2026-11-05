@@ -46,7 +46,9 @@ export { buildDefinitions, defTargetOf, diffLines, drawerFiles, filesToAsk, libN
 export { buildTours, type BuildToursArgs } from './tour/build.js';
 export { buildBehaviors, type BuildBehaviorsArgs } from './behavior/build.js';
 export { attachCalls, type AttachCallsArgs } from './behavior/calls.js';
-export { applyBehaviorTitles } from './behavior/titles.js';
+export { applyBehaviorTitles, applyFlowTitles, copyFlowTitles } from './behavior/titles.js';
+export { buildFlows, stageOf, FLOW_MAX_CALLS, FLOW_MAX_DEPTH, type BuildFlowsArgs } from './flow/build.js';
+export { attachFlowCalls, type AttachFlowCallsArgs } from './flow/calls.js';
 export { buildMapGroups, courseGroupId, MAP_LIMIT, OUTSIDE_GROUP, type BuildMapGroupsArgs, type Theme } from './mapgroup/build.js';
 export { buildStructureInput, STRUCTURE_INPUT_LIMIT } from './structure/input.js';
 export { renderStructurePrompt } from './structure/prompt.js';

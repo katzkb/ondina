@@ -610,6 +610,7 @@ interface Analysis {                         // パイプラインの成果物�
   githubDiff?: Array<{ path: string; hunks: Array<{ oldStart: number; oldLines: number; newStart: number; newLines: number }> }>;  // GitHub の PR の差分の塊（12章。2026-10-06）。古い解析には無い
   mapGroups?: MapGroups;                     // 入口の地図のまとまり（2026-11-04）。古い解析には無い
   behaviors?: Behavior[];                    // 動き（2026-11-04）。古い解析には無い
+  flows?: CallFlow[];                        // 処理の流れ（2026-11-05）。変わる前と後の呼び出しを合わせた木。古い解析には無い
 }
 
 // 入口の地図のまとまりの木（2026-11-04。packages/core/src/mapgroup/build.ts）。分け方はプログラム、題の名前だけ LLM（原則 3）。
@@ -654,6 +655,32 @@ interface Behavior {
     returns?: string;                        // 戻り型（Edge.types.out）
   }>;
 }
+
+// 処理の流れ（2026-11-05。packages/core/src/flow/）。地図の ① 背景 / ② この PR / ③ マージ後 の材料。動きと同じく木はプログラム、題だけ LLM（原則 3）。
+// 変わる前の線（edgesBase）と変わった後の線（edges）から、呼ぶ側ごとの呼び出しの並び（動きと同じ: 行ごとに 1 回、インターフェースと実装は 1 本）を側ごとに作って突き合わせる。
+// - 突き合わせは「同じ呼ぶ側から同じ先への n 回目」どうし。両方にあれば、呼んでいる行が差分の行（base は消した行、head は足した行）に入るとき changed、
+//   入らなければ same。片方にだけあれば added / removed。並びは変わった後の順で、消えた呼び出しは変わる前の順で直前にあった呼び出しの後ろ
+// - 入口 = 差分があり、変わる前にも後にも差分のある呼び出し元を持たないシンボル（どちらの側にも呼び出しの無いものは流れにしない）。並びは動きと同じ
+// - 呼ばれるたびに中を開く（同じ save を 2 回呼べば 2 回開く）。開くのは親と同じ側の呼び出しだけ。深さ 6・輪・1 本 1000 呼び出しで開かずに cut
+// - 根の状態は入口の hunk の行の形（+ も - も無い = same、+ だけ = added、- だけ = removed、ほか = changed）。コースは呼んでいる行が入る hunk の How（根は入口の hunk の How）
+// - 呼び出しの式は動きと同じ選び方で、変わる前は base、後は head のファイルから
+// fixture は OrderController.apply の 1 本: ② = execute（changed）→ find（same）・applyDiscount（added）→ rateFor（added）・save（added）、save（added）、
+// OrderResponse.from（same）。① はそのうち変わる前にある 3 呼び出し（execute → find、from）。③ は変わった後の 7 呼び出し。ゴールデンは expected/flows.json
+interface CallFlow {
+  id: string;                                // 'f1' から。プログラムの順の番号
+  title: string; titleProvenance: Provenance; // llm = 2 回目の LLM の題（画面は点線）。ast = LLM が無いので入口の短い名前
+  root: FlowCall;                            // 入口の呼び出し（from = null）
+}
+interface FlowCall {
+  key: string;                               // 段をまたいで同じ呼び出しを指す。根から辿った「呼ぶ側>呼ばれる側#n」を / で繋いだもの。根は ">入口#1"
+  from: string | null; to: string;           // Symbol.id。根の from は null
+  status: 'same' | 'changed' | 'added' | 'removed';
+  before?: FlowCallSite; after?: FlowCallSite;  // 片側の呼び出し（行は各々のファイル）。① は before のある呼び出しだけ、③ は after のある呼び出しだけを辿る
+  courses: number[];                         // 呼んでいる行が入る hunk の How の id（昇順）
+  kids: FlowCall[];                          // 呼ばれる側の中の呼び出し（呼ぶ順）
+  cut?: true;                                // 先があるが開いていない（画面は「… 先は省略」）
+}
+interface FlowCallSite { line?: number; call?: BehaviorCall; returns?: string }  // 根は宣言なので line と call を持たない
 
 interface AnalysisConfig {                   // 11章。変えたら analyze の打ち直しが要る
   project?: string; language?: string; sourceRoots: string[];
@@ -795,7 +822,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
 8. `layerGuesses` は「設定に実在する層の名前」かつ「本当に `unlayeredPaths` にあるパス」のものだけ採る（glob で決まった層を推測で上書きさせない）。同じパスが 2 回来たら最初だけ。採ったものは `layerProvenance: 'llm'`（2026-09-22 実装 `packages/core/src/layers/guesses.ts`）
 9. 2 回目（文を書く。`packages/core/src/narration/verify.ts`）: 存在しない `howId` のコース・そのコースの停留所にない `symbolId` の文は除外する／空・空白だけの文はないものとして扱う（画面は自動の文）／同じコース・同じ停留所が 2 回来たら最初だけ（最初の文が空でも後の分は使わない。8 と同じ規則）／経路（並び・呼ばれ方）は変えない／入口の説明（2026-10-29）: 要点・例・箱の文は前後の空白を落とし、空なら欄を付けない。例の根拠の場所は確かめることと同じ規則（停留所はどのコースのものでもよい）。図の箱のコースは実在するものだけで、1 つのコースは全部の図で最初の 1 回だけ。コースが残らない箱・題が空の箱・箱が残らない図は除外する。箱の下の名前はその箱のコースの停留所だけ。入口の説明を書いていれば最後に 1 行（`入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）`。どの箱にも入らなかったコースもここに出る）／背景（2026-10-29）: 前からあるものの名前は候補（入力の `existing`）にあるものだけ。1 つの候補は最初の行だけ（同じ行で 2 回来ても 1 回）。消えるものと変えていないものが混ざったら最初の名前と同じ方だけ（チップの事実を 1 つにする）。文が空の行・名前が残らない行は除外し、3 行まで（`MAX_EXISTING`）。消えるか・パス・種類はプログラムが候補から付ける。言葉は言葉が空なら除外し、コードの名前（後ろの `()` と、識別子を `.` で繋いだものは認める）が差分の行に出る識別子でなければ除外する。同じ名前は最初だけ、4 個まで（`MAX_TERMS`）。背景を書いていれば最後に 1 行（`背景: 前からあるもの 3 行（候補 5）、言葉 4 個`）／確かめること（2026-10-22）は、根拠の場所がそのコースの停留所で、行がその停留所の hunk の head 側（文脈か追加の行）にある番号だけ残す（画面がその行を光らせるので、実在しない行を残さない）。行が残らない場所・場所が残らない文・文が空のものは除外する。同じ文で同じ場所は最初だけ。場所は読む順に並べ直し、行は昇順・重複なし。6 個目からは除外する（`MAX_CHECKS`）。除外したものは 1 行ずつ知らせ、最後の 1 行で埋まった数を出す（`案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 23（場所 32）`。書き漏らしが stderr で分かる）
 10. `themes`（地図のまとまり。2026-11-04 `packages/core/src/mapgroup/build.ts`）は How が 8 つ以上のときだけ見る。7 つ以下・名前が空でない・どの How もちょうど 1 つの題に入る・不明な How の番号がない、を全部満たすときだけ使う。満たさなければ全部使わず、理由を stderr に 1 行出して、全景にコースを全部並べる（7 を超えたまま出す。黙って直さない）
-11. 動きの題（2026-11-04 `packages/core/src/behavior/titles.ts`）: 知らない id の題は除外し、同じ id は最初だけ。題は前後の空白と末尾の句点を落とし、空なら始まりの短い名前のまま（`titleProvenance: 'ast'`）。並びは LLM の出力の順（見せる順）で、LLM が書かなかった動きはプログラムの順で後ろに付ける。呼び出しの列は変えない。最後に 1 行（`動きの題: 1 / 1 本`）
+11. 処理の流れの題（2026-11-04 は動きの題。2026-11-05 から流れ。`packages/core/src/behavior/titles.ts`）: 知らない id の題は除外し、同じ id は最初だけ。題は前後の空白と末尾の句点を落とし、空なら入口の短い名前のまま（`titleProvenance: 'ast'`）。並びは LLM の出力の順（見せる順）で、LLM が書かなかった流れはプログラムの順で後ろに付ける。呼び出しの木は変えない。最後に 1 行（`流れの題: 1 / 1 本`）。地図が流れの地図に替わるまでは、入口が同じ動きに同じ題を写し、流れの並びにする（`copyFlowTitles`）
 
 ### 5.5 実行形態
 - **CLI**: `ondina analyze <pr>` で Analysis.json を生成し、`ondina serve` でローカル UI。キャッシュは `.ondina/<pr>/<headSha>.json`（worktree の中で実行しても元のフォルダの `.ondina/`。12 章の worktree の項）。対象リポジトリはカレントディレクトリ
@@ -1269,11 +1296,11 @@ LLM の呼び出しは 1 回。入力は Stage 1 の成果物。出力の形は 
   "unassigned": ["…どの How にも入らなかった hunk の id"],
   "existing": [ { "symbol": "…DiscountPolicy.rateFor", "path": "…", "kind": "function", "removed": false },
                 { "symbol": "…Order.getDiscount", "path": "…", "kind": "function", "removed": true } ],
-  "behaviors": [ { "id": "b1", "start": "com.example.order.api.OrderController.apply",
+  "behaviors": [ { "id": "f1", "start": "com.example.order.api.OrderController.apply",
                    "calls": [ "OrderController.apply: useCase.execute(OrderId(id), body.discountCode)", "…" ] } ]
 }
 ```
-- `behaviors` は動き（2026-11-04。4 章の `Behavior`）。呼ぶ順の呼び出しを「呼ぶ側の短い名前: 呼び出しの式」で渡す（式が無ければ呼ばれる側の短い名前）。動きが 0 本なら欄ごと無い
+- `behaviors` は処理の流れ（2026-11-05 から。4 章の `CallFlow`。それまでは動き `Behavior`）。変わった後の呼び出しの木を呼ぶ順に開き、「呼ぶ側の短い名前: 呼び出しの式」で渡す（式が無ければ呼ばれる側の短い名前。入口が消えた流れは変わる前の木）。欄の名前は動きのときのまま（指示文を変えない）。流れが 0 本なら欄ごと無い
 - `existing` は説明タブの背景の「この PR の前からあるものは？」の候補（2026-10-29）。停留所が呼んでいる差分のない相手（`related` の out。コースの順に 1 回）の後に、この PR で消える宣言（base にだけある Kotlin の宣言。親も消えるなら親だけ。主コンストラクタの `val` / `var` も見る。`core/src/hunks/removed.ts`）。fixture は `rateFor`・`Money.ZERO`・`OrderRepository.save` と、消える `Order.promo`・`getDiscount`
 - `pr.body` は渡さない（入口の説明は差分だけから書く）。`previous` / `edges` / `unlayeredPaths` も渡さない
 - 差分の行は 1 回目と同じものの先頭に head（マージ後）の行番号と `|` を付ける（`15|+    fun execute(…`。削除の行は番号の代わりに空白。桁は hunk の中でいちばん大きい番号にそろえる）。確かめることの根拠の行を番号で選ばせるため（2026-10-22）
@@ -1291,10 +1318,10 @@ LLM の呼び出しは 1 回。入力は Stage 1 の成果物。出力の形は 
   "courses": [ { "howId": 3, "change": { "before": "1〜2 文", "after": "1〜2 文" },
                  "checks": [ { "text": "観測の 1 文（句点なし）", "at": [ { "symbolId": "…停留所", "lines": [16], "say": "1 文" } ] } ],
                  "stops": [ { "symbolId": "…", "role": "1〜2 文" } ] } ],
-  "behaviors": [ { "id": "b1", "title": "割引コードを受け取って注文に割引を適用する" } ]
+  "behaviors": [ { "id": "f1", "title": "割引コードを受け取って注文に割引を適用する" } ]
 }
 ```
-`behaviors`（2026-11-04）は動きの題で、並びが見せる順。古い記録には無い（空として読む）。検証は 5.4 の 11。
+`behaviors`（2026-11-04）は動きの題（2026-11-05 から処理の流れの題）で、並びが見せる順。古い記録には無い（空として読む）。検証は 5.4 の 11。
 背景は 2026-10-29 から（検証した結果は `Analysis.background` の `existing` / `terms`。`why` は要求の抜き出しが別に出す）。前からあるものの `symbols` と箱の `untouched` が文字列で来たら 1 要素の配列、`howIds` や `lines` が数 1 つなら 1 要素の配列として読む。検証は 5.4 の 9。入口の説明は 2026-10-29 から要点・例・流れの図（見本を比べて新しい案にした）。それまでは `problem` / `approach` / `untouched` / `beforeAfter`（問題・方針・触らないもの・前後表）。
 
 プロンプトの制約（10.3 に足す。文の形は 2026-09-29 に決めた）:
@@ -1660,6 +1687,7 @@ claude -p "このPRをレビューし、上記JSON形式で出力" --output-form
 - hunk 切り出しの既知の限界: 行 diff（Myers）が `}` などの同じ行を別の宣言に対応付けると、本来別の hunk が共通の親に格上げされることがある。fixture では起きていない。起きたら 5.2 の対付け規則に「空白・括弧だけの行は対にしない」を足す
 - 実装言語は TypeScript で進める。Kotlin/JVM に変えるなら 6 章の代替欄を参照
 - 未確認事項（着手時に確認）: `jetbrains://` スキームの `path` の解釈（repo 相対でよいか）。**kotlin-lsp の起動オプションは 2026-09-21 に実機で確認して 9.1 に書いた。JetBrains 版 Catppuccin の属性割当は 2026-09-22 に確認して 7.2 に書いた。`textDocument/hover` は戻り型つきのシグネチャを返すことを 2026-09-22 に確認して 9.3 に書いた**
+- 処理の流れ（`Analysis.flows`。2026-11-05）の既知の穴: (1) 呼び出しは「同じ呼ぶ側から同じ先への n 回目」で突き合わせるので、同じ先への呼び出しの前に同じ先への呼び出しを足すと、足した方でなく後ろの方が added になる。(2) コースは呼ぶ側のシンボルのパスで hunk を引くので、名前を変えたファイルの変わる前の行は当たらない。(3) 同じクラスの中の処理（見本の「中で」）と DB の表（見本の orders テーブル）は呼び出し関係から出ないので持たない。どれも業務の PR で困ったら直す（TODO）
 - 動きの値の札（見本の「割引額 0 → 100」。歩ごとに値が変わる様子）は未実装（TODO。2026-11-04）。歩ごとの値はどのデータにも無い（`Analysis.summary.example` はテストの差分から書く 1 文だけ）。LLM に推定で書かせると外れやすく、テストの無い動きには出せないので、見本で比べて今回は出さないことにした。出すなら、値の出どころを先に確かめる
 - 名前は `ondina` で確定。npm の `ondina` は空き（2026-09-13 時点）、GitHub に目立つ同名プロジェクトなし。CLI コマンド・設定ファイル・キャッシュディレクトリはすべて `ondina` で統一する
 - README の一行目は「大きな PR を読むためのレビュー支援ツールです。」（キャッチコピーは公開前にやめた）。作品のロゴやキャラクター画像は使わない（名前は一般語なので商標上の問題はない）

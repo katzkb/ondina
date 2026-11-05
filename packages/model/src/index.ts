@@ -698,6 +698,66 @@ export interface Analysis {
   mapGroups?: MapGroups;
   /** 動き（3.3。2026-11-04）。差分の呼び出しの線を、始まりから呼ぶ順に並べたもの。無い = 古い解析 */
   behaviors?: Behavior[];
+  /**
+   * 処理の流れ（3.3。2026-11-05）。変わる前（edgesBase）と変わった後（edges）の呼び出しの線を合わせた呼び出しの木。
+   * 地図の ① 背景 / ② この PR / ③ マージ後 の材料。無い = 古い解析
+   */
+  flows?: CallFlow[];
+}
+
+/**
+ * 処理の流れ 1 本（3.3。2026-11-05）。木はプログラムが call の線と呼んでいる行から組む（原則 3）。LLM は題だけを付け、見せる順を選ぶ。
+ * 入口は、差分があり、変わる前にも変わった後にも差分のある呼び出し元を持たないシンボル（呼び出しを 1 本も持たないものは流れにしない）
+ */
+export interface CallFlow {
+  /** 'f1' から。プログラムが付けた順の番号（LLM が並べ替えても変えない） */
+  id: string;
+  title: string;
+  /** llm = 2 回目の LLM が付けた題（画面は点線）。ast = LLM が無いので入口の短い名前 */
+  titleProvenance: Provenance;
+  /** 入口の呼び出し（from = null） */
+  root: FlowCall;
+}
+
+/**
+ * 流れの中の呼び出し 1 回。① = before のある呼び出しだけを辿った木、③ = after のある呼び出しだけ、② = 全部（status で色）。
+ * 箱の状態（新しい / 変わった / 差分なし / まだ無い）はここに持たない。画面が symbols の changed と hunk から決める
+ */
+export interface FlowCall {
+  /**
+   * 段をまたいで同じ呼び出しを指す。根から辿った「呼ぶ側>呼ばれる側#n」を / で繋いだもの（n = 同じ呼ぶ側から同じ先への n 回目。1 から）。
+   * 根は ">入口#1"
+   */
+  key: string;
+  /** 呼ぶ側の Symbol.id。根は null */
+  from: string | null;
+  /** 呼ばれる側の Symbol.id */
+  to: string;
+  /**
+   * same = 両方にあり、呼んでいる行が差分の行に入らない。changed = 両方にあり、どちらかの行が差分の行に入る。
+   * added = 変わった後にだけある。removed = 変わる前にだけある。
+   * 根は入口のシンボルの hunk で決める（差分なし = same、足しただけ = added、消しただけ = removed、ほか = changed）
+   */
+  status: 'same' | 'changed' | 'added' | 'removed';
+  /** 変わる前の呼び出し（removed と、両方にあるもの）。行は base のファイル */
+  before?: FlowCallSite;
+  /** 変わった後の呼び出し（added と、両方にあるもの）。行は head のファイル */
+  after?: FlowCallSite;
+  /** 呼んでいる行が入る hunk の How の id（before の行は消した行、after の行は足した行で見る）。根は入口の hunk の How。昇順 */
+  courses: number[];
+  /** 呼ばれる側の中の呼び出し（呼ばれるたびに開く）。呼ぶ順 */
+  kids: FlowCall[];
+  /** true = 先があるが開いていない（深さの上限・輪になった・木の大きさの上限）。画面は「… 先は省略」 */
+  cut?: true;
+}
+
+/** 呼び出しの片側。欄が無い = 言語サーバーが位置を返さなかった・ファイルを読めなかった。根は宣言なので line と call を持たない */
+export interface FlowCallSite {
+  /** 呼んでいる行（呼ぶ側のファイル。1 始まり） */
+  line?: number;
+  call?: BehaviorCall;
+  /** 戻り型（Edge.types.out。言語サーバーの事実） */
+  returns?: string;
 }
 
 /**

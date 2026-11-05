@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Behavior, Edge, How, Hunk, Symbol, Tour } from '@ondina/model';
+import type { Edge, CallFlow, How, Hunk, Symbol, Tour } from '@ondina/model';
 import type { LlmInput } from '../src/label/types.js';
 import { removedDeclarations } from '../src/hunks/removed.js';
 import { buildNarrationInput } from '../src/narration/input.js';
@@ -160,13 +160,13 @@ describe('buildNarrationInput（fixture）', () => {
     edges: read<Edge[]>('expected/edges.json'),
     tours: read<Tour[]>('expected/tours.json'),
     removed: fixtureRemoved,
-    behaviors: read<Behavior[]>('expected/behaviors.json'),
+    flows: read<CallFlow[]>('expected/flows.json'),
   });
 
-  it('動き: 呼ぶ順の呼び出しを「呼ぶ側: 呼び出しの式」で渡す', () => {
+  it('流れ: 変わった後の呼び出しを呼ぶ順に「呼ぶ側: 呼び出しの式」で渡す', () => {
     expect(input.behaviors).toEqual([
       {
-        id: 'b1',
+        id: 'f1',
         start: 'com.example.order.api.OrderController.apply',
         calls: [
           'OrderController.apply: useCase.execute(OrderId(id), body.discountCode)',

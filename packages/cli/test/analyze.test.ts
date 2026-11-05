@@ -420,6 +420,19 @@ describe('analyzeLocal と LSP', () => {
     expect(info.some((s) => s.startsWith('関連の線 '))).toBe(true);
   });
 
+  it('--lsp を付けると処理の流れ（flows）が入り、変わる前と後の呼び出しが両方ある。題は LLM が無ければ入口の名前', async () => {
+    const { analysis } = await analyzeLocal(repo, 'main', 'feature/discount', { llm: 'off', lsp: true });
+    const flows = analysis.flows!;
+    expect(flows.length).toBeGreaterThan(0);
+    expect(flows.every((f) => f.titleProvenance === 'ast' && f.root.from === null)).toBe(true);
+    type Call = (typeof flows)[number]['root'];
+    const all = (c: Call): Call[] => [c, ...c.kids.flatMap(all)];
+    const calls = flows.flatMap((f) => all(f.root)).filter((c) => c.from !== null);
+    // 偽 LSP は呼んでいる行を返さないので、呼び出しの式は付かない（式は core の fixture のテストで見る）
+    expect(calls.some((c) => c.before !== undefined)).toBe(true);
+    expect(calls.some((c) => c.after !== undefined)).toBe(true);
+  });
+
   it('--lsp を付けると経路上の未変更シンボルと testCount と edgesMeasured が付く', async () => {
     const { analysis } = await analyzeLocal(repo, 'main', 'feature/discount', { llm: 'off', lsp: true });
     const baseline = analysis.symbols.filter((s) => !s.changed);
