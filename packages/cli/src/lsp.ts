@@ -394,7 +394,8 @@ export async function startLspSession(a: StartLspArgs): Promise<{ session: LspSe
       opened.add(abs);
       client.notify('textDocument/didOpen', {
         textDocument: { uri: pathToFileURL(abs).href, languageId: 'kotlin', version: 1, text: readFileSync(abs, 'utf8') },
-      });      return true;
+      });
+      return true;
     };
     for (const t of a.targets) open(path.join(a.roots.head, t.path));
     for (const abs of a.openFiles) open(abs);
