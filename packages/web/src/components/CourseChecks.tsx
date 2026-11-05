@@ -2,6 +2,7 @@
 // 確かめることの文・変わること・要求は LLM の文（点線と「AI」）。読む順・PR の流れ・知っておくことの呼び出しは事実（実線と「自動」）。1 つの枠に混ぜない（原則 2）。
 // 押したものは全部コマンドにする（原則 6）: 確かめることを選ぶ course.check、場所へ course.jump、覗く map.peek、1 か所目へ course.ok
 import type { Analysis } from '@ondina/model';
+import type { ReactNode } from 'react';
 import type { Command } from '../commands/commands.js';
 import { callEdge, callerFacts, courseChecks, courseFlow, courseSpecs, nextReason, placeLabel, type CallerFact, type CourseCheck } from '../brief.js';
 import { courseBg, courseIntro, courseOf, courses, type Course, type StopInfo } from '../course.js';
@@ -18,7 +19,7 @@ export function CheckNum({ n, dim = false, ok = false }: { n: number; dim?: bool
 }
 
 /** 読む前の案内の画面の中身（真ん中と右をまとめた 1 枚） */
-export function BriefBody({ analysis, course, infos, check, next, dispatch }: { analysis: Analysis; course: Course; infos: readonly StopInfo[]; check: number | undefined; next: number; dispatch: (c: Command) => void }) {
+export function BriefBody({ analysis, course, infos, check, next, map, dispatch }: { analysis: Analysis; course: Course; infos: readonly StopInfo[]; check: number | undefined; next: number; map?: ReactNode; dispatch: (c: Command) => void }) {
   const tour = analysis.tours.find((t) => t.howId === course.id);
   const checks = courseChecks(analysis, course, infos);
   const sel = checks.find((c) => c.n === check);
@@ -34,6 +35,14 @@ export function BriefBody({ analysis, course, infos, check, next, dispatch }: { 
       </div>
       <h2>{course.title}</h2>
       <Flow analysis={analysis} course={course} />
+      {map && (
+        <section className="bsec">
+          <h3>
+            呼び出しの流れの中で <Chip ai={false} />
+          </h3>
+          {map}
+        </section>
+      )}
       {change ? (
         <section className="bsec">
           <h3>

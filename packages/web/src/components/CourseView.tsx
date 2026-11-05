@@ -19,6 +19,8 @@ import { FileView, type FilePlace, type LineMarks } from '../diff/FileView.js';
 import { courseChecks, placeLabel, type CourseCheck } from '../brief.js';
 import { BriefBody, BriefPill, CourseMeter, StopChecks, StopNotes, SummaryChecks } from './CourseChecks.js';
 import { CourseMap } from '../map/CourseMap.js';
+import { courseFlows } from '../map/flowmap/steps.js';
+import { FlowMap } from './FlowMap.js';
 import { DraftNote, OffDiffChip } from './MemoBox.js';
 import { Narr } from './Narr.js';
 import type { ElkLike } from '../map/layout.js';
@@ -34,7 +36,7 @@ import { paneStyle } from '../panes.js';
 import { Key, useKey } from './Key.js';
 import { ViewMark } from './ViewMark.js';
 import { relItems, relLayers } from '../rel.js';
-import { NO_MEMO, type AskUi, type CourseAt, type CourseMapSize, type FocusLine, type MemoUi, type Peek } from '../state/reducer.js';
+import { NO_BRIEF_MAP, NO_MEMO, type AskUi, type BriefMap, type CourseAt, type CourseMapSize, type FocusLine, type MemoUi, type Peek } from '../state/reducer.js';
 
 export interface CourseViewProps {
   analysis: Analysis;
@@ -42,6 +44,10 @@ export interface CourseViewProps {
   /** 停留所の画面の左右 / 統合（設定の diffMode.c） */
   diffMode: DiffMode;
   course: CourseAt | null;
+  /** 読む前の案内の流れの地図（AppState.briefMap）。無ければ ② この PR の最初から */
+  briefMap?: BriefMap;
+  /** 流れの地図の再生の速さ（ui.mapSpeed。無ければ 1） */
+  speed?: number;
   /** 地図の重ね物（null = 閉じている） */
   courseMap: CourseMapSize | null;
   fullFile: boolean;
@@ -520,7 +526,13 @@ function Stop({ course, infos, memos, open, checks, at, analysis, review, diffMo
  * 読む前の案内の画面（2026-10-22）: 上の帯・左のファイルのツリーは停留所の画面と同じ。真ん中と右をまとめて BriefBody。
  * 知っておくことの「覗く」は、この画面のままコードを出す（戻る Esc で読む前の案内に戻る）
  */
-function Brief({ course, infos, memos, open, checks, at, analysis, review, diffMode, fullFile, fold, panes, peek, treeShut, focusLine, defBack, dispatch }: ScreenProps & { at: CourseAt }) {
+function Brief({ course, infos, memos, open, checks, at, analysis, review, diffMode, fullFile, fold, panes, peek, treeShut, focusLine, defBack, briefMap = NO_BRIEF_MAP, speed = 1, zoom, elk, dispatch }: ScreenProps & { at: CourseAt }) {
+  // このコースの変更が乗る処理の流れ（コースの範囲: このコースの呼び出しとその戻りだけ色、次・再生はそこだけで止まる）。乗らなければ地図は出さない
+  const flows = useMemo(() => courseFlows(analysis, course.id), [analysis, course.id]);
+  const map =
+    flows.length > 0 ? (
+      <FlowMap analysis={analysis} flows={flows} stage={briefMap.stage} flowId={briefMap.flow} step={briefMap.step} play={briefMap.play} speed={speed} zoom={zoom} course={course} courseTitle={false} dispatch={dispatch} {...(elk ? { elk } : {})} />
+    ) : undefined;
   const peekSym = peek?.kind === 'symbol' ? analysis.symbols.find((s) => s.id === peek.symbolId) : undefined;
   const peekHunk = peekSym?.hunkId === undefined ? undefined : analysis.hunks.find((h) => h.id === peekSym.hunkId);
   return (
@@ -547,7 +559,7 @@ function Brief({ course, infos, memos, open, checks, at, analysis, review, diffM
               </DefLinks>
             </div>
           ) : (
-            <BriefBody analysis={analysis} course={course} infos={infos} check={at.check} next={at.i} dispatch={dispatch} />
+            <BriefBody analysis={analysis} course={course} infos={infos} check={at.check} next={at.i} map={map} dispatch={dispatch} />
           )}
         </div>
       </div>

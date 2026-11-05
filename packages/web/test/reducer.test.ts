@@ -2,6 +2,7 @@
 import type { ReviewState, ThemeSettings, UiSettings } from '@ondina/model';
 import { describe, expect, it } from 'vitest';
 import { canSend, diffModeOf, initialState, reduce, themeOf, type AppState } from '../src/state/reducer.js';
+import { courseFlows } from '../src/map/flowmap/steps.js';
 import { emptyReview, fixtureAnalysis } from './fixture.js';
 
 const ORDER = 'src/main/kotlin/com/example/order/domain/Order.kt';
@@ -709,5 +710,56 @@ describe('入口の地図の流れ（2026-11-05）', () => {
     }
     expect(seen).toHaveLength(4);
     expect(s.home.play).toBe(false);
+  });
+});
+
+describe('読む前の案内の流れの地図（コースの範囲。2026-11-05）', () => {
+  const run = (s: AppState, ...cs: Parameters<typeof reduce>[1][]) => cs.reduce((x, c) => reduce(x, c).state, s);
+  const brief = (id: number) => run(loaded(), { id: 'course.enter', courseId: id });
+
+  it('コースに入ると ② この PR の最初から。→ は地図のステップを進め、Enter で停留所へ', () => {
+    const s = brief(5);
+    expect(s.course).toMatchObject({ id: 5, screen: 'brief' });
+    expect(s.briefMap).toEqual({ stage: 2, flow: null, step: 0, play: false });
+    const one = run(s, { id: 'course.forward' });
+    expect(one.course?.screen).toBe('brief');
+    expect(one.briefMap.step).toBeGreaterThan(0);
+    const two = run(one, { id: 'course.forward' });
+    expect(two.briefMap.step).toBeGreaterThan(one.briefMap.step);
+    expect(run(two, { id: 'course.prev' }).briefMap.step).toBe(one.briefMap.step);
+    expect(run(two, { id: 'enter' }).course?.screen).toBe('stop');
+    // 入口の地図はそのまま
+    expect(two.home).toEqual(loaded().home);
+  });
+
+  it('再生はそのコースのステップだけを進み、最後で止まる（入口のコースの範囲と同じ止まり方）', () => {
+    const home = run(loaded(), { id: 'home.tab', tab: 'map' }, { id: 'home.select', courseId: 5 }, { id: 'map.play' });
+    let s = run(brief(5), { id: 'map.play' });
+    expect(s.briefMap.play).toBe(true);
+    expect(s.briefMap.step).toBe(home.home.step);
+    const seen = [s.briefMap.step];
+    for (let k = 0; k < 6 && s.briefMap.play; k++) {
+      s = run(s, { id: 'map.tick' });
+      if (s.briefMap.play) seen.push(s.briefMap.step);
+    }
+    expect(seen).toHaveLength(4);
+    expect(s.briefMap.play).toBe(false);
+  });
+
+  it('段は map.stage と home.stage で替わる。停留所から戻ると同じステップで、再生は止まっている', () => {
+    const s = run(brief(5), { id: 'course.forward' }, { id: 'map.stage', stage: 3 });
+    expect(s.briefMap.stage).toBe(3);
+    expect(run(s, { id: 'home.stage' }).briefMap.stage).toBe(1);
+    const back = run(s, { id: 'map.play' }, { id: 'enter' }, { id: 'course.prev' });
+    expect(back.course?.screen).toBe('brief');
+    expect(back.briefMap).toMatchObject({ stage: 3, play: false });
+  });
+
+  it('流れに乗らないコースでは、→ はこれまでどおり停留所へ', () => {
+    const analysis = fixtureAnalysis();
+    const ids = [...new Set(analysis.hunks.flatMap((h) => h.hows))];
+    const off = ids.find((id) => courseFlows(analysis, id).length === 0);
+    expect(off).toBeDefined();
+    expect(run(brief(off!), { id: 'course.forward' }).course?.screen).toBe('stop');
   });
 });
