@@ -1,5 +1,5 @@
 // serve の API（設計書 5.5）への薄い層。App には Api を注入するので、テストではメモリ上の実装に差し替える。
-import type { Analysis, AnalysisSummary, AnalyzeJob, AskEntry, AskLog, AskPlace, DisplayConfig, LatestHead, PrDetail, PrList, ReviewJob, ReviewState, UiSettings } from '@ondina/model';
+import type { Analysis, AnalysisSummary, AnalyzeJob, AskEntry, AskLog, AskPlace, DisplayConfig, LatestHead, PrDetail, PrList, ReviewJob, ReviewState, UiSettings, WorkspaceJob, WorkspaceTools } from '@ondina/model';
 
 export interface Api {
   /** 開いている PR の一覧（3.11。serve が gh で GitHub に聞く）。失敗は Error（message は serve が返した理由） */
@@ -30,6 +30,9 @@ export interface Api {
   startReview(key: string, headSha: string): Promise<ReviewJob>;
   /** serve の AI レビュー（key ごとの最新） */
   reviewStatus(): Promise<ReviewJob[]>;
+  startWorkspace(key: string, input: { branch: string; title: string; url: string }): Promise<WorkspaceJob>;
+  workspaceStatus(): Promise<WorkspaceJob[]>;
+  workspaceTools(): Promise<WorkspaceTools>;
   /** 解析待ちかレビュー中の AI レビューを止める。動いていなければ何もしない */
   stopReview(key: string): Promise<void>;
   /** GitHub の PR で Viewed のファイル（12.1）。失敗は Error（message は serve が返した理由） */
@@ -103,6 +106,14 @@ export const httpApi: Api = {
     return (await res.json()) as ReviewJob;
   },
   reviewStatus: () => getJson('/api/review'),
+  workspaceStatus: () => getJson('/api/workspace'),
+  workspaceTools: () => getJson('/api/workspace/tools'),
+  startWorkspace: async (key, input) => {
+    const url = `/api/workspace/${enc(key)}`;
+    const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
+    if (!res.ok && res.status !== 409) throw new Error((await res.text()) || `${url}: ${res.status}`);
+    return (await res.json()) as WorkspaceJob;
+  },
   stopReview: async (key) => {
     const url = `/api/review/${enc(key)}`;
     const res = await fetch(url, { method: 'DELETE' });

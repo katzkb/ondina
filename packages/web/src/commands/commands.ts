@@ -1,5 +1,5 @@
 // すべての操作はコマンド ID 経由（設計書 18.2、原則 6）。マウスもキーボードも同じコマンドを dispatch する。
-import type { Analysis, AnalysisSummary, AnalyzeJob, AskCite, AskEntry, CommentDraft, DisplayConfig, LatestHead, PaneId, PrDetail, PrList, ReviewJob, ReviewState, ThemeMode, TicketSettings, UiSettings } from '@ondina/model';
+import type { Analysis, AnalysisSummary, AnalyzeJob, AskCite, AskEntry, CommentDraft, DisplayConfig, LatestHead, PaneId, PrDetail, PrList, ReviewJob, ReviewState, ThemeMode, TicketSettings, UiSettings, WorkspaceSettings, WorkspaceJob, WorkspaceTools } from '@ondina/model';
 import type { TreeName } from '../fileTree.js';
 import type { DetailTab } from '../prs.js';
 import type { KeyChange } from './keymap.js';
@@ -27,7 +27,12 @@ export type Command =
   | { id: 'pr.detail.refresh' }
   /** 引き出しの「GitHub で開く」: PR のページを新しいタブで */
   | { id: 'pr.github'; number: number }
-  /** カードと引き出しの「AI にレビューを頼む」「頼み直す」「もう一度」。headSha は PR の今の head（3.11） */
+  /** PR のブランチをレビュー用に開く。now は UI が押した日時（楽観的な実行中の表示） */
+  | { id: 'pr.workspace'; key: string; branch: string; title: string; url: string; now: string }
+  | { id: 'workspace.jobs'; jobs: WorkspaceJob[] }
+  | { id: 'workspace.tools'; tools: WorkspaceTools }
+  | { id: 'workspace.startFailed'; key: string; reason: string }
+  /** カードと引き出しから AI にレビューを頼む。headSha は PR の今の head（3.11） */
   | { id: 'pr.review'; key: string; headSha: string }
   /** AI レビューの「止める」 */
   | { id: 'pr.review.stop'; key: string }
@@ -260,7 +265,10 @@ export type Command =
   | { id: 'ui.worktreeRoot'; value: string }
   /** LLM コマンド（設計書 5.3）。空なら消して yaml / 既定に戻る。次の analyze から効く */
   | { id: 'ui.llmCommand'; value: string }
-  /** AI レビューのコマンド（3.11）。空なら消して、PR 一覧に「AI にレビューを頼む」を出さない。次に頼んだときから効く */
+  /** レビュー用の作業場の設定。AI と指示の空文字も保存する */
+  | { id: 'ui.workspace'; patch: Omit<Partial<WorkspaceSettings>, 'app'> & { app?: WorkspaceSettings['app'] | '' } }
+  | { id: 'ui.workspace.insert'; variable: string; start: number; end: number }
+  /** AI レビューのコマンド（3.11）。空なら PR 一覧に「AI にレビューを頼む」を出さない */
   | { id: 'ui.reviewCommand'; value: string }
   /** チケットの取り方の 1 項目（設計書 5.1）。空なら消す。次の analyze から効く */
   | { id: 'ui.ticket'; field: keyof TicketSettings; value: string }

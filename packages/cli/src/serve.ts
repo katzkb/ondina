@@ -6,7 +6,7 @@
 //   GET  /api/analyses/:key/:sha        Analysis.json
 //   GET  /api/state/:key/:sha           ReviewState（その PR の進み具合）。無ければ前の版から引き継いで作る（無ければ初期値）
 //   PUT  /api/state/:key/:sha           ReviewState を .ondina/<key>/state/<sha>.json に書く
-//   GET  /api/ui / PUT /api/ui          .ondina/ui.json（PR をまたぐ設定: worktreeRoot / llmCommand / reviewCommand / ticket / theme / diffMode / keymap）。解析が無くても使える
+//   GET  /api/ui / PUT /api/ui          .ondina/ui.json（PR をまたぐ設定: worktreeRoot / llmCommand / reviewCommand / workspace / ticket / theme / diffMode / keymap）。解析が無くても使える
 //   GET  /api/config                    ondina.config.yaml の表示だけの部分（packagePrefix / theme / ide。11 章）。毎回読むので再起動不要
 //   POST /api/comments                  12 章の JSON を下書きとして足す
 //   POST /api/comments/send/:key/:sha   採用した下書きを GitHub で公開していないレビュー（pending）として送る（gh api）
@@ -26,6 +26,9 @@
 //                                       その PR が解析待ちかレビュー中なら 409 と今のジョブ、コマンドが空なら 400、番号でなければ 404
 //   GET  /api/review                    key ごとの最新の ReviewJob[]。解析の列とは別で、いくつでも同時に走る
 //   DELETE /api/review/:n               解析待ちかレビュー中を止める（コマンドはプロセスグループごと）。200 と止めたジョブ。動いていなければ 404
+//   GET  /api/workspace/tools          CLI の有無と既定の指示文（WorkspaceTools）
+//   POST /api/workspace/:n              { branch, title, url } の作業場を開く（202、実行中は 409、未設定は 400、番号以外は 404）
+//   GET  /api/workspace                PR ごとの最新 WorkspaceJob[]。保存した作業場は serve 再起動後も復元する
 //   POST /api/lsp                       analyze から言語サーバーの仕事（LspJobRequest）を受け、起動したままの言語サーバーで取る（lsp-session.ts）。
 //                                       応答は 1 行 1 JSON（進みと最後の結果。lsp-remote.ts）と、黙る間の空の行。serve は起動時に .ondina/serve.json を書き、analyze はそれで見つける
 //   それ以外                             dist の静的ファイル。無ければ index.html（SPA）
@@ -46,6 +49,7 @@ import { fetchPrList, repoTargetFromGhJson, repoUrlArgs } from './pr-list.js';
 import { isLspJobRequest, removeServeFile, toJobArgs, toWire, writeServeFile, type WireLine } from './lsp-remote.js';
 import { createLspHolder, type LspHolder, type LspJobResult } from './lsp-session.js';
 import { createAnalyzeRunner, defaultReanalyzeDeps, latestHead, type ReanalyzeDeps } from './reanalyze.js';
+import { createWorkspaceRunner, type WorkspaceDeps } from './workspace.js';
 import { createReviewRunner, type ReviewDeps } from './review.js';
 import { addComments, appendAsk, isAskRequest, isCommentsInput, isReviewState, isSha, isUiSettings, keepOutsideDrafts, listAnalyses, OffDiffError, readAnalysis, readAsk, readOrCarryState, readState, readUi, returnComments, sendComments, writeState, writeUi } from './store.js';
 
@@ -66,6 +70,7 @@ export interface ServeOptions {
   reanalyze?: Partial<ReanalyzeDeps>;
   /** AI レビューの時計と打ち切り（テストで差し替える） */
   review?: Partial<ReviewDeps>;
+  workspace?: Partial<WorkspaceDeps>;
   /** serve.json の登録が空いたか（登録していた serve が終わったか）を見る間隔。既定 REGISTER_CHECK_MS（テストで縮める） */
   registerCheckMs?: number;
   /** POST /api/lsp の応答に空の行を送る間隔。既定 LSP_KEEPALIVE_MS（テストで縮める） */
@@ -155,6 +160,7 @@ export interface AppOptions {
   askTimeoutMs?: number;
   reanalyze?: Partial<ReanalyzeDeps>;
   review?: Partial<ReviewDeps>;
+  workspace?: Partial<WorkspaceDeps>;
   /** 起動したまま持つ言語サーバー（POST /api/lsp）。無ければ 503 */
   lsp?: LspHolder;
   /** POST /api/lsp の応答に空の行を送る間隔（既定 LSP_KEEPALIVE_MS） */
@@ -170,6 +176,7 @@ export function createApp(repo: string, distDir: string, opts: AppOptions = {}):
   const reanalyzeDeps = { ...defaultReanalyzeDeps(), ...opts.reanalyze };
   const runner = createAnalyzeRunner(repo, reanalyzeDeps);
   const reviews = createReviewRunner(repo, runner, opts.review);
+  const workspaces = createWorkspaceRunner(repo, opts.workspace);
   // yaml は毎回読む（直したら再読み込みで反映）。serve は止められないので、読めなければ既定値で描き理由を log に出す
   // PR 一覧・PR の詳細の宛先（リポジトリのホストと owner / name）は gh repo view で 1 回だけ聞いて覚える。聞けなければ次の回に聞き直す
   let prTarget: Promise<GhTarget> | null = null;
@@ -339,6 +346,20 @@ export function createApp(repo: string, distDir: string, opts: AppOptions = {}):
       if ('error' in started) return started.error === 'busy' ? json(res, 409, runner.jobs().find((j) => j.key === key)) : send(res, 404, '解析がありません');
       return json(res, 202, started);
     }
+    if (head === 'workspace' && method === 'GET' && segments.length === 1) return json(res, 200, workspaces.jobs());
+    if (head === 'workspace' && method === 'GET' && segments.length === 2 && key === 'tools') return json(res, 200, workspaces.tools());
+    if (head === 'workspace' && method === 'POST' && segments.length === 2) {
+      if (!/^[1-9][0-9]*$/.test(key!)) return send(res, 404, 'PR の番号ではありません');
+      let body: unknown;
+      try { body = await parseJsonBody(req); } catch { return send(res, 400, 'JSON として読めません'); }
+      if (typeof body !== 'object' || body === null || !('branch' in body) || typeof body.branch !== 'string' || !('title' in body) || typeof body.title !== 'string' || !('url' in body) || typeof body.url !== 'string') return send(res, 400, '{ branch, title, url } の形式ではありません');
+      const started = workspaces.start(key!, { branch: body.branch, title: body.title, url: body.url });
+      if (!('error' in started)) return json(res, 202, started);
+      if (started.error === 'busy') return json(res, 409, workspaces.jobs().find((j) => j.key === key));
+      if (started.error === 'noapp') return send(res, 400, '開く先が設定されていません。設定（⚙）の「レビュー用の作業場」で選んでください');
+      if (started.error === 'invalid') return send(res, 400, 'PR のブランチ名を使えません');
+      return send(res, 404, 'PR の番号ではありません');
+    }
     if (head === 'review' && method === 'GET' && segments.length === 1) return json(res, 200, reviews.jobs());
     if (head === 'review' && segments.length === 2 && (method === 'POST' || method === 'DELETE')) {
       if (!/^[1-9][0-9]*$/.test(key!)) return send(res, 404, 'PR の番号ではありません');
@@ -477,7 +498,7 @@ export function startServer(opts: ServeOptions): Promise<RunningServer> {
   // 言語サーバーは最初の POST /api/lsp で起動し、serve が終わるまで残す（設計書 9.1）。終わり方は serve が決めるので、シグナルは拾わせない
   const lsp = createLspHolder(opts.repo, { handleSignals: false });
   const started = { ...(opts.version === undefined ? {} : { version: opts.version }), startedAt: new Date().toISOString() };
-  const server = createServer(createApp(opts.repo, opts.distDir ?? defaultDistDir(), { ...(opts.runGh ? { runGh: opts.runGh } : {}), ...(opts.runGhAsync ? { runGhAsync: opts.runGhAsync } : {}), ...(opts.log ? { log: opts.log } : {}), ...(opts.reanalyze ? { reanalyze: opts.reanalyze } : {}), ...(opts.review ? { review: opts.review } : {}), ...(opts.lspKeepAliveMs === undefined ? {} : { lspKeepAliveMs: opts.lspKeepAliveMs }), lsp, started }));
+  const server = createServer(createApp(opts.repo, opts.distDir ?? defaultDistDir(), { ...(opts.runGh ? { runGh: opts.runGh } : {}), ...(opts.runGhAsync ? { runGhAsync: opts.runGhAsync } : {}), ...(opts.log ? { log: opts.log } : {}), ...(opts.reanalyze ? { reanalyze: opts.reanalyze } : {}), ...(opts.review ? { review: opts.review } : {}), ...(opts.workspace ? { workspace: opts.workspace } : {}), ...(opts.lspKeepAliveMs === undefined ? {} : { lspKeepAliveMs: opts.lspKeepAliveMs }), lsp, started }));
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(opts.port, host, () => {

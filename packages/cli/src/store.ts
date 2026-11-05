@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { carryReview, onGithubDiff } from '@ondina/core';
-import type { Analysis, AnalysisSummary, AskEntry, AskLog, AskPlace, CommentDraft, CommentsInput, ReviewState, UiSettings } from '@ondina/model';
+import type { Analysis, AnalysisSummary, AskEntry, AskLog, AskPlace, CommentDraft, CommentsInput, ReviewState, UiSettings, WorkspaceRecord } from '@ondina/model';
 import { git, mainWorktree } from './git.js';
 import { graphqlData, prUrlArgs, targetFromGhJson, type GhTarget, type RunGh } from './pr.js';
 
@@ -169,6 +169,14 @@ export function readUi(repo: string): UiSettings {
 
 export function writeUi(repo: string, ui: UiSettings): void {
   writeJsonAtomic(path.join(repo, '.ondina', 'ui.json'), ui);
+}
+
+/** PR ごとのレビュー用 worktree。UI 設定と同じくリポジトリの下に保存する */
+export function readWorkspaces(repo: string): Record<string, WorkspaceRecord> {
+  return readJson<Record<string, WorkspaceRecord>>(path.join(repo, '.ondina', 'workspaces.json')) ?? {};
+}
+export function writeWorkspaces(repo: string, records: Record<string, WorkspaceRecord>): void {
+  writeJsonAtomic(path.join(repo, '.ondina', 'workspaces.json'), records);
 }
 
 /** 内容から決める id。同じコメントを二度受けても増えない */
@@ -451,6 +459,11 @@ const optDiffMode = (x: unknown): boolean => x === undefined || x === 'sbs' || x
 /** PUT /api/ui の本文の形。theme は mode（system / light / dark）と light・dark・accent の全部、diffMode は画面ごと（b / c / d）に任意、ticket の取り方は jira / command、keymap は操作の名前 → キーの配列、panes は列 → px、mapSpeed は正の数 */
 export function isUiSettings(x: unknown): x is UiSettings {
   if (!isObj(x) || !optString(x['worktreeRoot']) || !optString(x['llmCommand']) || !optString(x['reviewCommand'])) return false;
+  const workspace = x['workspace'];
+  if (workspace !== undefined && !(isObj(workspace) &&
+    (workspace['app'] === undefined || ['herdr-app', 'herdr', 'orca'].includes(String(workspace['app']))) &&
+    (workspace['maker'] === undefined || workspace['maker'] === 'gct' || workspace['maker'] === 'app') &&
+    optString(workspace['agent']) && optString(workspace['prompt']))) return false;
   const keymap = x['keymap'];
   if (keymap !== undefined && !(isObj(keymap) && Object.values(keymap).every((keys) => Array.isArray(keys) && keys.every((k) => typeof k === 'string')))) return false;
   const panes = x['panes'];

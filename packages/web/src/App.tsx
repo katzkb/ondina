@@ -61,7 +61,9 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
   const dispatchRef = useRef<(c: Command) => void>(() => {});
   /** 待っている問い（案内人に聞く。3.10）。止める・別の解析を読むと abort する */
   const askAbort = useRef<AbortController | null>(null);
-  /** GitHub の Viewed の付ける・外すは、押した順に 1 つずつ送る（付けてすぐ外したときに入れ替わらない。12.1） */
+  /** 設定を押した順に保存し、作業場を開く前に保存が終わるのを待つ */
+  const uiQueue = useRef<Promise<void>>(Promise.resolve());
+  /** GitHub の Viewed の付ける・外すは、押した順に 1 つずつ送る（12.1） */
   const githubQueue = useRef<Promise<void>>(Promise.resolve());
   /** URL の画面を出している間（起動・戻る・進む）は 1 以上。その間は URL を書き換えるだけで履歴を足さない */
   const applying = useRef(0);
@@ -82,6 +84,10 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
     api.analyzeStatus().then(
       (jobs) => dispatchRef.current({ id: 'reanalyze.job', jobs }),
       () => undefined, // 次のポーリングで届く
+    );
+    api.workspaceStatus().then(
+      (jobs) => dispatchRef.current({ id: 'workspace.jobs', jobs }),
+      () => undefined,
     );
     api.reviewStatus().then(
       (jobs) => dispatchRef.current({ id: 'review.jobs', jobs }),
@@ -112,11 +118,19 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
           if (state.current && state.review) void api.putState(state.current.key, state.current.headSha, state.review);
           break;
         case 'saveUi':
-          void api.putUi(state.ui);
+          uiQueue.current = uiQueue.current.catch(() => undefined).then(() => api.putUi(state.ui));
           break;
         case 'loadAnalysis':
           void load(effect.key, effect.headSha, effect.view);
           break;
+        case 'fetchWorkspaceTools':
+          api.workspaceTools().then((tools) => dispatchRef.current({ id: 'workspace.tools', tools }), () => undefined);
+          break;
+        case 'startWorkspace': {
+          const { key, branch, title, url } = effect;
+          uiQueue.current.then(() => api.startWorkspace(key, { branch, title, url })).then(pollJobs, (e: unknown) => dispatchRef.current({ id: 'workspace.startFailed', key, reason: e instanceof Error ? e.message : String(e) }));
+          break;
+        }
         case 'startReview': {
           const { key, headSha } = effect;
           api.startReview(key, headSha).then(pollJobs, (e: unknown) => dispatchRef.current({ id: 'review.startFailed', key, headSha, reason: e instanceof Error ? e.message : String(e) }));
@@ -274,6 +288,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       try {
         dispatch({ id: 'analyses.loaded', analyses });
         dispatch({ id: 'ui.loaded', ui });
+        api.workspaceTools().then((tools) => dispatchRef.current({ id: 'workspace.tools', tools }), () => undefined);
         dispatch({ id: 'config.loaded', config });
         // 画面を読み直したとき、serve で解析・AI レビューをしていればその進みに戻る
         pollJobs();
@@ -366,7 +381,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
     };
   }, [dragging, dispatch]);
   // 解析か AI レビューが動いている間は 1 秒おきに serve に聞く（進みの 1 行と、終わり・失敗）
-  const jobsActive = s.reanalyze.jobs.some(isActive) || s.reviews.some(reviewActive);
+  const jobsActive = s.reanalyze.jobs.some(isActive) || s.reviews.some(reviewActive) || s.workspaces.some((j) => j.status === 'running');
   useEffect(() => {
     if (!jobsActive) return;
     const t = window.setInterval(pollJobs, POLL_MS);
@@ -407,7 +422,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       {/* PR 一覧は開いている解析を出さないので、その解析の知らせも出さない（解析の状態はカードの中） */}
       {s.view !== 'prs' && <ReanalyzeStrip strip={stripOf(s)} dispatch={dispatch} />}
       <main className="stage">
-        {s.view === 'prs' && <PrListView prs={s.prs} analyses={s.analyses} jobs={s.reanalyze.jobs} reviews={s.reviews} reviewEnabled={(s.ui.reviewCommand ?? '').trim() !== ''} flavor={flavor} dispatch={dispatch} />}
+        {s.view === 'prs' && <PrListView prs={s.prs} analyses={s.analyses} jobs={s.reanalyze.jobs} workspaces={s.workspaces} workspaceEnabled={s.ui.workspace?.app !== undefined} reviews={s.reviews} reviewEnabled={(s.ui.reviewCommand ?? '').trim() !== ''} flavor={flavor} dispatch={dispatch} />}
         {s.view === 'home' && s.analysis && s.review && <HomeView analysis={s.analysis} review={s.review} flavor={flavor} home={s.home} zoom={s.mapZoom} speed={s.ui.mapSpeed ?? 1} dispatch={dispatch} />}
         {s.view === 'hows' && s.analysis && s.review && (
           <HowView
@@ -471,7 +486,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       )}
       {s.ask.open && s.analysis && <AskDrawer analysis={s.analysis} ask={s.ask} dispatch={dispatch} />}
       {s.showKeymap && <KeymapHelp dispatch={dispatch} />}
-      {s.settings !== null && <SettingsModal tab={s.settings} theme={theme} worktreeRoot={s.ui.worktreeRoot ?? ''} llmCommand={s.ui.llmCommand ?? ''} reviewCommand={s.ui.reviewCommand ?? ''} ticket={s.ui.ticket ?? {}} dispatch={dispatch} />}
+      {s.settings !== null && <SettingsModal tab={s.settings} theme={theme} worktreeRoot={s.ui.worktreeRoot ?? ''} llmCommand={s.ui.llmCommand ?? ''} reviewCommand={s.ui.reviewCommand ?? ''} workspace={s.ui.workspace ?? {}} workspaceTools={s.workspaceTools} ticket={s.ui.ticket ?? {}} dispatch={dispatch} />}
       <GithubToast toast={s.github.toast} dispatch={dispatch} />
       {s.showPalette && s.analysis && <Palette analysis={s.analysis} packagePrefix={packagePrefix} from={s.paletteFrom} selectedHow={s.view === 'course' ? (s.course?.id ?? null) : s.selectedHow} dispatch={dispatch} />}
     </div>
