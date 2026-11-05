@@ -1,7 +1,7 @@
 // 入口（全体図。設計書 3.1）。承認したデモ（2026-09-29）の screenIntro が画面の正。
 // 上: タブ（説明 1 / 地図 2。説明を読んでから地図を見る順）・題・件数・コースごとの割合・開始ボタン。題の下に LLM が動かなかった知らせ（1 回目か 2 回目）。
-// 中: 地図タブ = 変更のまとまりの地図（GroupMap。押すと中に入る。丸の色と番号 = コース。選んだコースが通る所だけを残し、他を沈め、道順を流す）/ 説明タブ = 差分から生成した説明。
-//     まとまりの無い古い解析は、前の形の地図（CourseMap。変更した場所を全部並べ、選んだコースの道順を出す）。
+// 中: 地図タブ = 処理の流れの地図（FlowMap。① 背景 / ② この PR / ③ マージ後。コースを選ぶと ② でそのコースの変更だけで止まる。2026-11-05）/ 説明タブ = 差分から生成した説明。
+//     流れの無い解析（古い解析・呼び出しの流れが無い差分）は、前の形の地図（CourseMap。変更した場所を全部並べ、選んだコースの道順を出す）。
 // 下: コースの並び。押すとそのコースを選び（道順が出る）、選んだカードの「入る」でコースに入る。ここは描くだけで、押した物は全部コマンド（原則 6）。
 import type { Analysis, ReviewState } from '@ondina/model';
 import { AskButton } from './AskButton.js';
@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import type { Command } from '../commands/commands.js';
 import { courseBg, courseOf, courses, nextCourse, OUTSIDE, stopInfo } from '../course.js';
 import { CourseMap } from '../map/CourseMap.js';
-import { GroupMap } from './GroupMap.js';
+import { FlowMap } from './FlowMap.js';
 import { buildGraph } from '../map/graph.js';
 import type { ElkLike } from '../map/layout.js';
 import { courseKeep, courseRoute } from '../map/route.js';
@@ -94,26 +94,22 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
       <LlmNotice llm={analysis.llm} text={analysis.llmText} dispatch={dispatch} />
       <MapNotice analysis={analysis} />
       <div className="hubbody">
-        {home.tab === 'map' && analysis.mapGroups ? (
-          <GroupMap
+        {home.tab === 'map' && analysis.flows && analysis.flows.length > 0 ? (
+          <FlowMap
             analysis={analysis}
-            mapGroups={analysis.mapGroups}
-            path={home.path}
-            sel={home.sel}
-            course={sel ?? null}
-            review={review}
+            flows={analysis.flows}
+            stage={home.mapStage}
+            flowId={home.flow}
             step={home.step}
             play={home.play}
             speed={speed}
-            behavior={analysis.behaviors?.find((b) => b.id === home.behavior) ?? null}
-            mode={home.mode}
-            args={home.args}
             zoom={zoom}
+            course={sel ?? null}
             dispatch={dispatch}
             {...(elk ? { elk } : {})}
           />
         ) : home.tab === 'map' ? (
-          // 古い解析（mapGroups が無い）だけ。知らせは MapNotice
+          // 流れの無い解析だけ。知らせは MapNotice
           <CourseMap
             analysis={analysis}
             scope={null}

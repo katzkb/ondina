@@ -32,8 +32,9 @@ function lines(analysis: Analysis): Line[] {
       ),
     });
   }
-  // 入口の地図のまとまり（2026-11-04）が無い解析は、前の形の地図を出す（web は core の分け方を持たない。原則 5）
-  if (analysis.mapGroups === undefined) out.push({ key: 'g', text: '古い ondina で作った解析なので、前の形の地図を出しています。', hint: <>{analyze} で解析し直すと新しい地図になります</> });
+  // 処理の流れ（2026-11-05）が無い解析は、前の形の地図を出す（web は core の組み方を持たない。原則 5）
+  if (analysis.flows === undefined) out.push({ key: 'g', text: '古い ondina で作った解析なので、前の形の地図を出しています。', hint: <>{analyze} で解析し直すと処理の流れの地図になります</> });
+  else if (analysis.flows.length === 0 && analysis.lsp?.status === 'ok') out.push({ key: 'g', text: 'この PR の差分には呼び出しの流れがないので、変更した場所を並べた地図を出しています。', hint: <>流れは、差分のある関数どうしの呼び出しから組みます</> });
   const lsp = analysis.lsp;
   if (lsp === undefined) {
     out.push({ key: 'l', text: '言語サーバーを使わずに解析したので、関連の線がありません。', hint: <>--no-lsp を付けずに {analyze} を実行し直すと表示されます</> });
