@@ -33,6 +33,47 @@ const cmdClick = async (el: HTMLElement, init: { metaKey?: boolean; ctrlKey?: bo
 };
 
 describe('差分一覧の名前から定義へ', () => {
+  it('検索した後で引き出しを大きくしても、定義の行へ戻さない', async () => {
+    const original = Element.prototype.scrollIntoView;
+    const scrolled: Element[] = [];
+    Element.prototype.scrollIntoView = function (this: Element) { scrolled.push(this); };
+    try {
+      const { container } = await renderDiffList();
+      await cmdClick(nameIn(container, 'Money')!);
+      fireEvent.keyDown(window, { key: 'f', metaKey: true });
+      fireEvent.change(screen.getByRole('searchbox', { name: 'このファイルの中を検索' }), { target: { value: 'package' } });
+      const hit = container.querySelector('.defdrawer mark.cur');
+      expect(hit).not.toBeNull();
+      expect(scrolled.at(-1)).toBe(hit);
+      fireEvent.keyDown(window, { key: 'R', shiftKey: true });
+      expect(screen.getByRole('dialog', { name: '定義' })).toBeInTheDocument();
+      expect(scrolled.at(-1)).toBe(hit);
+    } finally {
+      if (original) Element.prototype.scrollIntoView = original;
+      else Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+    }
+  });
+
+  it('定義の引き出しが開いている間の ⌘F はファイルの中を探し、背後の差分の検索欄は出さない', async () => {
+    const { container } = await renderDiffList();
+    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+    expect(screen.getByRole('searchbox', { name: '差分の中を検索' })).toBeInTheDocument();
+    await cmdClick(nameIn(container, 'Money')!);
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+    const drawer = screen.getByRole('complementary', { name: '定義' });
+    const input = within(drawer).getByRole('searchbox', { name: 'このファイルの中を検索' });
+    fireEvent.change(input, { target: { value: 'package' } });
+    expect(within(drawer).getByText('1 / 1')).toBeInTheDocument();
+    expect(drawer.querySelector('mark.cur')).toHaveTextContent('package');
+    expect(container.querySelector('.dscroll .dfind')).toBeNull();
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(within(drawer).queryByRole('searchbox')).toBeNull();
+    expect(drawer).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('complementary', { name: '定義' })).toBeNull();
+  });
+
   it('移れる名前だけ押せる形（dj）にする。⌘ を押さずに押しても何もしない', async () => {
     const { container } = await renderDiffList();
     const money = nameIn(container, 'Money');

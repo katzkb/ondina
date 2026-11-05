@@ -513,6 +513,9 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .fold .fx button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .fold .fl{padding-left:16px}
 .fv .dscroll{flex:1}
+.fv-wrap{position:relative;display:flex;flex:1;min-height:0}
+.fv-wrap>.fv-body{min-width:0}
+.fv-find{position:absolute;top:0;left:0;right:0;z-index:4}
 .bottom{flex:none;display:flex;align-items:center;gap:10px;padding:10px 20px;border-top:1px solid var(--line);background:var(--panel)}
 .bottom .sp{flex:1}
 .veil{position:fixed;inset:0;background:color-mix(in srgb,var(--crust) 55%,transparent);z-index:10}

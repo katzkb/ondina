@@ -3,6 +3,7 @@
 // そこで行のデータ（畳む前の行列）から探す。見つけた行は DiffList が帯から出してスクロールし、文字に印を付ける。
 import type { TokenLine } from '@ondina/model';
 import type { DefName } from '../defs.js';
+import type { FileRow } from './fileRows.js';
 import type { VirtualRow } from './rows.js';
 import type { ChangeSpan } from './wordDiff.js';
 
@@ -61,6 +62,11 @@ export function findHits(rows: readonly VirtualRow[], query: string): FindHit[] 
     }
   }
   return out;
+}
+
+export function findFileHits(rows: readonly FileRow[], query: string): { order: number; from: number; to: number }[] {
+  if (query === '') return [];
+  return rows.flatMap((row, order) => indexesOf(lineText(' ', row.tokens), query).map((from) => ({ order, from, to: from + query.length })));
 }
 
 /** 今の 1 件の番号（AppState.find.at は次へ・前へで増減するだけなので、件数で回す） */

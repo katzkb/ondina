@@ -208,8 +208,8 @@ const NO_GITHUB: GithubUi = { viewed: null, toast: null, seq: 0 };
  * to: file = そのファイルの見出しを一番上、hunk = 見えていなければ見える所まで（どちらも前のファイルの末尾を一番上に残さない）
  */
 /**
- * 差分の列の検索（2026-10-27。diff/find.ts）。差分一覧と目的ごとの画面のプレビューで ⌘F。画面の一時状態で保存しない。
- * at = 今の 1 件（次へ・前へで増減するだけ。DiffList が件数で回す）、n = 検索欄に入れ直す合図（開いている間にもう一度 ⌘F）
+ * 差分の列・引き出しの検索（diff/find.ts）。画面の一時状態で保存しない。
+ * at = 今の 1 件（次へ・前へで増減するだけ。描く側が件数で回す）、n = 検索欄に入れ直す合図（開いている間にもう一度 ⌘F）
  */
 export interface FindUi {
   open: boolean;
@@ -220,11 +220,15 @@ export interface FindUi {
 
 export const NO_FIND: FindUi = { open: false, query: '', at: 0, n: 0 };
 
-/** 差分の列の検索が効く画面（差分の列を出している画面）。ほかの画面の ⌘F はブラウザのページ内検索に任せる */
+export function findIn(state: AppState): 'drawer' | 'list' | null {
+  if (state.analysis === null || overlayOpen(state)) return null;
+  if (state.def !== null || state.rel !== null) return 'drawer';
+  if (state.view === 'diff' && state.analysis.hunks.length > 0) return 'list';
+  return state.view === 'hows' && state.analysis.hunks.some((h) => h.id === state.selectedHunk) ? 'list' : null;
+}
+
 export function findable(state: AppState): boolean {
-  if (state.analysis === null || overlayOpen(state)) return false;
-  if (state.view === 'diff') return state.analysis.hunks.length > 0;
-  return state.view === 'hows' && state.analysis.hunks.some((h) => h.id === state.selectedHunk);
+  return findIn(state) !== null;
 }
 
 export interface DiffJump {
@@ -532,8 +536,9 @@ export function reduce(state: AppState, command: Command): Reduced {
   const treeShut = revealTree(state, s);
   const diffJump = nextJump(state, s, fullFile);
   const diffFile = s.view === 'diff' ? s.diffFile : null;
-  // 差分の列の検索は、画面を替えたら閉じる（入れた文字は残す）
-  const find = s.find.open && s.view !== state.view ? { ...s.find, open: false } : s.find;
+  // 検索欄が差分の列と引き出しを行き来しないよう、引き出しの開閉でも閉じる（入れた文字は残す）
+  const drawerChanged = (def !== null || rel !== null) !== (state.def !== null || state.rel !== null);
+  const find = s.find.open && (s.view !== state.view || drawerChanged) ? { ...s.find, open: false } : s.find;
   return memo === s.memo && focusLine === s.focusLine && ask === s.ask && rel === s.rel && def === s.def && defBack === s.defBack && prs === s.prs && fullFile === s.fullFile && treeShut === s.treeShut && diffJump === s.diffJump && diffFile === s.diffFile && find === s.find
     ? r
     : { ...r, state: { ...s, memo, focusLine, ask, rel, def, defBack, prs, fullFile, treeShut, diffJump, diffFile, find } };

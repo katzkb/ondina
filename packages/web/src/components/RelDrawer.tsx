@@ -10,7 +10,7 @@ import { FileView } from '../diff/FileView.js';
 import { Key } from './Key.js';
 import { layerText } from '../map/graph.js';
 import { relHostLabel, relItems, relLayers, relVisible, type RelView } from '../rel.js';
-import type { FocusLine } from '../state/reducer.js';
+import type { FindUi, FocusLine } from '../state/reducer.js';
 
 export interface RelDrawerProps {
   analysis: Analysis;
@@ -20,12 +20,13 @@ export interface RelDrawerProps {
   memo: DiffMemo;
   /** 案内人の答えの行の場所で来た行 */
   focusLine: FocusLine | null;
+  find?: FindUi;
   dispatch: (c: Command) => void;
 }
 
 const WORD = { in: '呼び出し元', out: '呼び出し先' } as const;
 
-export function RelDrawer({ analysis, rel, viewed, memo, focusLine, dispatch }: RelDrawerProps) {
+export function RelDrawer({ analysis, rel, viewed, memo, focusLine, find, dispatch }: RelDrawerProps) {
   const big = rel.size === 'big';
   const items = relVisible(analysis, rel);
   const sel = items.find((x) => x.id === rel.sel) ?? items[0];
@@ -95,7 +96,7 @@ export function RelDrawer({ analysis, rel, viewed, memo, focusLine, dispatch }: 
           </div>
           <div className="rcode">
             {/* 相手の関数の全体を読めるよう、ファイル全体を出して中心の行（宣言と差分を呼ぶ行）へスクロールする */}
-            {symbol && <FileView key={symbol.id} analysis={analysis} path={symbol.path} hunkId={null} symbol={symbol} full mode="uni" viewed={viewed} dispatch={dispatch} memo={memo} focusLine={focusLine} controls={false} />}
+            {symbol && <FileView key={symbol.id} analysis={analysis} path={symbol.path} hunkId={null} symbol={symbol} full mode="uni" viewed={viewed} dispatch={dispatch} memo={memo} focusLine={focusLine} controls={false} {...(find ? { find } : {})} />}
           </div>
         </div>
         <div className="rfoot">

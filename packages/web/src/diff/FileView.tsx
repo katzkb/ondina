@@ -17,12 +17,14 @@ import type { Command } from '../commands/commands.js';
 import { Key } from '../components/Key.js';
 import { DraftBox, LineMark, MemoEditor, MemoHoldSpace, MemoSaved } from '../components/MemoBox.js';
 import { endsAt, isMemo, pickRange, pickSpan } from '../memo.js';
-import type { FocusLine } from '../state/reducer.js';
+import type { FindUi, FocusLine } from '../state/reducer.js';
 import { DiffList, type DiffMemo } from './DiffList.js';
 import { Excerpt } from './Excerpt.js';
 import { fileRows, foldRows, splitRows, type FileRow, type SplitSide } from './fileRows.js';
 import { foldLines } from './fold.js';
 import { FoldBand } from './FoldBand.js';
+import { FindBar } from './FindBar.js';
+import { curIndex, findFileHits, type FindMark } from './find.js';
 import type { DiffMode } from './rows.js';
 import type { DefAt } from './DefLinks.js';
 import { TokenSpans } from './TokenSpans.js';
@@ -60,6 +62,7 @@ export interface FileViewProps {
    * 無い = 名前から移れない解析か、定義の引き出しの中（引き出しは自分で前の定義へ戻る）
    */
   defBack?: number | undefined;
+  find?: FindUi;
 }
 
 /** 確かめること 1 つの根拠の行。n = 文の番号、lines = head の行番号、on = 濃く光らせる（選んでいる文か、何も選んでいない） */
@@ -92,7 +95,7 @@ export function litBy(f: FocusLine | null | undefined, path: string | undefined,
 /** 光らせる class。押すたびに名前を替えて、同じ行をもう一度押しても光らせ直す */
 export const flashClass = (f: FocusLine) => ` lflash l${f.n % 2}`;
 
-export function FileView({ analysis, path, hunkId, all = false, symbol, full, mode, viewed, dispatch, memo, focusLine = null, controls = true, open, places, marks = [], side = 'head', defBack }: FileViewProps) {
+export function FileView({ analysis, path, hunkId, all = false, symbol, full, mode, viewed, dispatch, memo, focusLine = null, controls = true, open, places, marks = [], side = 'head', defBack, find }: FileViewProps) {
   const file = path === undefined ? undefined : (side === 'base' ? analysis.baseFiles : analysis.files)?.find((f) => f.path === path);
   const centers = useMemo(() => (hunkId === null ? (symbol?.excerpt?.flatMap((b) => b.centers) ?? null) : null), [hunkId, symbol]);
   const rows = useMemo(() => {
@@ -101,6 +104,14 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
     return all ? r.map((x) => (x.hunkId === null ? x : { ...x, focus: true })) : r;
   }, [file, analysis, hunkId, centers, all, side]);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const query = find?.open ? find.query : '';
+  const hits = useMemo(() => findFileHits(rows ?? [], query), [rows, query]);
+  const cur = curIndex(find?.at ?? 0, hits.length);
+  const searchMarks = useMemo(() => {
+    const out = new Map<number, FindMark[]>();
+    hits.forEach((h, i) => out.set(h.order, [...(out.get(h.order) ?? []), { from: h.from, to: h.to, cur: i === cur }]));
+    return out;
+  }, [hits, cur]);
 
   // 見ている場所を画面に入れる（全体表示に切り替えたときも、見ている行へ）。同じファイルの中で場所を移ったときはなめらかに
   const shownPath = useRef(path);
@@ -122,6 +133,9 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
     // .mrow は display: contents で箱が無いので、中のコードのセルへ
     bodyRef.current?.querySelector('.mrow.lflash .cd')?.scrollIntoView?.({ block: 'center' });
   }, [focusLine, path, hunkId, full]);
+  useEffect(() => {
+    bodyRef.current?.querySelector('mark.fhit.cur')?.scrollIntoView?.({ block: 'center' });
+  }, [cur, find?.at, find?.n, query, hits, mode]);
 
   const hunk = hunkId === null ? undefined : analysis.hunks.find((h) => h.id === hunkId);
   const shownHunks = all ? analysis.hunks.filter((h) => h.path === path) : hunk ? [hunk] : [];
@@ -183,7 +197,7 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
   const placeOf = new Map(shown.map((p) => [p.hunkId, p]));
   const parts = foldLines(
     rows.map((row, order) => ({ row, order })),
-    ({ row, order }) => ({ key: row.key, anchor: (row.focus && (row.kind !== 'ctx' || row.center)) || (row.hunkId !== null && row.kind !== 'ctx' && placeOf.has(row.hunkId)) || noted.has(order) || editAt === order || isLit(row) || marksOf(row).length > 0 }),
+    ({ row, order }) => ({ key: row.key, anchor: (row.focus && (row.kind !== 'ctx' || row.center)) || (row.hunkId !== null && row.kind !== 'ctx' && placeOf.has(row.hunkId)) || noted.has(order) || editAt === order || isLit(row) || marksOf(row).length > 0 || searchMarks.has(order) }),
     new Set(open ?? []),
     full || noFocus,
   );
@@ -290,7 +304,7 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
                 {r.new ?? ''}
               </div>
               <div className={`cd ${c}`} {...anchorOf(order)}>
-                <TokenSpans line={' '} tokens={r.tokens} chg={r.chg} at={defAt(r)} />
+                <TokenSpans line={' '} tokens={r.tokens} chg={r.chg} at={defAt(r)} marks={searchMarks.get(order)} />
               </div>
             </div>
             {under(r)}
@@ -322,7 +336,7 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
             {line ?? ''}
           </div>
           <div className={`cd ${c}`} {...(anchor ? anchorOf(s.order) : {})}>
-            <TokenSpans line={' '} tokens={s.row.tokens} chg={s.row.chg} at={defAt(s.row)} />
+            <TokenSpans line={' '} tokens={s.row.tokens} chg={s.row.chg} at={defAt(s.row)} marks={writable ? searchMarks.get(s.order) : undefined} />
           </div>
         </div>
       );
@@ -388,8 +402,16 @@ export function FileView({ analysis, path, hunkId, all = false, symbol, full, mo
           </span>
         )}
       </div>
-      <div className={`diff fv-body ${mode}${placeAt.size > 0 ? ' pl' : ''}`} ref={bodyRef}>
-        {lines}
+      <div className="fv-wrap">
+        {/* 長い行を横に動かしても右上に残るよう、検索欄はスクロール領域の外に重ねる */}
+        {find?.open && (
+          <div className="fv-find">
+            <FindBar label="このファイルの中を検索" find={find} count={hits.length} cur={cur} dispatch={dispatch} />
+          </div>
+        )}
+        <div className={`diff fv-body ${mode}${placeAt.size > 0 ? ' pl' : ''}`} ref={bodyRef}>
+          {lines}
+        </div>
       </div>
     </div>
   );
