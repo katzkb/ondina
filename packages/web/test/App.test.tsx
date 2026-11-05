@@ -1330,10 +1330,10 @@ describe('App（コース。3.3）', () => {
     const { container } = await renderCourses();
     enter(container, 5);
     const col = container.querySelector('.rcol') as HTMLElement;
-    expect(col.querySelectorAll('.sck.here')).toHaveLength(3);
-    expect(col.querySelector('.schecks h3')!.textContent).toContain('ここに 3 つ');
-    // execute の 15〜18 行に 1〜3 の番号（3 つ目は 17・18 行の 2 行で、番号は 17 行にだけ。4 つ目はテストの停留所にある）
-    expect([...container.querySelectorAll('.fv-body .ln.ck')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['115', '216', '317', '18']);
+    expect(col.querySelectorAll('.sck.here')).toHaveLength(4);
+    expect(col.querySelector('.schecks h3')!.textContent).toContain('ここに 4 つ');
+    // execute の 15〜18 行に 1〜4 の番号（1 行に 1 つずつ）
+    expect([...container.querySelectorAll('.fv-body .ln.ck')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['115', '216', '317', '418']);
     expect(container.querySelectorAll('.fv-body .ln.ck.on')).toHaveLength(4);
     fireEvent.click(col.querySelectorAll('.sck.here')[1]!);
     expect([...container.querySelectorAll('.fv-body .ln.ck.on')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['216']);
@@ -1716,6 +1716,31 @@ describe('App（コース。3.3）', () => {
       await key('n');
       expect(pressed(map)).toBe('③ マージ後');
       expect(map.querySelector('.fm-step .fm-code .hot')!.textContent!.trim()).toBe('val order = useCase.execute(OrderId(id), body.discountCode)');
+    });
+
+    it('段ごとの文（AI）を地図の上に 1 文 1 行で出す。書かれていない段は出さない', async () => {
+      const b = structuredClone(a);
+      b.flows![0]!.stages = { before: '注文を読んで返す。割引はまだ計算しない。', after: '割引コードを受け取る → 注文を読む → 保存する → 返す。' };
+      const { map } = await fmap(b);
+      const narr = () => map.querySelector('.fm-say .narr.ai');
+      expect([...narr()!.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['AI注文を読んで返す。', '割引はまだ計算しない。']);
+      await key('n');
+      expect(narr()).toBeNull();
+      await key('n');
+      expect(narr()!.textContent).toBe('AI割引コードを受け取る → 注文を読む → 保存する → 返す。');
+    });
+
+    it('段ごとの文はコースの範囲の ② では出さない（コースの変更の数を出す）', async () => {
+      const b = structuredClone(a);
+      b.flows![0]!.stages = { change: '割引を計算して保存するようになる。' };
+      const { container: c, map } = await fmap(b);
+      await key('n');
+      expect(map.querySelector('.fm-say .narr.ai')!.textContent).toBe('AI割引を計算して保存するようになる。');
+      await act(async () => {
+        fireEvent.click(c.querySelectorAll('.ccard .pick')[4]!);
+      });
+      expect(pressed(map)).toBe('② この PR');
+      expect(map.querySelector('.fm-say .narr.ai')).toBeNull();
     });
 
     it('② の横に流れの外の変更。押すと差分一覧のその場所へ', async () => {

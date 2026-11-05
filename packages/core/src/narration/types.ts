@@ -55,13 +55,20 @@ export interface NarrationInputExisting {
   removed: boolean;
 }
 
-/** 動き 1 本（2026-11-04）。呼ぶ順はプログラムが組んだもの。LLM は題を付けて、見せる順に並べるだけ */
+/**
+ * 流れ 1 本（2026-11-05。欄の名前は動きのころの behaviors のまま）。呼ぶ順と状態はプログラムが組んだ事実。
+ * LLM は題を付けて見せる順に並べ、段ごとの文（① 背景・② この PR・③ マージ後）を書く
+ */
 export interface NarrationInputBehavior {
   id: string;
-  /** 始まりの FQ 名 */
+  /** 入口の FQ 名 */
   start: string;
-  /** 呼ぶ順の呼び出し。「呼ぶ側の短い名前: 呼び出しの式」（式が無ければ呼ばれる側の短い名前） */
-  calls: string[];
+  /** 変わる前（①）の呼ぶ順の呼び出し。「呼ぶ側の短い名前: 呼び出しの式」（式が無ければ呼ばれる側の短い名前）。入口が新しく足された流れは空 */
+  before: string[];
+  /** 変わった後（③）の呼ぶ順の呼び出し。形は before と同じ。入口が消された流れは空 */
+  after: string[];
+  /** この PR で変わった呼び出し（②）。呼ぶ順に「足した / 変えた / 消した 呼ぶ側: 式」。変えたもので式が違えば「前の式 → 後の式」 */
+  changes: string[];
 }
 
 export interface NarrationInput {
@@ -104,6 +111,9 @@ export interface NarrationOutput {
   background: { existing: Array<{ symbols: string[]; text: string }>; terms: Array<{ word: string; code: string; meaning: string }> };
   /** change = 変わること、checks = 確かめること、stops[].role = この場所（2026-10-22。それまでは intro と停留所の guide / say） */
   courses: Array<{ howId: number; change: { before: string; after: string }; checks: NarrationOutputCheck[]; stops: Array<{ symbolId: string; role: string }> }>;
-  /** 動きの題（2026-11-04）。並びが見せる順。古い記録には無い（空） */
-  behaviors: Array<{ id: string; title: string }>;
+  /**
+   * 流れの題（2026-11-04）と段ごとの文（2026-11-05。before = ① 背景、change = ② この PR、after = ③ マージ後）。並びが見せる順。
+   * 古い記録には無い（空。段の文は空文字）
+   */
+  behaviors: Array<{ id: string; title: string; before: string; change: string; after: string }>;
 }

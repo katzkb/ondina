@@ -717,6 +717,11 @@ export interface CallFlow {
   titleProvenance: Provenance;
   /** 入口の呼び出し（from = null） */
   root: FlowCall;
+  /**
+   * 段ごとの文（2026-11-05）。2 回目の LLM が書いた推測（provenance は llm。画面は「AI」の札と点線）。
+   * before = ① 背景、change = ② この PR、after = ③ マージ後。欄が無い = LLM が書かなかった・その段に流れが無い
+   */
+  stages?: { before?: string; change?: string; after?: string };
 }
 
 /**

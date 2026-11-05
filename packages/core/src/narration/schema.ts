@@ -95,7 +95,7 @@ export const NARRATION_OUTPUT_SCHEMA = {
     },
     behaviors: {
       type: 'array',
-      items: { type: 'object', additionalProperties: false, required: ['id', 'title'], properties: { id: text, title: text } },
+      items: { type: 'object', additionalProperties: false, required: ['id', 'title', 'before', 'change', 'after'], properties: { id: text, title: text, before: text, change: text, after: text } },
     },
   },
 } as const;
@@ -215,7 +215,7 @@ function behaviors(v: unknown): NarrationOutput['behaviors'] {
   return v.map((b, i) => {
     if (!isObj(b)) bad(`behaviors[${i}] がオブジェクトではありません`);
     if (typeof b['id'] !== 'string') bad(`behaviors[${i}].id が文字列ではありません`);
-    return { id: b['id'], title: str(b['title']) };
+    return { id: b['id'], title: str(b['title']), before: str(b['before']), change: str(b['change']), after: str(b['after']) };
   });
 }
 

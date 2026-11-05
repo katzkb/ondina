@@ -671,6 +671,8 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .fm-say{display:flex;flex-direction:column;gap:4px;font-size:13px}
 .fm-say:empty{display:none}
 .fm-say p{margin:0}
+.fm-narr{padding:6px 12px;gap:2px}
+.fm-narr .chip{margin-right:6px}
 .fm-ctitle{display:flex;gap:8px;align-items:center;font-weight:700}
 .fm-chips{display:flex;flex-wrap:wrap;gap:6px}
 .fc{display:inline-block;border:1px solid;border-radius:999px;padding:0 9px;font:500 11.5px/18px var(--sans);white-space:nowrap}
