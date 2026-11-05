@@ -1,7 +1,7 @@
 // 2 回目の LLM が書いた動きの題を重ねる（設計書 3.3 / 5.4）
 import { describe, expect, it } from 'vitest';
-import type { Behavior } from '@ondina/model';
-import { applyBehaviorTitles } from '../src/behavior/titles.js';
+import type { Behavior, CallFlow } from '@ondina/model';
+import { applyBehaviorTitles, applyFlowTitles, copyFlowTitles } from '../src/behavior/titles.js';
 
 const B = (id: string): Behavior => ({ id, title: `start-${id}`, titleProvenance: 'ast', start: id, messages: [] });
 
@@ -24,5 +24,30 @@ describe('applyBehaviorTitles', () => {
 
   it('動きが 0 本なら知らせない', () => {
     expect(applyBehaviorTitles([], [])).toEqual({ behaviors: [], info: [] });
+  });
+});
+
+const F = (id: string, start: string): CallFlow => ({ id, title: `start-${start}`, titleProvenance: 'ast', root: { key: `>${start}#1`, from: null, to: start, status: 'changed', courses: [], kids: [] } });
+
+describe('applyFlowTitles', () => {
+  it('流れにも同じ規則で題を付け、知らせは「流れ」で書く', () => {
+    const r = applyFlowTitles([F('f1', 'a'), F('f2', 'b')], [{ id: 'f2', title: '注文を受け付ける。' }]);
+    expect(r.flows.map((f) => [f.id, f.title, f.titleProvenance])).toEqual([
+      ['f2', '注文を受け付ける', 'llm'],
+      ['f1', 'start-a', 'ast'],
+    ]);
+    expect(r.info).toEqual(['流れの題: 1 / 2 本']);
+  });
+});
+
+describe('copyFlowTitles', () => {
+  it('入口が同じ動きに LLM の題を写し、流れの並びにする。流れの無い動きは後ろ', () => {
+    const flows = [{ ...F('f2', 'b'), title: '後の題', titleProvenance: 'llm' as const }, F('f1', 'a')];
+    const r = copyFlowTitles([B('a'), B('z'), B('b')], flows);
+    expect(r.map((b) => [b.id, b.title, b.titleProvenance])).toEqual([
+      ['b', '後の題', 'llm'],
+      ['a', 'start-a', 'ast'],
+      ['z', 'start-z', 'ast'],
+    ]);
   });
 });

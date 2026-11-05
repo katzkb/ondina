@@ -610,6 +610,7 @@ interface Analysis {                         // パイプラインの成果物�
   githubDiff?: Array<{ path: string; hunks: Array<{ oldStart: number; oldLines: number; newStart: number; newLines: number }> }>;  // GitHub の PR の差分の塊（12章。2026-10-06）。古い解析には無い
   mapGroups?: MapGroups;                     // 入口の地図のまとまり（2026-11-04）。古い解析には無い
   behaviors?: Behavior[];                    // behaviors (2026-11-04). Absent in old analyses
+  flows?: CallFlow[];                        // request flows (2026-11-05). Call trees combining before and after the change. Absent in old analyses
 }
 
 // 入口の地図のまとまりの木（2026-11-04。packages/core/src/mapgroup/build.ts）。分け方はプログラム、題の名前だけ LLM（原則 3）。
@@ -654,6 +655,32 @@ interface Behavior {
     returns?: string;                        // return type (Edge.types.out)
   }>;
 }
+
+// Request flows (2026-11-05. packages/core/src/flow/). Material for the map's ① Background / ② This PR / ③ After merge. As with behaviors, the program builds the tree and the LLM only writes the title (principle 3).
+// From the edges before the change (edgesBase) and after it (edges), build each caller's ordered calls per side (same as behaviors: one per line, interface and implementation merged into one) and match them.
+// - Calls are matched as "the n-th call from the same caller to the same callee". Present on both sides: changed when a calling line falls on a changed line
+//   (removed lines for base, added lines for head), otherwise same. Present on one side only: added / removed. Order follows the after side; a removed call goes right after the call that preceded it before the change
+// - Entry = a symbol with a diff and no caller with a diff, either before or after the change (symbols with no calls on either side do not become flows). Order as for behaviors
+// - The callee is opened every time it is called (calling save twice opens it twice). Only calls of the parent's sides are opened. Depth 6, a cycle, or 1000 calls per tree stops opening with cut
+// - The root's status comes from the shape of the entry's hunk lines (no + and no - = same, only + = added, only - = removed, otherwise changed). Courses are the Hows of the hunks the calling line falls in (the root uses the entry's hunk)
+// - Call expressions are chosen as for behaviors, from the base file before the change and the head file after it
+// The fixture has one flow from OrderController.apply: ② = execute (changed) → find (same), applyDiscount (added) → rateFor (added), save (added); save (added);
+// OrderResponse.from (same). ① is the 3 calls that exist before the change (execute → find, from). ③ is the 7 calls after the change. Golden: expected/flows.json
+interface CallFlow {
+  id: string;                                // from 'f1'. Numbered in program order
+  title: string; titleProvenance: Provenance; // llm = title from the second LLM call (dotted on screen). ast = no LLM, so the entry's short name
+  root: FlowCall;                            // the entry call (from = null)
+}
+interface FlowCall {
+  key: string;                               // points at the same call across steps. "caller>callee#n" joined with / from the root. The root is ">entry#1"
+  from: string | null; to: string;           // Symbol.id. The root's from is null
+  status: 'same' | 'changed' | 'added' | 'removed';
+  before?: FlowCallSite; after?: FlowCallSite;  // one side of the call (lines are in each side's file). ① follows only calls with before, ③ only calls with after
+  courses: number[];                         // How ids of the hunks the calling line falls in (ascending)
+  kids: FlowCall[];                          // calls inside the callee (calling order)
+  cut?: true;                                // there is more, but it is not opened (the screen shows "… rest omitted")
+}
+interface FlowCallSite { line?: number; call?: BehaviorCall; returns?: string }  // the root is a declaration, so it has no line or call
 
 interface AnalysisConfig {                   // 11章。変えたら analyze の打ち直しが要る
   project?: string; language?: string; sourceRoots: string[];
@@ -795,7 +822,7 @@ The program determines everything. Print each exclusion and renumbering on its o
 8. Accept `layerGuesses` only for “layer names that exist in configuration” and “paths actually in `unlayeredPaths`” (do not let inference overwrite glob-determined layers). Keep only the first occurrence of a repeated path. Accepted entries get `layerProvenance: 'llm'` (implemented 2026-09-22 in `packages/core/src/layers/guesses.ts`)
 9. Second call (write prose. `packages/core/src/narration/verify.ts`): exclude courses with nonexistent `howId` and prose for `symbolId` absent from that course's stops / treat empty or whitespace-only prose as absent (the screen uses generated prose) / keep only the first duplicate course or stop (even if the first prose is empty, do not use later occurrences. Same rule as 8) / do not change paths (order or call relationships) / entry explanation (2026-10-29): strip surrounding whitespace from the Key point (「要点」), Example (「例」), and box prose; omit empty fields. Supporting locations for examples follow the same rules as checks (stops may belong to any course). Diagram boxes may reference only existing courses; a course appears only once across all diagrams, at its first occurrence. Exclude boxes with no remaining courses or empty titles, and diagrams with no remaining boxes. Names beneath boxes must be stops in that box's courses. If an entry explanation was written, print a final line (`入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）`. Also lists courses absent from every box) / background (2026-10-29): Existing items (「前からあるもの」) names must appear among candidates (input `existing`). Keep a candidate only in the first row where it appears (once even if repeated in that row). If disappearing and unchanged items are mixed, keep only those matching the first name's category (one fact per chip). Exclude rows with empty prose or no remaining names; maximum three rows (`MAX_EXISTING`). The program supplies disappearance, path, and kind from candidates. Exclude Terms (「言葉」) with empty wording, and code names (allow trailing `()` and identifiers joined by `.`) that are not identifiers appearing in diff lines. Keep the first occurrence of each name, up to four (`MAX_TERMS`). If background was written, print a final line (`背景: 前からあるもの 3 行（候補 5）、言葉 4 個`) / checks (2026-10-22): retain only supporting locations that are stops in that course, and line numbers on the head side (context or added lines) of that stop's hunk (the screen highlights those lines, so do not retain nonexistent ones). Exclude locations with no remaining lines, sentences with no remaining locations, and empty sentences. Keep only the first identical location in the same sentence. Reorder locations in reading order; sort and deduplicate lines ascending. Exclude the sixth onward (`MAX_CHECKS`). Report each exclusion on its own line, then report filled counts on a final line (`案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 23（場所 32）`. stderr reveals omissions)
 10. `themes` (map groups. 2026-11-04 `packages/core/src/mapgroup/build.ts`) is read only when there are 8 or more Hows. Use it only when all of these hold: 7 or fewer themes, no empty title, every How in exactly one theme, and no unknown How id. Otherwise use none of it, print the reason to stderr in one line, and put every course on the overview (still more than 7. Do not fix it silently)
-11. Behavior titles (2026-11-04 `packages/core/src/behavior/titles.ts`): drop titles with unknown ids; for a repeated id use only the first. Trim spaces and a trailing full stop; if empty, keep the start's short name (`titleProvenance: 'ast'`). The order is the LLM's output order (display order); behaviors the LLM did not write follow in program order. The call list is not changed. One last line (`動きの題: 1 / 1 本`)
+11. Request flow titles (behavior titles on 2026-11-04, flows from 2026-11-05. `packages/core/src/behavior/titles.ts`): drop titles with unknown ids; for a repeated id use only the first. Trim spaces and a trailing full stop; if empty, keep the entry's short name (`titleProvenance: 'ast'`). The order is the LLM's output order (display order); flows the LLM did not write follow in program order. The call tree is not changed. One last line (`流れの題: 1 / 1 本`). Until the map is replaced by the flow map, the same title is copied to the behavior with the same entry, in flow order (`copyFlowTitles`)
 
 ### 5.5 Execution modes
 - **CLI**: generate Analysis.json with `ondina analyze <pr>` and run the local UI with `ondina serve`. Cache in `.ondina/<pr>/<headSha>.json` (`.ondina/` in the original folder even when run inside a worktree. Worktree item in chapter 12). The target repository is the current directory
@@ -1269,11 +1296,11 @@ Input (built deterministically. Golden file: `fixtures/order-service/expected/ll
   "unassigned": ["…どの How にも入らなかった hunk の id"],
   "existing": [ { "symbol": "…DiscountPolicy.rateFor", "path": "…", "kind": "function", "removed": false },
                 { "symbol": "…Order.getDiscount", "path": "…", "kind": "function", "removed": true } ],
-  "behaviors": [ { "id": "b1", "start": "com.example.order.api.OrderController.apply",
+  "behaviors": [ { "id": "f1", "start": "com.example.order.api.OrderController.apply",
                    "calls": [ "OrderController.apply: useCase.execute(OrderId(id), body.discountCode)", "…" ] } ]
 }
 ```
-- `behaviors` are the behaviors (2026-11-04. `Behavior` in chapter 4). Calls are passed in calling order as "caller's short name: call expression" (the callee's short name when there is no expression). Absent when there are no behaviors
+- `behaviors` are the request flows (from 2026-11-05. `CallFlow` in chapter 4; before that, behaviors `Behavior`). The after-change call tree is opened in calling order and passed as "caller's short name: call expression" (the callee's short name when there is no expression; a flow whose entry was removed uses the before-change tree). The field keeps its behaviors-era name (the prompt is unchanged). Absent when there are no flows
 - `existing` contains candidates for What existed before this PR? in the explain tab's background (2026-10-29). First are unchanged callees of stops (out in `related`, once in course order), followed by declarations removed in this PR (Kotlin declarations found only in base. If the parent is also removed, include only the parent. Also inspect primary-constructor `val` / `var`. `core/src/hunks/removed.ts`). The fixture has `rateFor`, `Money.ZERO`, and `OrderRepository.save`, plus the removed `Order.promo` and `getDiscount`
 - Do not pass `pr.body` (write the entry explanation from the diff alone). Do not pass `previous` / `edges` / `unlayeredPaths` either
 - Prefix the same diff lines used in the first call with the head (after merge) line number and `|` (`15|+    fun execute(…`. Deleted lines have spaces instead of a number. Align to the width of the largest number in the hunk). This lets it select evidence lines for What to check by number (2026-10-22)
@@ -1291,10 +1318,10 @@ Output:
   "courses": [ { "howId": 3, "change": { "before": "1〜2 文", "after": "1〜2 文" },
                  "checks": [ { "text": "観測の 1 文（句点なし）", "at": [ { "symbolId": "…停留所", "lines": [16], "say": "1 文" } ] } ],
                  "stops": [ { "symbolId": "…", "role": "1〜2 文" } ] } ],
-  "behaviors": [ { "id": "b1", "title": "割引コードを受け取って注文に割引を適用する" } ]
+  "behaviors": [ { "id": "f1", "title": "割引コードを受け取って注文に割引を適用する" } ]
 }
 ```
-`behaviors` (2026-11-04) are behavior titles; their order is the display order. Old records lack them (read as empty). Verification: 5.4, item 11.
+`behaviors` (2026-11-04) are behavior titles (request flow titles from 2026-11-05); their order is the display order. Old records lack them (read as empty). Verification: 5.4, item 11.
 Background has been included since 2026-10-29 (verified results go into `existing` / `terms` in `Analysis.background`. Requirement extraction produces `why` separately). If existing items' `symbols` or boxes' `untouched` arrive as strings, read them as one-element arrays; likewise, read a single number in `howIds` or `lines` as a one-element array. Verification: 5.4, item 9. Since 2026-10-29, the entry explanation has a headline, example, and flow diagram (a new option chosen by comparing prototypes). Previously it was `problem` / `approach` / `untouched` / `beforeAfter` (problem, approach, untouched areas, before/after table).
 
 Prompt constraints (in addition to 10.3. Sentence style decided 2026-09-29):
@@ -1660,6 +1687,7 @@ To keep this branch open, keep the Web UI limited to "read JSON and render," wit
 - Known limitation in hunk extraction: when the line diff (Myers) matches identical lines such as `}` to different declarations, hunks that should be separate may be promoted to a common parent. Not seen in the fixture. If encountered, add "do not pair lines containing only whitespace/brackets" to the pairing rules in 5.2
 - Continue implementation in TypeScript. If switching to Kotlin/JVM, see the alternatives column in chapter 6
 - Unverified items (check when starting): interpretation of `path` in the `jetbrains://` scheme (whether repo-relative works). **kotlin-lsp launch options were checked on an actual machine on 2026-09-21 and written in 9.1. Catppuccin for JetBrains attribute mappings were checked on 2026-09-22 and written in 7.2. `textDocument/hover` was confirmed to return signatures with return types on 2026-09-22 and written in 9.3**
+- Known gaps in request flows (`Analysis.flows`, 2026-11-05): (1) calls are matched as "the n-th call from the same caller to the same callee", so adding a call before an existing call to the same callee marks the later one as added instead of the new one. (2) Courses look up hunks by the caller symbol's path, so before-change lines in renamed files do not match. (3) Work inside the same class (the mockup's "inside") and DB tables (the mockup's orders table) do not come from the call hierarchy, so they are not kept. Fix each when it gets in the way on a work PR (TODO)
 - Value cards for behaviors (the mockup's 「割引額 0 → 100」: how a value changes step by step) are not implemented (TODO. 2026-11-04). No data holds per-step values (`Analysis.summary.example` is only one sentence written from the test diff). An LLM guess is often wrong and cannot cover behaviors without tests, so after comparing mockups they are left out for now. To show them, first confirm where the values would come from
 - Name finalized as `ondina`. npm's `ondina` is available (as of 2026-09-13); no prominent same-name project on GitHub. Use `ondina` consistently for CLI command, config file, and cache directory
 - README's first line is "A review support tool for reading large PRs." (The tagline was dropped before publication). Do not use logos or character images from the work (the name is a common word, so there is no trademark issue)

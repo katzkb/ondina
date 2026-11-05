@@ -19,31 +19,38 @@ export interface AttachCallsArgs {
 
 export async function attachCalls(behaviors: readonly Behavior[], { symbols, readHead }: AttachCallsArgs): Promise<Behavior[]> {
   const byId = new Map(symbols.map((s) => [s.id, s]));
-  const trees = new Map<string, Promise<Node | undefined>>();
-  const rootOf = (p: string, text: string): Promise<Node | undefined> => {
-    if (!trees.has(p)) trees.set(p, /\.kts?$/.test(p) ? parseKotlin(text).then((t) => t.rootNode) : Promise.resolve(undefined));
-    return trees.get(p)!;
-  };
-
+  const callAt = createCallReader(readHead);
   const out: Behavior[] = [];
   for (const b of behaviors) {
     const messages = [];
     for (const m of b.messages) {
       const from = byId.get(m.from);
       const to = byId.get(m.to);
-      const text = m.line === undefined || from === undefined ? undefined : readHead(from.path);
-      const lineText = text?.split('\n')[m.line! - 1];
-      if (text === undefined || lineText === undefined || to === undefined) {
-        messages.push(m);
-        continue;
-      }
-      const root = await rootOf(from!.path, text);
-      const call = (root === undefined ? undefined : callOn(root, m.line! - 1, lastName(to.fqName))) ?? { text: lineText.trim(), exact: false };
-      messages.push({ ...m, call });
+      const call = m.line === undefined || from === undefined || to === undefined ? undefined : await callAt(from.path, m.line, to.fqName);
+      messages.push(call === undefined ? m : { ...m, call });
     }
     out.push({ ...b, messages });
   }
   return out;
+}
+
+/**
+ * ファイルの line 行目（1 始まり）にある、toFqName を呼ぶ式を返す読み手。構文木はファイルごとに 1 回だけ作る。
+ * ファイルや行が読めなければ undefined。流れ（flow/calls.ts）は head と base で 1 つずつ作る
+ */
+export function createCallReader(read: (path: string) => string | undefined): (path: string, line: number, toFqName: string) => Promise<BehaviorCall | undefined> {
+  const trees = new Map<string, Promise<Node | undefined>>();
+  const rootOf = (p: string, text: string): Promise<Node | undefined> => {
+    if (!trees.has(p)) trees.set(p, /\.kts?$/.test(p) ? parseKotlin(text).then((t) => t.rootNode) : Promise.resolve(undefined));
+    return trees.get(p)!;
+  };
+  return async (p, line, toFqName) => {
+    const text = read(p);
+    const lineText = text?.split('\n')[line - 1];
+    if (text === undefined || lineText === undefined) return undefined;
+    const root = await rootOf(p, text);
+    return (root === undefined ? undefined : callOn(root, line - 1, lastName(toFqName))) ?? { text: lineText.trim(), exact: false };
+  };
 }
 
 /** row（0 始まり）に名前がある呼び出しの式から 1 つを選ぶ */
