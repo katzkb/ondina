@@ -3,8 +3,9 @@
 // worktree の置き場所と LLM コマンドとチケットの取り方は .ondina/ui.json に入り、次の analyze から効く（設計書 3.5 / 5.3 / 5.1）。
 // AI レビューのコマンドも ui.json に入り、次に PR 一覧から頼んだときから効く（3.11）。
 // タブは 全般 / ショートカットキー（2026-10-20）。ショートカットキーも ui.json に入り、押した時点で効く（KeysSettings）。
-import type { ThemeMode, ThemeSettings, TicketSettings } from '@ondina/model';
-import type { ReactNode } from 'react';
+import type { ThemeMode, ThemeSettings, TicketSettings, WorkspaceSettings, WorkspaceTools } from '@ondina/model';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { fillWorkspacePrompt } from '../prs.js';
 import type { Command, SettingsTab } from '../commands/commands.js';
 import { composingKey } from '../commands/keymap.js';
 import { ACCENTS, themesOf } from '../theme.js';
@@ -28,6 +29,8 @@ export interface SettingsModalProps {
   llmCommand: string;
   /** AI レビューのコマンド（.ondina/ui.json）。空なら PR 一覧に「AI にレビューを頼む」を出さない */
   reviewCommand: string;
+  workspace?: WorkspaceSettings;
+  workspaceTools?: WorkspaceTools | null;
   /** チケットの取り方（.ondina/ui.json の ticket。5.1） */
   ticket: TicketSettings;
   dispatch: (c: Command) => void;
@@ -57,7 +60,7 @@ export function SettingsModal({ tab, dispatch, ...general }: SettingsModalProps)
 }
 
 /** 全般のタブ: テーマ・worktree の置き場所・LLM コマンド・AI レビューのコマンド・チケットの取り方 */
-function General({ theme, worktreeRoot, llmCommand, reviewCommand, ticket, dispatch }: Omit<SettingsModalProps, 'tab'>) {
+function General({ theme, worktreeRoot, llmCommand, reviewCommand, workspace = {}, workspaceTools = null, ticket, dispatch }: Omit<SettingsModalProps, 'tab'>) {
   const source = ticket.source ?? 'jira';
   return (
     <>
@@ -108,6 +111,7 @@ function General({ theme, worktreeRoot, llmCommand, reviewCommand, ticket, dispa
       >
         <SettingInput id="set-review" value={reviewCommand} placeholder='claude -p --model opus --allowedTools "Bash(git diff:*),Bash(git show:*),Read,Grep,Glob"' onCommit={(value) => dispatch({ id: 'ui.reviewCommand', value })} />
       </Row>
+      <WorkspaceSettingsSection workspace={workspace} tools={workspaceTools} dispatch={dispatch} />
       <Row label="チケットの取得方法" note="analyze --ticket で指定したチケットの取得方法。値がファイルなら、ここに関係なくそのファイルを読みます">
         <span className="seg">
           <button type="button" className={source === 'jira' ? 'on' : ''} onClick={() => dispatch({ id: 'ui.ticket', field: 'source', value: '' })}>
@@ -134,6 +138,56 @@ function General({ theme, worktreeRoot, llmCommand, reviewCommand, ticket, dispa
       )}
     </>
   );
+}
+
+/** 全般の「レビュー用の作業場」。保存・挿入・プリセットの操作もコマンド経由 */
+function WorkspaceSettingsSection({ workspace, tools, dispatch }: { workspace: WorkspaceSettings; tools: WorkspaceTools | null; dispatch: (c: Command) => void }) {
+  const field = useRef<HTMLTextAreaElement>(null);
+  const caret = useRef<number | null>(null);
+  const prompt = workspace.prompt ?? tools?.defaultPrompt ?? '';
+  useLayoutEffect(() => {
+    if (caret.current === null || !field.current) return;
+    field.current.focus();
+    field.current.setSelectionRange(caret.current, caret.current);
+    caret.current = null;
+  }, [prompt]);
+  const missing = (available: boolean | undefined, name: string) => available === false ? `（${name} が見つかりません）` : '';
+  return <section aria-label="レビュー用の作業場" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <h3 style={{ margin: 0 }}>レビュー用の作業場</h3>
+    <Row label="開く先" htmlFor="set-workspace-app" note="PR のブランチをレビュー用に開きます。「使わない」のときはカードに出しません">
+      <select id="set-workspace-app" value={workspace.app ?? ''} onChange={(e) => dispatch({ id: 'ui.workspace', patch: { app: e.target.value as NonNullable<WorkspaceSettings['app']> | '' } })}>
+        {/* eslint-disable-next-line ondina/wording-endings -- 選択肢のラベル（ユーザー指定） */}
+        <option value="">使わない</option>
+        <option value="herdr-app">Herdr アプリ{missing(tools?.herdrApp, 'herdr-app')}</option>
+        <option value="herdr">herdr（ターミナル）{missing(tools?.herdr, 'herdr')}</option>
+        <option value="orca">orca{missing(tools?.orca, 'orca')}</option>
+      </select>
+    </Row>
+    <Row label="作り方" htmlFor="set-workspace-maker" note="gct は .gct.toml の置き場所・コピー・symlink の設定に従います">
+      <select id="set-workspace-maker" value={workspace.maker ?? 'app'} onChange={(e) => dispatch({ id: 'ui.workspace', patch: { maker: e.target.value as NonNullable<WorkspaceSettings['maker']> } })}>
+        <option value="gct">gct（.gct.toml の置き場所・コピー・symlink に従う）{missing(tools?.gct, 'gct')}</option>
+        <option value="app">開く先のアプリに任せる</option>
+      </select>
+    </Row>
+    <Row label="起動する AI" htmlFor="set-workspace-agent" note="コマンドを編集できます。空なら AI は起動しません">
+      {/* eslint-disable-next-line ondina/wording-endings -- AI を起動しないプリセットのボタンラベル */}
+      <div style={{ width: '100%' }}><span className="seg">{['claude', 'codex', 'opencode', ''].map((agent) => <button type="button" key={agent} className={(workspace.agent ?? 'claude') === agent ? 'on' : ''} onClick={() => dispatch({ id: 'ui.workspace', patch: { agent } })}>{agent || '起動しない'}</button>)}</span>
+      <SettingInput id="set-workspace-agent" value={workspace.agent ?? 'claude'} placeholder="claude" onCommit={(agent) => dispatch({ id: 'ui.workspace', patch: { agent } })} /></div>
+    </Row>
+    <Row label="最初に送る指示" htmlFor="set-workspace-prompt" note="変数を押すとカーソルの位置に入ります。空なら指示を送りません">
+      <div style={{ width: '100%' }}>
+        <textarea id="set-workspace-prompt" ref={field} rows={4} style={{ width: '100%', boxSizing: 'border-box', font: 'inherit', padding: '6px 9px', border: '1px solid var(--line-2)', borderRadius: 4, background: 'var(--panel-2)', color: 'var(--ink)' }} value={prompt} disabled={workspace.prompt === undefined && tools === null} onChange={(e) => dispatch({ id: 'ui.workspace', patch: { prompt: e.target.value } })} />
+        <span className="seg">{[['{pr}', 'PR 番号'], ['{title}', 'タイトル'], ['{branch}', 'ブランチ'], ['{url}', 'PR の URL']].map(([variable, label]) => <button type="button" key={variable} disabled={workspace.prompt === undefined && tools === null} onMouseDown={(e) => e.preventDefault()} onClick={() => {
+          const start = field.current?.selectionStart ?? prompt.length;
+          const end = field.current?.selectionEnd ?? start;
+          caret.current = start + variable!.length;
+          dispatch({ id: 'ui.workspace.insert', variable: variable!, start, end });
+        }}>{variable} {label}</button>)}</span>
+        <p>#1234 だとこう送ります</p>
+        <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', font: 'inherit' }}>{fillWorkspacePrompt(prompt, { pr: '1234', title: '注文に割引を適用する', branch: 'feature/discount', url: 'https://github.com/example/order-service/pull/1234' })}</pre>
+      </div>
+    </Row>
+  </section>;
 }
 
 /** 設定の 1 行: 見出し・欄・1 行の説明 */

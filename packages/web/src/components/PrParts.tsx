@@ -1,6 +1,6 @@
 // PR 一覧（設計書 3.11）のカードと PR の詳細の引き出しが共有する部品: 作者の丸・上のチップ・ラベル・解析の行・AI の行。押すとコマンドを出すだけ（原則 6）
 import type { CSSProperties, ReactNode } from 'react';
-import type { OpenPr } from '@ondina/model';
+import type { OpenPr, WorkspaceJob } from '@ondina/model';
 import type { Command } from '../commands/commands.js';
 import { ago, avatarColor, youOf, type PrAiState, type PrAnalysisState } from '../prs.js';
 import { clock } from '../reanalyze.js';
@@ -215,4 +215,31 @@ export function AiLine({ pr, state, now, dispatch }: { pr: OpenPr; state: PrAiSt
 /** GitHub の差分に出ない行のコメントは、そのジョブでは入れずに数だけ残す（3.11） */
 function Skipped({ n }: { n: number }) {
   return n > 0 ? <div className="skip">{n} 件は GitHub の差分に出ない行なので入れませんでした</div> : null;
+}
+
+/** PR のレビュー用作業場。UI は外部ツールを直接呼ばず、コマンドだけを出す */
+export function WorkspaceLine({ pr, job, dispatch }: { pr: OpenPr; job?: WorkspaceJob | undefined; dispatch: Dispatch }) {
+  const open = (label: string) => (
+    <button type="button" className="btn sm" onClick={() => dispatch({ id: 'pr.workspace', key: String(pr.number), branch: pr.head, title: pr.title, url: pr.url, now: new Date().toISOString() })}>
+      {label}
+    </button>
+  );
+  if (!job) return <St k="none" label="">{open('レビュー用に開く')}</St>;
+  if (job.status === 'running') return (
+    <div role="status">
+      <div className="st k-run">
+        <span className="spin" aria-hidden="true" />
+        <span className="lbl">作業場を開いています</span>
+      </div>
+      {job.steps.map((step, i) => <div className="step" key={step}>{i < job.done ? `✓ ${step}` : step}</div>)}
+    </div>
+  );
+  if (job.status === 'failed') return (
+    <>
+      <St k="failed" label="作業場を開けませんでした">{open('もう一度')}</St>
+      <div className="why">{job.error}</div>
+    </>
+  );
+  const name = { 'herdr-app': 'Herdr アプリ', herdr: 'herdr', orca: 'orca' }[job.app];
+  return <St k="done" label={`${name} で開いています`}>{open('開く')}</St>;
 }

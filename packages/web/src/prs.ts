@@ -139,3 +139,8 @@ export function duration(sec: number): string {
   const min = Math.floor(sec / 60);
   return min < 60 ? `${min} 分 ${sec % 60} 秒` : `${Math.floor(min / 60)} 時間 ${min % 60} 分`;
 }
+
+/** CLI と同じ置換規則。置換した値の中の波括弧は展開しない */
+export function fillWorkspacePrompt(template: string, values: { pr: string; title: string; branch: string; url: string }): string {
+  return template.replace(/\{(pr|title|branch|url)\}/g, (_, key: keyof typeof values) => values[key]);
+}

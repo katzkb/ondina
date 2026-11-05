@@ -1,7 +1,7 @@
 // UI の状態遷移。reduce は純粋で、通信や URL を開くなどの副作用は effects として返す（App が実行する）。
 // 選択 hunk へのスクロールは DiffList が selectedHunk の変化を見て行う（仮想リストの index を知っているのはそこだけ）。
 // 差分一覧（全部のファイルを 1 本に並べる。2026-10-20）だけは、reducer が出す diffJump の n が進んだときに動く。
-import type { Analysis, AnalysisSummary, AskCite, CallFlow, AskEntry, AskPlace, CommentDraft, DiffMode, DisplayConfig, PaneId, PrDetail, PrList, ReviewJob, ReviewState, ThemeSettings, TicketSettings, UiSettings } from '@ondina/model';
+import type { Analysis, AnalysisSummary, AskCite, CallFlow, AskEntry, AskPlace, CommentDraft, DiffMode, DisplayConfig, PaneId, PrDetail, PrList, ReviewJob, ReviewState, ThemeSettings, TicketSettings, UiSettings, WorkspaceJob, WorkspaceTools } from '@ondina/model';
 import { askKey, askLinesOf, askLinesPlace, askPlace, canMemo } from '../ask.js';
 import type { Command, SettingsTab } from '../commands/commands.js';
 import { keymapWith } from '../commands/keymap.js';
@@ -319,6 +319,8 @@ export interface AppState {
   prs: PrsUi;
   /** serve の AI レビュー（3.11。key ごとの最新）と、serve に頼めなかった失敗。解析の列とは別。保存しない */
   reviews: ReviewJob[];
+  workspaces: WorkspaceJob[];
+  workspaceTools: WorkspaceTools | null;
   /**
    * ファイルツリーで閉じたフォルダの key（fileTree.ts。差分一覧とコースの左で別々。2026-10-19）。既定は全部開いている。
    * 見ているファイル（差分一覧で選んだファイル・今の場所のファイル）が変わったら、その上のフォルダを開く。保存しない。別の解析を開くと空
@@ -338,7 +340,10 @@ export type Effect =
   | { type: 'saveUi' }
   /** view は着く画面（AI レビューの「見る」は締め） */
   | { type: 'loadAnalysis'; key: string; headSha: string; view?: 'closing' }
-  /** AI にレビューを頼む（POST /api/review）。状態は review.jobs で戻る（頼めなければ review.startFailed） */
+  /** レビュー用の作業場を開く。状態は workspace.jobs で戻る */
+  | { type: 'startWorkspace'; key: string; branch: string; title: string; url: string }
+  | { type: 'fetchWorkspaceTools' }
+  /** AI にレビューを頼む（POST /api/review）。状態は review.jobs で戻る */
   | { type: 'startReview'; key: string; headSha: string }
   | { type: 'stopReview'; key: string }
   /** その解析の state を読み直し、知らない AI の下書きを並べる（comments.arrived） */
@@ -370,7 +375,7 @@ export interface Reduced {
 }
 
 export function initialState(): AppState {
-  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false }, course: null, briefMap: NO_BRIEF_MAP, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
+  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false }, course: null, briefMap: NO_BRIEF_MAP, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], workspaces: [], workspaceTools: null, memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
 }
 
 const none = (state: AppState): Reduced => ({ state, effects: [] });
@@ -662,6 +667,22 @@ function reduceAll(state: AppState, command: Command): Reduced {
     case 'pr.open':
       if (state.current?.key === command.key && state.current.headSha === command.headSha) return none({ ...state, view: 'home', ...LEAVE });
       return { state, effects: [{ type: 'loadAnalysis', key: command.key, headSha: command.headSha }] };
+    case 'pr.workspace': {
+      if (state.workspaces.some((j) => j.key === command.key && j.status === 'running')) return none(state);
+      const app = state.workspaces.find((j) => j.key === command.key)?.app ?? state.ui.workspace?.app;
+      if (!app) return none(state);
+      const { key, branch, title, url } = command;
+      const job: WorkspaceJob = { key, app, status: 'running', steps: [], done: 0, startedAt: command.now };
+      return { state: { ...state, workspaces: [...state.workspaces.filter((j) => j.key !== key), job] }, effects: [{ type: 'startWorkspace', key, branch, title, url }] };
+    }
+    case 'workspace.jobs':
+      return none({ ...state, workspaces: mergeJobs(state.workspaces, command.jobs) });
+    case 'workspace.tools':
+      return none({ ...state, workspaceTools: command.tools });
+    case 'workspace.startFailed': {
+      const workspaces = state.workspaces.map((j) => j.key === command.key ? { ...j, status: 'failed' as const, error: command.reason } : j);
+      return none({ ...state, workspaces });
+    }
     case 'pr.review':
       if (reviewActive(state.reviews.find((j) => j.key === command.key))) return none(state);
       return { state, effects: [{ type: 'startReview', key: command.key, headSha: command.headSha }] };
@@ -806,7 +827,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
     case 'settings.open': {
       // 重なる物（キーマップ表示・パレット）とは同時に開かない
       const settings = command.tab ?? (state.settings === null ? 'general' : null);
-      return none({ ...state, settings, showPalette: false, showKeymap: false });
+      return { state: { ...state, settings, showPalette: false, showKeymap: false }, effects: settings === null ? [] : [{ type: 'fetchWorkspaceTools' }] };
     }
     case 'settings.tab':
       return state.settings === null ? none(state) : none({ ...state, settings: command.tab });
@@ -879,6 +900,18 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return { state: { ...state, ui: withUi(state.ui, 'worktreeRoot', command.value) }, effects: [{ type: 'saveUi' }] };
     case 'ui.llmCommand':
       return { state: { ...state, ui: withUi(state.ui, 'llmCommand', command.value) }, effects: [{ type: 'saveUi' }] };
+    case 'ui.workspace': {
+      const { app, ...patch } = command.patch;
+      const workspace = { ...state.ui.workspace, ...patch };
+      if (app === '') delete workspace.app;
+      else if (app !== undefined) workspace.app = app;
+      return { state: { ...state, ui: { ...state.ui, workspace } }, effects: [{ type: 'saveUi' }] };
+    }
+    case 'ui.workspace.insert': {
+      const prompt = state.ui.workspace?.prompt ?? state.workspaceTools?.defaultPrompt ?? '';
+      const value = prompt.slice(0, command.start) + command.variable + prompt.slice(command.end);
+      return { state: { ...state, ui: { ...state.ui, workspace: { ...state.ui.workspace, prompt: value } } }, effects: [{ type: 'saveUi' }] };
+    }
     case 'ui.reviewCommand':
       return { state: { ...state, ui: withUi(state.ui, 'reviewCommand', command.value) }, effects: [{ type: 'saveUi' }] };
     case 'ui.ticket':

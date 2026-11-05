@@ -985,6 +985,42 @@ export type DiffMode = 'sbs' | 'uni';
 /** 幅を変えられる横の列。stopTree / stopGuide = コースの停留所の画面の左のツリー / 右の水先案内、diffTree = 差分一覧のファイル列 */
 export type PaneId = 'stopTree' | 'stopGuide' | 'diffTree';
 
+export type WorkspaceApp = 'herdr-app' | 'herdr' | 'orca';
+export type WorkspaceMaker = 'gct' | 'app';
+export interface WorkspaceSettings {
+  /** 開く先。無ければこの機能を出さない */
+  app?: WorkspaceApp;
+  /** worktree の作り方。無ければ app */
+  maker?: WorkspaceMaker;
+  /** AI のコマンド。空文字なら起動しない。無ければ claude */
+  agent?: string;
+  /** {pr} {title} {branch} {url} を埋める指示。空文字なら送らない */
+  prompt?: string;
+}
+export interface WorkspaceJob {
+  key: string;
+  app: WorkspaceApp;
+  status: 'running' | 'done' | 'failed';
+  steps: string[];
+  done: number;
+  path?: string;
+  error?: string;
+  startedAt: string;
+}
+export interface WorkspaceRecord {
+  app: WorkspaceApp;
+  path: string;
+  branch: string;
+  openedAt: string;
+}
+export interface WorkspaceTools {
+  gct: boolean;
+  herdrApp: boolean;
+  herdr: boolean;
+  orca: boolean;
+  defaultPrompt: string;
+}
+
 /** .ondina/ui.json。PR をまたぐ UI 設定（設計書 3.8）。画面の設定はすべてここ（2026-10-11） */
 export interface UiSettings {
   /** base / head の worktree を置く親ディレクトリ。無ければ analyze の既定 */
@@ -993,6 +1029,7 @@ export interface UiSettings {
   llmCommand?: string;
   /** AI レビューのコマンド（3.11。2026-10-22）。PR ごとに sh -c で起動する。無ければ PR 一覧に「AI にレビューを頼む」を出さない */
   reviewCommand?: string;
+  workspace?: WorkspaceSettings;
   /** チケットの取り方（5.1。2026-10-12） */
   ticket?: TicketSettings;
   /** テーマ（3.5）。無ければ yaml の theme */

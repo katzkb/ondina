@@ -143,6 +143,7 @@ export function fakeApi(analysis: Analysis = fixtureAnalysis(), opts: FakeApiOpt
       return job;
     },
     reviewStatus: async () => reviews,
+    workspaceStatus: async () => [], workspaceTools: async () => ({ gct: false, herdrApp: false, herdr: false, orca: false, defaultPrompt: '' }), startWorkspace: async (key) => ({ key, app: ui.workspace?.app ?? 'orca', status: 'done', steps: [], done: 0, startedAt: new Date().toISOString() }),
     stopReview: async (k) => {
       reviewsStopped.push(k);
       reviews = reviews.map((j) => (j.key === k && (j.status === 'waiting' || j.status === 'running') ? { status: 'stopped', key: k, headSha: j.headSha } : j));

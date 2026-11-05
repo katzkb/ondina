@@ -1,11 +1,11 @@
 // PR 一覧（設計書 3.11）のカードを押すと右から出す PR の詳細。上はカードと同じ事実と解析の行・AI の行、下は 4 つのタブ（説明 / レビューとコメント / 変更したファイル / チェック）。
 // 形はモックで確かめた。コースの地図の引き出しと同じく右から出し、背景は暗くしない（左の表は押せたまま）。中身は GET /api/prs/:n
-import type { OpenPr, PrCheckResult, PrDetail, PrReviewKind, PrTimelineItem } from '@ondina/model';
+import type { OpenPr, PrCheckResult, PrDetail, PrReviewKind, PrTimelineItem, WorkspaceJob } from '@ondina/model';
 import type { Command } from '../commands/commands.js';
 import { ago, duration, type DetailTab, type PrAiState, type PrAnalysisState } from '../prs.js';
 import type { PrDetailUi } from '../state/reducer.js';
 import { BodyMarkdown } from './ExplainView.js';
-import { AiLine, AnalysisLine, Avatar, Labels, PrChips, when } from './PrParts.js';
+import { AiLine, AnalysisLine, Avatar, Labels, PrChips, when, WorkspaceLine } from './PrParts.js';
 
 type Dispatch = (c: Command) => void;
 
@@ -33,7 +33,7 @@ function countOf(tab: DetailTab, d: PrDetail): number | undefined {
   return undefined;
 }
 
-export function PrDetailDrawer({ pr, viewer, tab, loaded, state, ai, now, flavor, dispatch }: { pr: OpenPr; viewer: string | null; tab: DetailTab; loaded: PrDetailUi | undefined; state: PrAnalysisState; ai: PrAiState; now: number; flavor: string; dispatch: Dispatch }) {
+export function PrDetailDrawer({ pr, viewer, tab, loaded, state, ai, workspace, workspaceEnabled = false, now, flavor, dispatch }: { workspace?: WorkspaceJob | undefined; workspaceEnabled?: boolean; pr: OpenPr; viewer: string | null; tab: DetailTab; loaded: PrDetailUi | undefined; state: PrAnalysisState; ai: PrAiState; now: number; flavor: string; dispatch: Dispatch }) {
   const updated = Date.parse(pr.updatedAt);
   const data = loaded?.data ?? null;
   const error = loaded?.error ?? null;
@@ -67,6 +67,8 @@ export function PrDetailDrawer({ pr, viewer, tab, loaded, state, ai, now, flavor
           <div>
             <AnalysisLine pr={pr} state={state} now={now} dispatch={dispatch} />
           </div>
+          <span className="cap">作業場</span>
+          <div>{workspaceEnabled ? <WorkspaceLine pr={pr} job={workspace} dispatch={dispatch} /> : <div className="st"><span className="sub">設定の「レビュー用の作業場」で開く先を選ぶと、ここから開けます。</span><span className="acts"><button type="button" className="btn sm" onClick={() => dispatch({ id: 'settings.open' })}>⚙ 設定を開く</button></span></div>}</div>
           <span className="cap">AI</span>
           <div>
             {ai.kind === 'off' ? (

@@ -2,12 +2,12 @@
 // 形はモックを比べて決めた（作者 × レビューの状況）。何を出すかは prs.ts。押すとコマンドを出すだけ（原則 6）
 // カードを押すと右に PR の詳細（PrDetailDrawer）。左の表は押せたままで、別のカードを押すと中身が切り替わる
 import { useEffect, useReducer, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
-import type { AnalysisSummary, AnalyzeJob, OpenPr, PrChecks, PrReviewerState, ReviewJob } from '@ondina/model';
+import type { AnalysisSummary, AnalyzeJob, OpenPr, PrChecks, PrReviewerState, ReviewJob, WorkspaceJob } from '@ondina/model';
 import type { Command } from '../commands/commands.js';
 import { avatarColor, prAiReview, prAnalysis, prRows, REVIEW_COLUMNS, type PrAiState, type PrAnalysisState, type ReviewColumn } from '../prs.js';
 import type { PrsUi } from '../state/reducer.js';
 import { PrDetailDrawer } from './PrDetailDrawer.js';
-import { AiLine, AnalysisLine, Avatar, Labels, PrChips, when } from './PrParts.js';
+import { AiLine, AnalysisLine, Avatar, Labels, PrChips, when, WorkspaceLine } from './PrParts.js';
 
 const COLUMNS: Record<ReviewColumn, { name: string; note: string }> = {
   // eslint-disable-next-line ondina/wording-endings -- 列の見出し（「。」の無いラベル）。名前はモックを比べて決めた
@@ -33,6 +33,8 @@ interface Sources {
   jobs: AnalyzeJob[];
   reviews: ReviewJob[];
   reviewEnabled: boolean;
+  workspaces?: WorkspaceJob[];
+  workspaceEnabled?: boolean;
 }
 
 export function PrListView({ prs, flavor, dispatch, ...src }: { prs: PrsUi; flavor: string; dispatch: Dispatch } & Sources) {
@@ -79,7 +81,7 @@ export function PrListView({ prs, flavor, dispatch, ...src }: { prs: PrsUi; flav
         <Body prs={prs} src={src} now={now} dispatch={dispatch} />
       </div>
       {detail !== null && shown !== undefined && (
-        <PrDetailDrawer pr={shown} viewer={list?.viewer ?? null} tab={detail.tab} loaded={prs.details[detail.number]} state={prAnalysis(shown, src.analyses, src.jobs)} ai={prAiReview(shown, src.reviews, src.reviewEnabled)} now={now} flavor={flavor} dispatch={dispatch} />
+        <PrDetailDrawer pr={shown} viewer={list?.viewer ?? null} tab={detail.tab} loaded={prs.details[detail.number]} state={prAnalysis(shown, src.analyses, src.jobs)} ai={prAiReview(shown, src.reviews, src.reviewEnabled)} workspaceEnabled={src.workspaceEnabled ?? false} workspace={(src.workspaces ?? []).find((j) => j.key === String(shown.number))} now={now} flavor={flavor} dispatch={dispatch} />
       )}
     </section>
   );
@@ -129,7 +131,7 @@ function Body({ prs, src, now, dispatch }: { prs: PrsUi; src: Sources; now: numb
           {REVIEW_COLUMNS.map((c) => (
             <div key={c} className={`cell${c === 'none' ? ' hot' : ''}`} role="cell">
               {r.cells[c].map((pr) => (
-                <PrCard key={pr.number} pr={pr} viewer={list.viewer} open={detail?.number === pr.number} state={prAnalysis(pr, src.analyses, src.jobs)} ai={prAiReview(pr, src.reviews, src.reviewEnabled)} now={now} dispatch={dispatch} />
+                <PrCard key={pr.number} pr={pr} viewer={list.viewer} open={detail?.number === pr.number} state={prAnalysis(pr, src.analyses, src.jobs)} ai={prAiReview(pr, src.reviews, src.reviewEnabled)} workspaceEnabled={src.workspaceEnabled ?? false} workspace={(src.workspaces ?? []).find((j) => j.key === String(pr.number))} now={now} dispatch={dispatch} />
               ))}
             </div>
           ))}
@@ -139,7 +141,7 @@ function Body({ prs, src, now, dispatch }: { prs: PrsUi; src: Sources; now: numb
   );
 }
 
-function PrCard({ pr, viewer, open, state, ai, now, dispatch }: { pr: OpenPr; viewer: string | null; open: boolean; state: PrAnalysisState; ai: PrAiState; now: number; dispatch: Dispatch }) {
+function PrCard({ pr, viewer, open, state, ai, workspace, workspaceEnabled, now, dispatch }: { workspace?: WorkspaceJob | undefined; workspaceEnabled: boolean; pr: OpenPr; viewer: string | null; open: boolean; state: PrAnalysisState; ai: PrAiState; now: number; dispatch: Dispatch }) {
   const ci = CI[pr.checks];
   const updated = Date.parse(pr.updatedAt);
   const detail = () => dispatch({ id: 'pr.detail', number: pr.number });
@@ -194,6 +196,7 @@ function PrCard({ pr, viewer, open, state, ai, now, dispatch }: { pr: OpenPr; vi
         <div>
           <AnalysisLine pr={pr} state={state} now={now} dispatch={dispatch} />
         </div>
+        {workspaceEnabled && <><span className="cap">作業場</span><div><WorkspaceLine pr={pr} job={workspace} dispatch={dispatch} /></div></>}
         {/* AI レビューのコマンドが空なら、カードには行を出さない（設定への入口は引き出しだけ） */}
         {ai.kind !== 'off' && (
           <>
