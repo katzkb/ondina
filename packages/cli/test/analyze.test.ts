@@ -482,6 +482,12 @@ describe('analyzeLocal と LSP', () => {
     expect(asked!.names.length).toBeGreaterThan(0);
   });
 
+  it('言語サーバーの答えにリポジトリの外のファイルが出ても止まらず、件数と例を知らせる（2026-11-05）', async () => {
+    const { analysis, info } = await analyzeLocal(repo, 'main', 'feature/discount', { llm: 'off', lsp: true, lspEnv: { FAKE_LSP_CALLER: 'outside' } });
+    expect(analysis.lsp?.status).toBe('ok');
+    expect(info.find((s) => s.startsWith('呼び出し関係に、リポジトリの外のファイルが'))).toMatch(/（例: \.\.\/elsewhere\/src\/main\/kotlin\/com\/example\/order\/domain\/OrderRepository\.kt）/);
+  });
+
   it('定義がフォルダ（パッケージの名前）を指せば、その名前は答え無し。言語サーバーの結果は止めない', async () => {
     const { analysis } = await analyzeLocal(repo, 'main', 'feature/discount', { llm: 'off', lsp: true, lspEnv: { FAKE_LSP_DEF_DIR: '1' } });
     expect(analysis.lsp?.status).toBe('ok');

@@ -142,6 +142,15 @@ describe('readBlobs', () => {
   it('フォルダは null', () => {
     expect(readBlobs(repo, git(repo, 'rev-parse', 'main'), ['src/main/kotlin'])).toEqual([null]);
   });
+
+  it('リポジトリの外を指すパスは null。ほかのパスは読める（言語サーバーの答えに worktree の外のファイルが混ざる。2026-11-05）', () => {
+    const order = 'src/main/kotlin/com/example/order/domain/Order.kt';
+    expect(readBlobs(repo, git(repo, 'rev-parse', 'main'), ['../head/' + order, '/abs/X.kt', order])).toEqual([
+      null,
+      null,
+      readFileSync(path.join(FIXTURE_ROOT, 'base', order), 'utf8'),
+    ]);
+  });
 });
 
 describe('parseDiffHunks', () => {
