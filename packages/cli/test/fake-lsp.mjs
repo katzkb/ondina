@@ -165,13 +165,15 @@ function handle(msg) {
     return;
   }
   if (msg.method === 'callHierarchy/incomingCalls') {
-    // FAKE_LSP_CALLER: 差分の無いファイル domain/OrderRepository.kt から呼ばれている
+    // FAKE_LSP_CALLER: 差分の無いファイル domain/OrderRepository.kt から呼ばれている。outside なら worktree の外（隣のフォルダ）のそのファイルから
     const file = fileURLToPath(msg.params.item.uri);
+    const worktree = file.slice(0, file.indexOf('/src/'));
+    const callerRoot = process.env.FAKE_LSP_CALLER === 'outside' ? `${worktree.slice(0, worktree.lastIndexOf('/'))}/elsewhere` : worktree;
     const caller = {
       name: 'OrderRepository.find(OrderId)',
       detail: 'com.example.order.domain',
       kind: 6,
-      uri: pathToFileURL(`${file.slice(0, file.indexOf('/src/'))}/src/main/kotlin/com/example/order/domain/OrderRepository.kt`).href,
+      uri: pathToFileURL(`${callerRoot}/src/main/kotlin/com/example/order/domain/OrderRepository.kt`).href,
       range: { start: { line: 3, character: 4 }, end: { line: 3, character: 30 } },
       selectionRange: { start: { line: 3, character: 8 }, end: { line: 3, character: 12 } },
     };

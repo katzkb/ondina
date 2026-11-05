@@ -26,7 +26,7 @@ import path from 'node:path';
 import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyFlowTitles, applyNarration, attachCalls, attachFlowCalls, buildFlows, copyFlowTitles, attachTokens, buildBaseCallEdges, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
 import type { How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
 import { readConfigFile } from './config.js';
-import { changedFiles, git, githubDiff, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
+import { changedFiles, git, githubDiff, outsideRepo, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
 import { findPrevious, readLlmCache, resolveLlmCommand, runLlmCommand, writeLlmCache, type LlmCall } from './llm.js';
 import { installedLspCommand, lspCacheDir, lspInstallPath, lspWorktreeRoot, resolveLspCommand } from './lsp.js';
 import { findServe, requestServeLsp, toJobArgs, type LspJobRequest } from './lsp-remote.js';
@@ -152,6 +152,9 @@ async function runAnalysis(
         : `LSP を使いませんでした: ${lsp.reason ?? '理由は受け取っていません'}`,
     );
   }
+  // 言語サーバーの答えに出た、リポジトリの外のファイル（中身は読まない。readBlobs）。何が混ざったか分かるよう、件数と例を残す
+  const outside = [...new Set([...callGraphPaths(lspResult?.callGraph), ...callGraphPaths(lspResult?.callGraphBase)])].filter(outsideRepo).sort();
+  if (outside.length > 0) info.push(`呼び出し関係に、リポジトリの外のファイルが ${outside.length} 件ありました。中身は読んでいません（例: ${outside.slice(0, 2).join('、')}）`);
   const tokenized = await attachTokens(ripples.hunks, files, semantic === undefined ? {} : { semantic });
   // 経路上の未変更シンボルのファイル（辺の抜き出しと実物の画面の全文）。初めて聞かれたときに、言語サーバーが返したファイルをまとめて読む
   // （1 つずつ git を起こすと、偽の言語サーバーの 63 ファイルで 0.55 秒。2026-10-23 実測）

@@ -241,13 +241,19 @@ export function changedFiles(repo: string, refs: RefPair): ChangedFile[] {
   return paths.map((p, i) => ({ path: p, before: before[i]!, after: after[i]! }));
 }
 
+/** リポジトリ相対のパスが、リポジトリの外を指すか（../ で始まる・絶対パス） */
+export function outsideRepo(p: string): boolean {
+  return path.isAbsolute(p) || p === '..' || p.startsWith('../');
+}
+
 /**
  * その版（コミットか tree）のファイルの中身を、paths と同じ順に返す。無いパスとファイルでないものは null。
  * `git cat-file --batch` を 1 回だけ起こす（1 ファイルずつ起こすと 300 ファイルで 2.4 秒、まとめると 0.05 秒。2026-10-23 実測）。
- * 改行を含むパスは 1 行 1 件の入力に書けないので null
+ * 改行を含むパスは 1 行 1 件の入力に書けないので null。リポジトリの外を指すパスも null
  */
 export function readBlobs(repo: string, sha: string, paths: readonly string[]): (string | null)[] {
-  const asked = paths.filter((p) => !p.includes('\n'));
+  // リポジトリの外（../ で始まる・絶対パス）は git が cat-file ごと止めるので聞かない。言語サーバーの答えには worktree の外のファイルが混ざる（2026-11-05）
+  const asked = paths.filter((p) => !p.includes('\n') && !outsideRepo(p));
   if (asked.length === 0) return paths.map(() => null);
   let out: Buffer;
   try {
