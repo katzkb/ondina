@@ -10,7 +10,7 @@
 import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { defTargetOf, diffLines, filesToAsk, findDeclarationPosition, findProbePosition, fqNameOf, namePositions, symbolName, type CallGraphSource, type DefinitionSource, type DefSide, type NamePosition, type RawDefTarget, type CallItem, type DeclarationRange, type DocumentSymbol, type LspClient, type Position, type SemanticLegend, type SemanticSource } from '@ondina/core';
+import { defTargetOf, diffLines, filesToAsk, findCallablePositions, findDeclarationPosition, fqNameOf, namePositions, symbolName, type CallGraphSource, type DefinitionSource, type DefSide, type NamePosition, type RawDefTarget, type CallItem, type DeclarationRange, type DocumentSymbol, type LspClient, type Position, type SemanticLegend, type SemanticSource } from '@ondina/core';
 import type { Hunk } from '@ondina/model';
 import { realpathOr } from './lsp-model.js';
 
@@ -112,28 +112,26 @@ export async function collectCallGraph(client: LspClient, args: CollectCallGraph
       src.testRefs[hunk.id] = [...tests].sort();
     }
 
-    const position = findProbePosition(symbols, name);
-    if (position === undefined) {
-      src.probes.push({ hunkId: hunk.id });
-      continue;
-    }
-    const items = (await client.request<RawItem[] | null>('textDocument/prepareCallHierarchy', { textDocument: { uri }, position })) ?? [];
-    const raw = items[0];
-    if (raw === undefined) {
-      src.probes.push({ hunkId: hunk.id });
-      continue;
-    }
-    const item = seen({ ...raw, selectionRange: raw.selectionRange ?? { start: position } });
-    src.probes.push({ hunkId: hunk.id, item });
+    // クラス丸ごとの hunk は中の関数を全部聞く。probes には最初に答えた関数を 1 つ残す（どれも答えなければ item 無し）
+    let probed = false;
+    for (const position of findCallablePositions(symbols, name)) {
+      const items = (await client.request<RawItem[] | null>('textDocument/prepareCallHierarchy', { textDocument: { uri }, position })) ?? [];
+      const raw = items[0];
+      if (raw === undefined) continue;
+      const item = seen({ ...raw, selectionRange: raw.selectionRange ?? { start: position } });
+      if (!probed) src.probes.push({ hunkId: hunk.id, item });
+      probed = true;
 
-    // fromRanges はどちら向きでも呼ぶ側（from）のファイルの位置（未変更シンボルの行の切り出しに使う。設計書 3.3）
-    const outgoing = (await client.request<Array<{ to: RawItem; fromRanges?: Array<{ start: Position }> }> | null>('callHierarchy/outgoingCalls', { item: raw })) ?? [];
-    for (const call of outgoing) src.calls.push({ from: item, to: seen(call.to), kind: args.isTestPath(item.path) ? 'test' : 'call', lines: linesOf(call.fromRanges) });
-    const incoming = (await client.request<Array<{ from: RawItem; fromRanges?: Array<{ start: Position }> }> | null>('callHierarchy/incomingCalls', { item: raw })) ?? [];
-    for (const call of incoming) {
-      const from = seen(call.from);
-      src.calls.push({ from, to: item, kind: args.isTestPath(from.path) ? 'test' : 'call', lines: linesOf(call.fromRanges) });
+      // fromRanges はどちら向きでも呼ぶ側（from）のファイルの位置（未変更シンボルの行の切り出しに使う。設計書 3.3）
+      const outgoing = (await client.request<Array<{ to: RawItem; fromRanges?: Array<{ start: Position }> }> | null>('callHierarchy/outgoingCalls', { item: raw })) ?? [];
+      for (const call of outgoing) src.calls.push({ from: item, to: seen(call.to), kind: args.isTestPath(item.path) ? 'test' : 'call', lines: linesOf(call.fromRanges) });
+      const incoming = (await client.request<Array<{ from: RawItem; fromRanges?: Array<{ start: Position }> }> | null>('callHierarchy/incomingCalls', { item: raw })) ?? [];
+      for (const call of incoming) {
+        const from = seen(call.from);
+        src.calls.push({ from, to: item, kind: args.isTestPath(from.path) ? 'test' : 'call', lines: linesOf(call.fromRanges) });
+      }
     }
+    if (!probed) src.probes.push({ hunkId: hunk.id });
   }
 
   // 辺に出た宣言のシグネチャ（辺ラベル）。取れなければ欄ごと入れない

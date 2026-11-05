@@ -71,7 +71,7 @@ export interface Position {
 
 /**
  * name の宣言を探し、callHierarchy を打てる位置を返す。
- * 当たった宣言が呼べる種別ならその宣言名の位置、そうでなければ（クラスなど）中の最初の関数の位置。
+ * 当たった宣言が呼べる種別ならその宣言名の位置、そうでなければ（クラスなど）中の最初の関数の位置（準備完了の確かめに使う）。
  * 見つからなければ undefined。
  */
 /**
@@ -83,10 +83,18 @@ export function findDeclarationPosition(symbols: readonly DocumentSymbol[], name
 }
 
 export function findProbePosition(symbols: readonly DocumentSymbol[], name: string): Position | undefined {
+  return findCallablePositions(symbols, name)[0];
+}
+
+/**
+ * name の宣言の中の呼べる宣言の位置を全部（深さ優先の順）。宣言そのものが呼べればそれ 1 つ。
+ * クラス丸ごとの hunk で最初の関数だけ聞くと、2 つ目以降の関数からの呼び出しが線にならない（2026-11-05。新しいクラスが差分の無い相手を呼ぶ形）
+ */
+export function findCallablePositions(symbols: readonly DocumentSymbol[], name: string): Position[] {
   const found = findByName(symbols, name);
-  if (found === undefined) return undefined;
-  if (CALLABLE_SYMBOL_KINDS.includes(found.kind)) return found.selectionRange.start;
-  return firstCallable(found.children ?? []);
+  if (found === undefined) return [];
+  if (CALLABLE_SYMBOL_KINDS.includes(found.kind)) return [found.selectionRange.start];
+  return callables(found.children ?? []);
 }
 
 /**
@@ -103,12 +111,7 @@ function findByName(symbols: readonly DocumentSymbol[], name: string): DocumentS
   return undefined;
 }
 
-/** 木を深さ優先で見て、最初に当たった呼べる宣言の位置。コンストラクタ（kind 9）は呼べる種別に入れていない */
-function firstCallable(symbols: readonly DocumentSymbol[]): Position | undefined {
-  for (const s of symbols) {
-    if (CALLABLE_SYMBOL_KINDS.includes(s.kind)) return s.selectionRange.start;
-    const inner = firstCallable(s.children ?? []);
-    if (inner !== undefined) return inner;
-  }
-  return undefined;
+/** 木を深さ優先で見て、呼べる宣言の位置を全部。コンストラクタ（kind 9）は呼べる種別に入れていない */
+function callables(symbols: readonly DocumentSymbol[]): Position[] {
+  return symbols.flatMap((s) => (CALLABLE_SYMBOL_KINDS.includes(s.kind) ? [s.selectionRange.start] : callables(s.children ?? [])));
 }

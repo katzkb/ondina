@@ -36,7 +36,7 @@ export type { AskInput, AskInputHunk, AskInputLines, AskInputPlace, AskInputRead
 export { encodeMessage, createMessageReader, type LspMessage } from './lsp/protocol.js';
 export { lastServerLogLine } from './lsp/server-log.js';
 export { createReadyWatcher, describePending, KOTLIN_IMPORT_NOTIFICATION, READY_GRACE_MS, type ImportNotificationRule, type Pending, type ReadyState, type ReadyWatcher } from './lsp/ready.js';
-export { chooseProbeTargets, symbolName, findProbePosition, findDeclarationPosition, PROBE_TARGET_LIMIT, CALLABLE_SYMBOL_KINDS, type ProbeTarget, type DocumentSymbol, type Position } from './lsp/targets.js';
+export { chooseProbeTargets, symbolName, findProbePosition, findCallablePositions, findDeclarationPosition, PROBE_TARGET_LIMIT, CALLABLE_SYMBOL_KINDS, type ProbeTarget, type DocumentSymbol, type Position } from './lsp/targets.js';
 export { createLspClient, type LspClient, type LspIo } from './lsp/client.js';
 export { cutExcerpt } from './lsp/excerpt.js';
 export { buildConfigPaths, firstRestartPath } from './lsp/restart.js';
