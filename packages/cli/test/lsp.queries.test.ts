@@ -35,8 +35,10 @@ const decl = (name: string, line: number, kind = 6) => ({ name, kind, range: ran
 
 interface Answers {
   documentSymbol?: Record<string, unknown>;
-  prepare?: unknown[];
-  outgoing?: unknown[];
+  /** 関数なら宣言の行ごとに答えを変える */
+  prepare?: unknown[] | ((line: number) => unknown[]);
+  /** 関数なら聞いた item の name ごとに答えを変える */
+  outgoing?: unknown[] | ((name: string) => unknown[]);
   incoming?: unknown[];
   references?: unknown[];
   hover?: string;
@@ -50,8 +52,14 @@ function fakeClient(answers: Answers) {
       calls.push({ method, params });
       const p = params as { textDocument?: { uri: string } };
       if (method === 'textDocument/documentSymbol') return ((answers.documentSymbol?.[p.textDocument!.uri] ?? []) as T);
-      if (method === 'textDocument/prepareCallHierarchy') return ((answers.prepare ?? []) as T);
-      if (method === 'callHierarchy/outgoingCalls') return ((answers.outgoing ?? []) as T);
+      if (method === 'textDocument/prepareCallHierarchy') {
+        const line = (params as { position: { line: number } }).position.line;
+        return ((typeof answers.prepare === 'function' ? answers.prepare(line) : (answers.prepare ?? [])) as T);
+      }
+      if (method === 'callHierarchy/outgoingCalls') {
+        const name = (params as { item: { name: string } }).item.name;
+        return ((typeof answers.outgoing === 'function' ? answers.outgoing(name) : (answers.outgoing ?? [])) as T);
+      }
       if (method === 'callHierarchy/incomingCalls') return ((answers.incoming ?? []) as T);
       if (method === 'textDocument/references') return ((answers.references ?? []) as T);
       if (method === 'textDocument/hover') return ({ contents: { kind: 'markdown', value: answers.hover ?? '' } } as T);
@@ -95,6 +103,21 @@ describe('collectCallGraph', () => {
       [12, 9, [13, 15]],
       [4, 12, []],
     ]);
+  });
+
+  it('クラス丸ごとの hunk は中の関数を全部聞く。2 つ目の関数からの呼び出しも取れる（新しいクラスが差分の無い相手を呼ぶ）', async () => {
+    const NEW = 'src/main/kotlin/com/example/app/NewCaller.kt';
+    const GREETER = 'src/main/kotlin/com/example/app/Greeter.kt';
+    const h = hunk(NEW, 'com.example.app.NewCaller', { symbolKind: 'class' });
+    const item = (name: string, line: number) => ({ name, detail: 'com.example.app', kind: 6, uri: uri(NEW), selectionRange: { start: { line, character: 8 } } });
+    const { client } = fakeClient({
+      documentSymbol: { [uri(NEW)]: [{ ...decl('NewCaller', 2, 5), children: [decl('NewCaller', 2, 9), decl('label', 3), decl('run', 5)] }] },
+      prepare: (line) => (line === 3 ? [item('NewCaller.label()', 3)] : line === 5 ? [item('NewCaller.run()', 5)] : []),
+      outgoing: (name) => (name === 'NewCaller.run()' ? [{ to: { name: 'Greeter.greet(String)', detail: 'com.example.app', kind: 6, uri: uri(GREETER), selectionRange: { start: { line: 3, character: 8 } } }, fromRanges: [{ start: { line: 6, character: 23 } }] }] : []),
+    });
+    const src = await collectCallGraph(client, { hunks: [h], root: ROOT, isTestPath });
+    expect(src.calls.map((c) => [c.from.name, c.to.name, c.lines])).toContainEqual(['NewCaller.run()', 'Greeter.greet(String)', [6]]);
+    expect(src.probes).toEqual([{ hunkId: h.id, item: { name: 'NewCaller.label()', detail: 'com.example.app', kind: 6, path: NEW, line: 3 } }]);
   });
 
   it('prepareCallHierarchy が [] を返したら probes に item 無しで残す（黙って消さない）', async () => {
