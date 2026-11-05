@@ -1330,10 +1330,10 @@ describe('App（コース。3.3）', () => {
     const { container } = await renderCourses();
     enter(container, 5);
     const col = container.querySelector('.rcol') as HTMLElement;
-    expect(col.querySelectorAll('.sck.here')).toHaveLength(3);
-    expect(col.querySelector('.schecks h3')!.textContent).toContain('ここに 3 つ');
-    // execute の 15〜18 行に 1〜3 の番号（3 つ目は 17・18 行の 2 行で、番号は 17 行にだけ。4 つ目はテストの停留所にある）
-    expect([...container.querySelectorAll('.fv-body .ln.ck')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['115', '216', '317', '18']);
+    expect(col.querySelectorAll('.sck.here')).toHaveLength(4);
+    expect(col.querySelector('.schecks h3')!.textContent).toContain('ここに 4 つ');
+    // execute の 15〜18 行に 1〜4 の番号（1 行に 1 つずつ）
+    expect([...container.querySelectorAll('.fv-body .ln.ck')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['115', '216', '317', '418']);
     expect(container.querySelectorAll('.fv-body .ln.ck.on')).toHaveLength(4);
     fireEvent.click(col.querySelectorAll('.sck.here')[1]!);
     expect([...container.querySelectorAll('.fv-body .ln.ck.on')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['216']);

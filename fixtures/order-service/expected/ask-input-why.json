@@ -24,7 +24,7 @@
             "path": "src/main/kotlin/com/example/order/domain/DiscountPolicy.kt"
           }
         ],
-        "text": "割引コードから割引率を返す。Order が割引額の計算に使う。",
+        "text": "割引コードから割引率を返す。差分では割引を適用するときにこれを呼ぶ。",
         "removed": false
       },
       {
@@ -38,30 +38,35 @@
             "path": "src/main/kotlin/com/example/order/domain/Order.kt"
           }
         ],
-        "text": "注文に付いた販促の値から割引額を返していた。discount フィールドに置き換わる。",
+        "text": "販促の値から割引額を取る。この PR で、注文が持つ割引額のフィールドに置き換わる。",
         "removed": true
+      },
+      {
+        "names": [
+          {
+            "fqName": "com.example.order.domain.Money.Companion.ZERO",
+            "path": "src/main/kotlin/com/example/order/domain/Money.kt"
+          }
+        ],
+        "text": "金額 0 を表す。差分では割引額の初期値に使う。",
+        "removed": false
       }
     ],
     "terms": [
       {
         "word": "割引額",
         "code": "discount",
-        "meaning": "注文の小計から引く金額。小計 1000 で 10% なら 100。"
-      },
-      {
-        "word": "割引コード",
-        "code": "code",
-        "meaning": "割引の種類を表す文字列。例は SPRING10。"
+        "meaning": "小計から引く金額。小計 1000 に SPRING10 を適用すると 100 になる。"
       },
       {
         "word": "割引率",
         "code": "rate",
-        "meaning": "割引コードごとに決まる、小計に掛ける割合。"
+        "meaning": "割引コードごとに決まる、小計に掛ける率。"
       },
       {
-        "word": "小計",
-        "code": "subtotal",
-        "meaning": "割引を引く前の注文の金額。"
+        "word": "割引コード",
+        "code": "discountCode",
+        "meaning": "リクエストで受け取る割引の名前。例は SPRING10。"
       }
     ]
   },
