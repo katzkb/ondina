@@ -19,7 +19,7 @@ describe('reduce', () => {
   it('data.loaded で最初のファイルと hunk が選ばれ、入口の説明タブに着く（3.1）', () => {
     const s = loaded();
     expect(s.view).toBe('home');
-    expect(s.home).toEqual({ tab: 'text', sel: null, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false });
+    expect(s.home).toEqual({ tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false });
     expect(s.selectedFile).toBe('src/main/kotlin/com/example/admin/OrderAdminView.kt');
     expect(s.selectedHunk).toBe(s.analysis!.hunks.find((h) => h.path === s.selectedFile)!.id);
   });
@@ -570,7 +570,7 @@ describe('入口（3.1）', () => {
   it('入口のタブと選んだコースは、別の画面へ移って戻っても残る。別の解析を読むと戻る', () => {
     const s1 = reduce(reduce(loaded(), { id: 'home.tab', tab: 'text' }).state, { id: 'home.select', courseId: 2 }).state;
     const back = reduce(reduce(s1, { id: 'view.diff' }).state, { id: 'view.home' }).state;
-    expect(back.home).toEqual({ tab: 'text', sel: 2, ticket: false, stage: 1, path: [], step: 0, play: false, behavior: null, mode: 'map', args: false });
+    expect(back.home).toEqual({ tab: 'text', sel: 2, ticket: false, stage: 1, mapStage: 2, flow: null, step: 0, play: false });
   });
 
   // 2026-10-29: 説明タブの左は 1 背景 / 2 この PR。n は切り替え、段のボタンはその段へ。地図タブなら説明タブにする
@@ -680,5 +680,34 @@ describe('列の幅（ui.json の panes。2026-10-20）', () => {
     expect(r.state.ui).toEqual({ llmCommand: 'codex exec -', panes: { stopTree: 300 } });
     expect(r.effects).toEqual([{ type: 'saveUi' }]);
     expect(reduce(r.state, { id: 'ui.pane', pane: 'stopTree', px: null }).state.ui).toEqual({ llmCommand: 'codex exec -' });
+  });
+});
+
+describe('入口の地図の流れ（2026-11-05）', () => {
+  const run = (s: AppState, ...cs: Parameters<typeof reduce>[1][]) => cs.reduce((x, c) => reduce(x, c).state, s);
+  const onMap = () => run(loaded(), { id: 'home.tab', tab: 'map' });
+
+  it('→ でステップ、map.stage で段。段を替えても同じ呼び出しに留まる。説明タブでは map.stage は何もしない', () => {
+    const s = run(onMap(), { id: 'course.forward' }, { id: 'course.forward' });
+    expect(s.home.step).toBe(3);
+    const two = run(s, { id: 'map.stage', stage: 2 });
+    expect(two.home).toMatchObject({ mapStage: 2, step: 3 });
+    expect(run(two, { id: 'home.stage' }).home.mapStage).toBe(3);
+    const text = run(loaded(), { id: 'map.stage', stage: 3 });
+    expect(text.home.mapStage).toBe(1);
+  });
+
+  it('コースの範囲では、再生はそのコースのステップだけを進み、最後で止まる', () => {
+    let s = run(onMap(), { id: 'home.select', courseId: 5 });
+    expect(s.home.mapStage).toBe(2);
+    s = run(s, { id: 'map.play' });
+    expect(s.home.play).toBe(true);
+    const seen = [s.home.step];
+    for (let k = 0; k < 6 && s.home.play; k++) {
+      s = run(s, { id: 'map.tick' });
+      if (s.home.play) seen.push(s.home.step);
+    }
+    expect(seen).toHaveLength(4);
+    expect(s.home.play).toBe(false);
   });
 });

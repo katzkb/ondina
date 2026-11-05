@@ -45,7 +45,7 @@ export const KEY_ACTIONS = {
   'jump.callee': { command: { id: 'jump.callee' }, keys: ['o'], group: 'course', label: '呼んでいる相手へ飛ぶ' },
   'home.tab.text': { command: { id: 'home.tab', tab: 'text' }, keys: ['1'], group: 'home', label: '説明のタブ' },
   'home.tab.map': { command: { id: 'home.tab', tab: 'map' }, keys: ['2'], group: 'home', label: '地図のタブ' },
-  'home.stage': { command: { id: 'home.stage' }, keys: ['n'], group: 'home', label: '説明の背景 / この PR', help: '説明タブの「1 背景」と「2 この PR」を切り替える' },
+  'home.stage': { command: { id: 'home.stage' }, keys: ['n'], group: 'home', label: '段を切り替える', help: '説明タブは「1 背景」と「2 この PR」を、地図タブは「① 背景」「② この PR」「③ マージ後」を順に切り替える' },
   enter: { command: { id: 'enter' }, keys: ['Enter'], group: 'fixed', label: '決める・次へ', help: '入口: 選んだコースに入る（なければ次のコース、全部完了なら締め） · 目的ごと: 追従グループを展開 / 畳む · コース: 問題なし · 次へ（読む前の案内では最初の未確認の場所へ、総括では完了） · 締め: GitHub で承認' },
   escape: { command: { id: 'escape' }, keys: ['Escape'], group: 'fixed', label: '閉じる', help: '閉じる・絞り込み解除。最後は入口へ' },
 } satisfies Record<string, KeyAction>;

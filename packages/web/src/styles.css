@@ -589,6 +589,7 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .share i{display:block;height:100%;flex-basis:0}
 .hubbody{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
 .hubbody>.cmap{flex:1;min-height:0}
+.hubbody>.fmap{flex:1;min-height:0;overflow:auto}
 .home .notice{border-radius:0;border-width:0 0 1px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .home .cards{display:flex;gap:10px;padding:10px 20px 14px;overflow-x:auto;border-top:1px solid var(--line);background:var(--panel-2)}
@@ -649,153 +650,97 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 .cmap .legend i{display:inline-block;width:18px;border-top:2px solid;vertical-align:middle;margin-right:6px}
 .cmap .legend .l-on{border-color:var(--subtext0)}.cmap .legend .l-call{border-color:var(--surface2)}
 .cmap .legend .l-ref{border-color:var(--overlay0);border-top-style:dotted}.cmap .legend .l-skip{border-color:var(--danger);border-top-style:dashed}
-/* 入口の地図（2026-11-04。見本 5 の形）。箱は HTML、線は SVG。倍率は .gzoom の scale、中に入る動きは .vw */
-.gmap .crumbs{display:flex;align-items:center;gap:2px;flex-wrap:wrap;min-width:0}
-.gmap .crumbs button{border:0;background:none;color:var(--accent-ink);font:600 13px var(--sans);cursor:pointer;padding:2px 5px;border-radius:4px}
-.gmap .crumbs button:hover{background:var(--accent-soft)}
-.gmap .crumbs b{font:600 13px var(--sans);color:var(--ink);padding:2px 5px}
-.gmap .crumbs .csep{color:var(--faint)}
-.gstage{position:relative}
-.gzoom{position:absolute;left:0;top:0;transform-origin:0 0}
-.gmap .vw{position:relative}
-@media (prefers-reduced-motion:no-preference){
-  .gmap .vw.zin{animation:gzin .34s cubic-bezier(.3,.7,.2,1)}
-  .gmap .vw.zout{animation:gzout .34s cubic-bezier(.3,.7,.2,1)}
-  .gn,.grel,.ged,.gcnt{transition:opacity .2s,box-shadow .2s}
-}
-@keyframes gzin{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
-@keyframes gzout{from{transform:scale(1.9);opacity:0}to{transform:none;opacity:1}}
-.gmap .map svg.gedges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none}
-.ged{fill:none;stroke:var(--surface2);stroke-width:1.5}
-.ged.portal{stroke-dasharray:5 4}
-.ged.dim,.gcnt.dim{opacity:.25}
-.gedges marker path{fill:var(--surface2)}
-.gcnt{position:absolute;transform:translate(-50%,-50%);font:700 10px/1 var(--sans);background:var(--panel);border:1px solid var(--line-2);color:var(--muted);border-radius:8px;padding:2px 5px;pointer-events:none}
-.gband{position:absolute;left:0;right:0;border-top:1px solid var(--line);font:500 10.5px var(--sans);color:var(--faint);padding-top:2px;pointer-events:none}
-.gn{position:absolute;box-sizing:border-box;border:1.5px solid var(--line-2);background:var(--panel);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;gap:2px;cursor:pointer;color:var(--ink);overflow:hidden;text-align:left;font:inherit;margin:0}
-.gn:hover{border-color:var(--accent-edge)}
-.gn:focus-visible,.grel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.gn.add{border-color:var(--green)}
-.gn.dim,.grel.dim{opacity:.3}
-.gn.lit{box-shadow:0 0 0 2px var(--accent)}
-.gdots{display:inline-flex;gap:2px;flex-wrap:wrap}
-.gn-tag{display:flex;align-items:center;gap:5px;min-height:16px;font:500 10.5px var(--sans);color:var(--muted)}
-.gn-tag .mk{border:1px solid var(--line-2);border-radius:3px;padding:0 4px;line-height:14px}
-.gn.add .gn-tag .mk:first-child{border-color:var(--green);color:var(--green)}
-.gn-tag .mk.dev{border-color:var(--peach);color:var(--peach)}
-.gn.box .cn{font:600 11.5px/15px var(--mono);word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:none}
-.gn.box .cn .el{font-style:normal;color:var(--faint);font-weight:400}
-.gn.box code{font:10px/14px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
-.gn.group .gn-h{display:flex;align-items:flex-start;gap:6px;justify-content:space-between}
-.gn.group .gn-h b{font:700 13px/1.35 var(--sans);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.gn.group .gn-n{font:500 11px var(--sans);color:var(--muted)}
-.gn.group .gn-go{position:absolute;right:8px;bottom:6px;color:var(--accent-ink);font:700 16px var(--sans)}
-.gmini{display:flex;flex-direction:column;gap:3px;margin-top:auto;padding:5px 0 1px;border-top:1px solid var(--line);margin-right:18px}
-.gmini .mr{display:flex;gap:2px;height:7px;align-items:center;flex-wrap:wrap;overflow:hidden}
-.gmini i{width:7px;height:7px;border-radius:50%;background:var(--overlay1);flex:none}
-.gmini i.add{background:var(--green)}
-.gn.portal{flex-direction:row;align-items:center;justify-content:space-between;gap:6px;border-style:dashed;border-radius:14px;padding:2px 10px;font:600 12px var(--sans);color:var(--accent-ink);background:var(--panel-2);white-space:nowrap}
-.gn.portal span{overflow:hidden;text-overflow:ellipsis}
-.gn.portal i{font-style:normal}
-.grel{position:absolute;transform:translateX(-100%);z-index:1;border:1.2px dashed var(--overlay0);background:var(--panel);color:var(--muted);border-radius:9px;font:600 10px/14px var(--sans);padding:1px 7px;cursor:pointer;white-space:nowrap}
-.grel:hover{border-color:var(--accent);color:var(--ink)}
-.gmap .gcommon{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap}
-.gmap .gcommon code{font:10.5px var(--mono);background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 4px;color:var(--muted)}
-.gmap .guess{text-decoration:underline dotted;text-decoration-color:var(--overlay1);text-underline-offset:3px}
-/* 入口の地図の道順（2026-11-04。見本 5 の 2 版）。色は --cc（選んだコースの色）。線は SVG、番号と札は HTML */
-.gmap .map svg.groute{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none;z-index:2}
-.groute marker path{fill:var(--cc)}
-.grt{fill:none;stroke:var(--cc);stroke-width:2.4;stroke-linejoin:round}
-.grt.fut{opacity:.22}
-.grt.past{opacity:.55}
-.grt.cur{stroke-width:3;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--cc) 70%,transparent))}
-.gtok{fill:var(--cc);stroke:var(--base);stroke-width:2}
-.gn.hot{box-shadow:0 0 0 2.5px var(--cc,var(--accent)),0 0 16px color-mix(in srgb,var(--accent) 45%,transparent)}
-.gsbs{position:absolute;z-index:3;display:flex;gap:2px;pointer-events:none}
-.gsb{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;padding:0 4px;box-sizing:border-box;font:700 10px/1 var(--sans);background:var(--cc);color:var(--base)}
-.gsb.fut{background:var(--panel);color:var(--cc);box-shadow:inset 0 0 0 1.5px var(--cc)}
-.gsb.past{opacity:.7}
-.gsb.cur{box-shadow:0 0 0 2px var(--base),0 0 0 3.5px var(--cc)}
-.gcard{position:absolute;z-index:4;width:max-content;max-width:330px;box-sizing:border-box;background:var(--panel);border:1.5px solid var(--cc);border-radius:6px;padding:4px 8px;box-shadow:0 4px 14px rgba(0,0,0,.28);font:12px/1.5 var(--sans);color:var(--ink)}
-.gcard-h{display:flex;align-items:center;gap:6px}
-.gcard-h b{font:600 11.5px var(--mono);word-break:break-all}
-.gcard-h button,.gwhere{border:1px solid var(--accent-edge);background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;font:700 11px/1 var(--sans);padding:3px 6px;cursor:pointer}
-.gcard p{margin:2px 0 0}
-.gcard p.ai{border-left:2px dashed var(--accent-edge);padding-left:6px}
-.gcard .chip.ai{margin-right:4px;font-size:10px;padding:0 4px}
-.gplay{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 10px;border-top:1px solid var(--line)}
-.gplay>button{border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:5px;font:600 12px/1 var(--sans);padding:4px 8px;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
-.gplay>button:disabled{opacity:.4;cursor:default}
-.gplay>button.pri{background:var(--cc);border-color:var(--cc);color:var(--base);min-width:30px;justify-content:center}
-.gplay kbd{font-size:10px}
-.gpl-seg{display:flex;gap:2px;flex:1;min-width:80px;max-width:420px}
-.gpl-seg button{flex:1;height:10px;border:0;border-radius:2px;padding:0;background:var(--overlay1);cursor:pointer}
-.gpl-seg button.add{background:var(--green)}
-.gpl-seg button.fut{opacity:.35}
-.gpl-seg button.cur{box-shadow:0 0 0 2px var(--base),0 0 0 3.5px var(--cc)}
-.gpl-n{font:600 11.5px var(--mono);color:var(--muted)}
-.gspd{display:inline-flex;align-items:center;gap:4px}
-.gspd input{width:96px;accent-color:var(--cc);margin:0}
-.gspd output{font:600 11.5px var(--mono);color:var(--muted);min-width:38px}
-.gpl-cap{display:flex;align-items:center;gap:8px;padding:0 10px 6px;font:12.5px/1.5 var(--sans);color:var(--ink);min-height:22px}
-.gpl-cap .mk{border:1px solid var(--line-2);border-radius:3px;padding:0 4px;font:500 10.5px/14px var(--sans);color:var(--muted);flex:none}
-.gpl-cap .mk.add{border-color:var(--green);color:var(--green)}
-.gpl-cap .t{min-width:0}
-.gpl-cap .gwhere{margin-left:auto;flex:none;white-space:nowrap}
-/* 入口の地図の動き（2026-11-04。見本 5）。矢印はアクセントの色、呼び出し元は灰色の点。シーケンス図の列の頭は地図の箱と同じ data-id */
-.gbehs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
-.gbehs .lbl{font:600 11.5px var(--sans);color:var(--muted)}
-.gbehs button{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:14px;font:600 12px var(--sans);padding:3px 10px;cursor:pointer;max-width:340px}
-.gbehs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gbehs button i{font-style:normal;font-size:9px;color:var(--accent-ink)}
-.gbehs button small{font-weight:500;color:var(--muted);flex:none}
-.gbehs button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
-.gmap .map svg.gflow{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none;z-index:2}
-.gflow marker path,.gseq marker path{fill:var(--accent)}
-.gfp{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round}
-.gfp.fut{opacity:.2}
-.gfp.past{opacity:.5}
-.gfp.cur{stroke-width:3;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--accent) 70%,transparent))}
-.gcdot{fill:var(--overlay1);stroke:var(--base);stroke-width:1.5}
-.gftok{fill:var(--accent)}
-.gfl{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--panel);border:1.5px solid var(--accent);border-radius:5px;padding:2px 6px;box-shadow:0 3px 10px rgba(0,0,0,.25)}
-.gfl-c{border:0;background:none;padding:0;margin:0;font:600 11px/1.45 var(--mono);color:var(--ink);cursor:pointer;text-align:left;overflow-wrap:anywhere}
-.gfl-c:hover{color:var(--accent-ink);text-decoration:underline}
-.gfl-r{font:500 11px/1.45 var(--mono);color:var(--muted)}
-.gfin{position:absolute;z-index:4;width:max-content;max-width:330px;box-sizing:border-box;background:var(--panel);border:1.5px solid var(--accent);border-radius:6px;padding:4px 8px;box-shadow:0 4px 14px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:flex-start;gap:2px}
-.gfin-h{display:flex;align-items:center;gap:6px;font:600 11.5px var(--sans);color:var(--muted)}
-.gfin-h button{border:1px solid var(--accent-edge);background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;font:700 11px/1 var(--sans);padding:3px 6px;cursor:pointer}
-.gfin-off{display:flex;align-items:center;gap:5px;font:11px var(--mono);color:var(--muted)}
-.gfin-off .mk,.gpl-cap .mk{border:1px dashed var(--overlay0);border-radius:3px;padding:0 4px;font:500 10.5px/14px var(--sans)}
-.gpl-seg button.off{background:var(--overlay0);opacity:.6}
-.gpl-cap code{font:12px var(--mono)}
-.gpl-cap .t .mk{margin-left:6px}
-.gplay.beh{--cc:var(--accent)}
-.gplay .seg{margin-left:auto}
-.gsqband{position:absolute;top:0;border-left:1px solid var(--line);pointer-events:none}
-.gsqband.alt{background:color-mix(in srgb,var(--panel-2) 60%,transparent)}
-.gsqband span{position:absolute;left:4px;top:2px;font:500 10.5px var(--sans);color:var(--faint)}
-.gmap .map svg.gseq{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;background:none}
-.gsq-life{stroke:var(--line-2);stroke-dasharray:3 4}
-.gsq-m line,.gsq-m path{fill:none;stroke:var(--accent);stroke-width:1.6}
-.gsq-m.ret line,.gsq-m.ret path{stroke:var(--overlay1);stroke-width:1.2}
-.gsq-m.fut{opacity:.3}
-.gsq-m.hot line,.gsq-m.hot path{stroke-width:2.6}
-.gsq-n{position:absolute;left:2px;transform:translateY(-50%);display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;font:700 10px/1 var(--sans);background:var(--accent);color:var(--base)}
-.gsq-n.fut{background:var(--panel);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
-.gsq-n.cur{box-shadow:0 0 0 2px var(--base),0 0 0 3.5px var(--accent)}
-.gsq-l{position:absolute;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;background:var(--base);padding:0 3px;margin:0;font:600 11px/1.3 var(--mono);color:var(--ink);cursor:pointer;border-radius:3px}
-.gsq-l small{font:500 10.5px var(--sans);color:var(--muted);margin-left:4px}
-.gsq-l.ret{font-weight:500;color:var(--muted);cursor:default}
-.gsq-l.fut{opacity:.4}
-.gsq-l.hot{box-shadow:0 0 0 1.5px var(--accent)}
-.gsqh{position:absolute;box-sizing:border-box;border:1.5px solid var(--line-2);background:var(--panel);border-radius:7px;padding:3px 6px;display:grid;place-items:center;text-align:center;font:600 11px/1.3 var(--mono);color:var(--ink);cursor:pointer;overflow:hidden;overflow-wrap:anywhere;margin:0;z-index:3}
-.gsqh.box{word-break:keep-all}
-.gsqh .el{font-style:normal;color:var(--faint);font-weight:400}
-.gsqh.add{border-color:var(--green)}
-.gsqh.group,.gsqh.portal{font:700 12px/1.3 var(--sans)}
-.gsqh.portal{border-style:dashed;color:var(--accent-ink);background:var(--panel-2)}
-.gsqh.hot{box-shadow:0 0 0 2.5px var(--accent)}
+/* 入口の地図 = 処理の流れの地図（2026-11-05。見本 flow5）。帯は点線、呼び出しは実線、戻りは点線。箱は HTML、線は SVG。倍率は .fm-zoom の scale */
+.fmap>*{flex:none}
+.fmap{display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;min-width:0;--fm-add:var(--green);--fm-chg:var(--yellow);--fm-del:var(--red);--fm-same:var(--overlay1)}
+.fmap .guess{text-decoration:underline dotted;text-decoration-color:var(--overlay1);text-underline-offset:3px}
+.fm-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fm-top .lbl{font:600 11.5px var(--sans);color:var(--muted);margin-right:6px}
+.fm-flow b{font:600 13px var(--mono);border:1px solid var(--accent-edge);background:var(--panel);border-radius:999px;padding:2px 12px}
+.fm-flows{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fm-flows button{border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:999px;font:600 12px var(--mono);padding:2px 12px;cursor:pointer}
+.fm-flows button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fm-stages{display:inline-flex;align-items:stretch;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.fm-stages button{display:grid;text-align:left;line-height:1.35;padding:6px 14px;border:0;background:var(--panel);color:var(--ink);cursor:pointer}
+.fm-stages button+button{border-left:1px solid var(--line-2)}
+.fm-stages button em{font:700 13px var(--sans);font-style:normal}
+.fm-stages button small{font:500 11px var(--sans);color:var(--muted)}
+.fm-stages button[aria-pressed="true"]{background:var(--accent);color:var(--crust)}
+.fm-stages button[aria-pressed="true"] small{color:var(--crust);opacity:.8}
+.fm-stages kbd{align-self:center;margin:0 8px;font-size:10px}
+.fm-say{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.fm-say:empty{display:none}
+.fm-say p{margin:0}
+.fm-ctitle{display:flex;gap:8px;align-items:center;font-weight:700}
+.fm-chips{display:flex;flex-wrap:wrap;gap:6px}
+.fc{display:inline-block;border:1px solid;border-radius:999px;padding:0 9px;font:500 11.5px/18px var(--sans);white-space:nowrap}
+.fc.add{color:var(--fm-add)}.fc.chg{color:var(--fm-chg)}.fc.same{color:var(--fm-same)}.fc.del{color:var(--fm-del)}
+.fm-mapw{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.fm-scroll{overflow:auto;max-height:62vh}
+.fm-stage{position:relative}
+.fm-zoom{position:absolute;left:0;top:0;transform-origin:0 0}
+.fm-lane{position:absolute;left:0;right:0;border-top:1.5px dashed var(--line-2);font:500 11px var(--sans);color:var(--faint);padding:2px 10px;pointer-events:none}
+.fm-box{position:absolute;box-sizing:border-box;overflow:hidden;background:var(--panel-2);border:1.5px solid var(--line-2);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;gap:0;transition:opacity .35s,border-color .35s,box-shadow .35s}
+.fm-box .nm{display:flex;gap:6px;align-items:center;font:700 12.5px/18px var(--mono);white-space:nowrap;margin-bottom:4px}
+.fm-box .nm span:first-child{overflow:hidden;text-overflow:ellipsis}
+.fm-box .fm-m{display:block;font:11.5px/18px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fm-box .fm-m.added{color:var(--fm-add)}.fm-box .fm-m.changed{color:var(--fm-chg)}.fm-box .fm-m.removed{color:var(--fm-del);text-decoration:line-through}
+.fm-box .fm-m.note{font-family:var(--sans);font-size:11px}
+.tagb{font:700 10.5px/15px var(--sans);border:1px solid;border-radius:4px;padding:0 5px;flex:none}
+.tagb.added{color:var(--fm-add)}.tagb.changed{color:var(--fm-chg)}.tagb.removed{color:var(--fm-del)}.tagb.none{color:var(--muted);border-color:var(--line-2);font-weight:400}
+.fm-box.add{border-color:var(--fm-add)}.fm-box.chg{border-color:var(--fm-chg)}
+.fm-box.ghost{opacity:.22;border-style:dashed}.fm-box.idle{opacity:.5}.fm-box.dimc{opacity:.55}
+.fm-box.cur{border:2px solid var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.fm-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.fm-ar{fill:none;stroke-width:1.7;stroke-linejoin:round;transition:opacity .3s}
+.fm-ar.plain{stroke:var(--accent)}.fm-ar.same{stroke:var(--fm-same)}.fm-ar.add{stroke:var(--fm-add)}.fm-ar.chg{stroke:var(--fm-chg)}.fm-ar.del{stroke:var(--fm-del)}.fm-ar.other{stroke:var(--fm-same);opacity:.22}
+.fm-ar.ret{stroke-dasharray:5 4}
+.fm-ar.future{opacity:0}.fm-ar.past{opacity:.45}.fm-ar.other.past{opacity:.18}.fm-ar.cur{stroke-width:3.2;opacity:1}.fm-ar.other.cur{opacity:.6}
+.fm-mk.plain path{fill:var(--accent)}.fm-mk.same path,.fm-mk.other path{fill:var(--fm-same)}.fm-mk.add path{fill:var(--fm-add)}.fm-mk.chg path{fill:var(--fm-chg)}.fm-mk.del path{fill:var(--fm-del)}
+.fm-caller{fill:var(--overlay1)}
+.fm-ball{fill:var(--text);stroke:var(--accent);stroke-width:3;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 80%,transparent))}
+.fm-ball.back{fill:var(--accent);stroke:var(--text)}
+.fm-lb{position:absolute;z-index:2;transform:translate(-50%,-50%);font:11px/18px var(--mono);background:var(--bg);border:1px solid var(--line-2);border-radius:5px;padding:0 6px;white-space:nowrap;max-width:520px;overflow:hidden;text-overflow:ellipsis}
+.fm-lb.cur{border-color:var(--accent);font-weight:700;z-index:3}
+.fm-lb.only{padding:0;border:0;background:none;opacity:.7}
+.fm-lb .n{display:inline-block;min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:var(--crust);text-align:center;font:700 10px/16px var(--sans);margin-right:4px}
+.fm-lb.only .n{margin:0}
+.fm-lb.add .n{background:var(--fm-add)}.fm-lb.chg .n{background:var(--fm-chg)}.fm-lb.same .n{background:var(--fm-same)}.fm-lb.del .n{background:var(--fm-del)}.fm-lb.other .n{background:var(--surface2);color:var(--muted)}
+.fm-play{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);font-size:12.5px}
+.fm-play .pb{border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink);border-radius:6px;padding:3px 10px;cursor:pointer;font:600 12px var(--sans)}
+.fm-play .pb:disabled{opacity:.4;cursor:default}
+.fm-play kbd{font-size:10px}
+.fm-ticks{display:flex;gap:3px;flex-wrap:wrap}
+.fm-ticks button{width:24px;height:10px;border-radius:5px;border:0;background:var(--line-2);cursor:pointer;padding:0}
+.fm-ticks button.r{width:12px}
+.fm-ticks button.add{background:color-mix(in srgb,var(--fm-add) 35%,transparent)}.fm-ticks button.chg{background:color-mix(in srgb,var(--fm-chg) 35%,transparent)}.fm-ticks button.del{background:color-mix(in srgb,var(--fm-del) 35%,transparent)}.fm-ticks button.other{opacity:.3}
+.fm-ticks button.done.add{background:var(--fm-add)}.fm-ticks button.done.chg{background:var(--fm-chg)}.fm-ticks button.done.del{background:var(--fm-del)}.fm-ticks button.done.same,.fm-ticks button.done.plain{background:var(--fm-same)}
+.fm-ticks button.cur{outline:2px solid var(--accent);outline-offset:1px}
+.fm-n{font:600 11.5px var(--mono);color:var(--muted)}
+.fm-spd{display:inline-flex;align-items:center;gap:4px;margin-left:auto}
+.fm-spd input{width:96px;accent-color:var(--accent);margin:0}
+.fm-spd .v{font:600 11.5px var(--mono);color:var(--muted);min-width:38px}
+.fm-legend{font-size:11.5px;color:var(--muted);padding:6px 12px;border-top:1px solid var(--line)}
+.fm-bottom{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.fm-bottom{grid-template-columns:1fr}}
+.fm-pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.fm-pane h3{margin:0;font:700 13.5px var(--sans);display:flex;gap:8px;align-items:center}
+.fm-head{margin:0;font:12.5px var(--mono)}
+.fm-call{margin:0;font:600 12.5px var(--mono);color:var(--ink)}
+.fm-code{font:12px/1.55 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;overflow-x:auto;white-space:pre}
+.fm-code span{display:block}
+.fm-code .f{color:var(--muted);font-size:11px}
+.fm-code .a{color:var(--fm-add);background:var(--add-bg)}.fm-code .d{color:var(--fm-del);background:var(--del-bg)}
+.fm-code .hot{box-shadow:inset 3px 0 0 var(--accent)}
+.fm-step .btn{align-self:flex-start}
+.fm-list,.fm-out{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.fm-list button,.fm-out button,.fm-tests{all:unset;cursor:pointer;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-size:12.5px}
+.fm-list button{font-family:var(--mono)}
+.fm-out b{font:600 12px var(--mono)}
+.fm-out small{color:var(--muted);font-size:11.5px}
+.fm-list button:hover,.fm-out button:hover,.fm-tests:hover{color:var(--accent-ink)}
+.fm-tests{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.fm-box,.fm-ar{transition:none}}
 @media (prefers-reduced-motion:no-preference){.cmap .nd rect{transition:stroke .18s ease-out,stroke-width .18s ease-out}}
 
 /* 上の帯: 画面の行き先と設定（2026-09-30。左の列から移した） */
