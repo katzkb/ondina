@@ -52,6 +52,11 @@ export function stopsOf(steps: readonly FlowStep[], stage: Stage, course: number
   return mine.length > 0 ? mine : all;
 }
 
+/** そのコースの変更が乗る流れ（読む前の案内の地図に出す流れ） */
+export function courseFlows(analysis: Pick<Analysis, 'flows'>, course: number): CallFlow[] {
+  return (analysis.flows ?? []).filter((f) => flowSteps(f, 2).some((s) => inCourse(s, course)));
+}
+
 /** 選んでいる流れ。flowId が無ければ、コースを選んでいればそのコースが通る最初の流れ、無ければ最初の流れ */
 export function pickFlow(analysis: Pick<Analysis, 'flows'>, flowId: string | null, course: number | null): CallFlow | null {
   const flows = analysis.flows ?? [];

@@ -1,7 +1,7 @@
 // UI の状態遷移。reduce は純粋で、通信や URL を開くなどの副作用は effects として返す（App が実行する）。
 // 選択 hunk へのスクロールは DiffList が selectedHunk の変化を見て行う（仮想リストの index を知っているのはそこだけ）。
 // 差分一覧（全部のファイルを 1 本に並べる。2026-10-20）だけは、reducer が出す diffJump の n が進んだときに動く。
-import type { Analysis, AnalysisSummary, AskCite, AskEntry, AskPlace, CommentDraft, DiffMode, DisplayConfig, PaneId, PrDetail, PrList, ReviewJob, ReviewState, ThemeSettings, TicketSettings, UiSettings } from '@ondina/model';
+import type { Analysis, AnalysisSummary, AskCite, CallFlow, AskEntry, AskPlace, CommentDraft, DiffMode, DisplayConfig, PaneId, PrDetail, PrList, ReviewJob, ReviewState, ThemeSettings, TicketSettings, UiSettings } from '@ondina/model';
 import { askKey, askLinesOf, askLinesPlace, askPlace, canMemo } from '../ask.js';
 import type { Command, SettingsTab } from '../commands/commands.js';
 import { keymapWith } from '../commands/keymap.js';
@@ -14,7 +14,7 @@ import { howRows, navigable } from '../hows.js';
 import { calleeDest, type PaletteTarget } from '../palette.js';
 import { mapNodeOf } from '../map/graph.js';
 import { snapSpeed } from '../map/flowmap/layout.js';
-import { carryStep, curStep, flowSteps, nextStop, pickFlow, stopsOf, type FlowStep, type Stage } from '../map/flowmap/steps.js';
+import { carryStep, courseFlows, curStep, flowSteps, nextStop, pickFlow, stopsOf, type FlowStep, type Stage } from '../map/flowmap/steps.js';
 import { openRel, relAt, relMove, relVisible, type RelView } from '../rel.js';
 import { ideaUrl } from '../ide.js';
 import { isMemo, memoPlace, memoStop, mergeDraft, newMemo, onGithubDiff, pickFor, pickRange, spanLabel, stopShows, type MemoPick, type PickScreen } from '../memo.js';
@@ -76,6 +76,18 @@ export interface CourseAt {
   screen: 'brief' | 'stop' | 'summary';
   check?: number;
 }
+
+/** 読む前の案内の流れの地図の状態（入口の地図とは別に持つ。入口に戻っても入口の地図はそのまま） */
+export interface BriefMap {
+  stage: Stage;
+  /** 選んだ処理の流れ。null = そのコースが通る最初の流れ */
+  flow: string | null;
+  /** 今のステップ（1 から。0 = 止まるステップの最初） */
+  step: number;
+  play: boolean;
+}
+
+export const NO_BRIEF_MAP: BriefMap = { stage: 2, flow: null, step: 0, play: false };
 
 /** 読む前の案内があるコース（コース外には経路も確かめることも無い） */
 const hasBrief = (courseId: number): boolean => courseId !== OUTSIDE;
@@ -247,6 +259,8 @@ export interface AppState {
   home: HomeState;
   /** コース（3.3）の今の場所。null はコースに入っていない。画面の一時状態で保存しない（進み具合は ReviewState.course） */
   course: CourseAt | null;
+  /** 読む前の案内の流れの地図（コースの範囲。2026-11-05）。コースに入るたびに ② この PR の最初から。保存しない */
+  briefMap: BriefMap;
   /** 停留所の画面の地図。null = 閉じている、side = 右からの引き出し（M）、big = 真ん中いっぱい（Shift+M）。大きさは覚えない（閉じると null） */
   courseMap: CourseMapSize | null;
   /**
@@ -352,7 +366,7 @@ export interface Reduced {
 }
 
 export function initialState(): AppState {
-  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false }, course: null, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
+  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false }, course: null, briefMap: NO_BRIEF_MAP, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
 }
 
 const none = (state: AppState): Reduced => ({ state, effects: [] });
@@ -777,11 +791,13 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return state.view === 'home' ? none({ ...state, home: { ...state.home, tab: command.tab, play: false } }) : none(state);
     case 'home.ticket':
       return none({ ...state, home: { ...state.home, ticket: !state.home.ticket } });
-    case 'home.stage':
+    case 'home.stage': {
+      // 地図（入口の地図タブ・読む前の案内）では地図の段を順に（① → ② → ③ → ①）。流れの無い古い解析の地図では説明タブへ
+      const fm = loaded(state) ? flowNav(state) : null;
+      if (fm !== null) return none(toMapStage(state as Loaded, ((fm.nav.stage % 3) + 1) as Stage));
       if (state.view !== 'home') return none(state);
-      // 地図タブでは地図の段を順に（① → ② → ③ → ①）。流れの無い古い解析の地図では説明タブへ
-      if (state.home.tab === 'map' && loaded(state) && flowNav(state) !== null) return none(toMapStage(state, ((state.home.mapStage % 3) + 1) as Stage));
       return none({ ...state, home: { ...state.home, tab: 'text', stage: command.stage ?? (state.home.stage === 1 ? 2 : 1) } });
+    }
     case 'settings.open': {
       // 重なる物（キーマップ表示・パレット）とは同時に開かない
       const settings = command.tab ?? (state.settings === null ? 'general' : null);
@@ -826,10 +842,17 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return none({ ...state, mapZoom: command.zoom });
     case 'map.speed':
       return { state: { ...state, ui: { ...state.ui, mapSpeed: snapSpeed(command.speed) } }, effects: [{ type: 'saveUi' }] };
-    case 'map.stage':
-      if (state.view !== 'home' || !loaded(state) || flowNav(state) === null) return none(state);
-      return none(toMapStage(state, command.stage ?? (((state.home.mapStage % 3) + 1) as Stage)));
+    case 'map.stage': {
+      const fm = loaded(state) ? flowNav(state) : null;
+      if (fm === null) return none(state);
+      return none(toMapStage(state as Loaded, command.stage ?? (((fm.nav.stage % 3) + 1) as Stage)));
+    }
     case 'map.flow':
+      if (state.view === 'course' && state.course?.screen === 'brief' && state.analysis) {
+        // 読む前の案内では、そのコースが通る流れだけ
+        if (!courseFlows(state.analysis, state.course.id).some((f) => f.id === command.flowId)) return none(state);
+        return none({ ...state, briefMap: { ...state.briefMap, flow: command.flowId, step: 0, play: false } });
+      }
       if (state.view !== 'home' || !state.analysis?.flows?.some((f) => f.id === command.flowId)) return none(state);
       return none({ ...state, home: { ...state.home, tab: 'map', flow: command.flowId, step: 0, play: false } });
     case 'ask.toggle':
@@ -918,7 +941,7 @@ function targetHunk(state: Loaded): string | null {
 function toStop(state: Loaded, at: CourseAt): Loaded {
   const step = courseOf(courses(state.analysis), at.id)?.steps[at.i];
   const hunk = state.analysis.hunks.find((h) => h.id === stopHunk(state, step ?? null));
-  return { ...state, view: 'course', course: at, peek: null, courseMap: null, fullFile: false, rel: null, ...(hunk ? { selectedFile: hunk.path, selectedHunk: hunk.id } : {}) };
+  return { ...state, view: 'course', course: at, briefMap: { ...state.briefMap, play: false }, peek: null, courseMap: null, fullFile: false, rel: null, ...(hunk ? { selectedFile: hunk.path, selectedHunk: hunk.id } : {}) };
 }
 
 /** 「開く」の行き先の停留所の画面。full ならファイル全体（メモの行が前後 3 行の外にある）。メモの行までスクロールする印（focus）を付ける */
@@ -933,7 +956,7 @@ function enterCourse(state: Loaded, courseId: number, at?: number): Reduced {
   const course = courseOf(courses(state.analysis), courseId);
   if (!course || course.steps.length === 0) return none(state);
   const i = at === undefined ? firstUnseen(state.analysis, course, state.review) : Math.min(Math.max(at, 0), course.steps.length - 1);
-  return none(toStop(state, { id: courseId, i, screen: at === undefined && hasBrief(courseId) ? 'brief' : 'stop' }));
+  return none(toStop({ ...state, briefMap: NO_BRIEF_MAP }, { id: courseId, i, screen: at === undefined && hasBrief(courseId) ? 'brief' : 'stop' }));
 }
 
 /** 今の停留所に問題なしを付ける（トグルしない）。差分があれば viewed、無ければ course.done */
@@ -1009,7 +1032,8 @@ function courseCommand(state: Loaded, command: Command): Reduced | null {
       return { state: next, effects: marked.changed ? [{ type: 'saveState' }] : [] };
     }
     case 'course.prev': {
-      if (!at && flowNav(state) !== null) return none(stepBy(state, -1));
+      // 地図（入口の地図タブ・読む前の案内）では前のステップへ
+      if (flowNav(state) !== null) return none(stepBy(state, -1));
       if (!at || at.screen === 'brief') return none(state);
       if (at.screen === 'summary') return none(toStop(state, { id: at.id, i: at.i, screen: 'stop' }));
       if (at.i > 0) return none(toStop(state, { id: at.id, i: at.i - 1, screen: 'stop' }));
@@ -1026,8 +1050,8 @@ function courseCommand(state: Loaded, command: Command): Reduced | null {
       return { state: moved as Loaded, effects: [{ type: 'saveState' }] };
     }
     case 'course.forward':
-      // 入口の地図で道順を見ているときは次の歩へ（コースに入るのは Enter と「入る」。2026-11-04）
-      if (!at && flowNav(state) !== null) return none(stepBy(state, 1));
+      // 地図で道順を見ているときは次のステップへ（入口でコースに入るのは Enter と「入る」。2026-11-04。読む前の案内で停留所へ行くのは Enter と「n か所目へ」。2026-11-05）
+      if (flowNav(state) !== null) return none(stepBy(state, 1));
       if (!at) return state.view === 'home' ? startHome(state) : none(state);
       if (at.screen !== 'summary') return courseCommand(state, { id: 'course.ok' });
       return courseCommand(state, { id: 'course.complete' });
@@ -1037,30 +1061,55 @@ function courseCommand(state: Loaded, command: Command): Reduced | null {
 }
 
 /** 入口で進む: 選んだコース、無ければ未完了の最初のコースに入る。全部完了なら締めへ（コースが無くコース外だけなら、コース外に入る） */
-/** 入口の地図の流れのステップと止まるステップ。地図タブで、流れのある解析のときだけ（それ以外は null） */
-function flowNav(state: Loaded): { steps: FlowStep[]; stops: number[] } | null {
-  if (state.view !== 'home' || state.home.tab !== 'map') return null;
-  const f = pickFlow(state.analysis, state.home.flow, state.home.sel);
+/** 流れの地図の居場所: 入口の地図タブか、読む前の案内（覗いていない間。そのコースが通る流れがあるときだけ） */
+type MapWhere = 'home' | 'brief';
+
+/** 今出ている流れの地図の状態・ステップ・止まるステップ。地図が出ていなければ null */
+function flowNav(state: Loaded): { at: MapWhere; nav: BriefMap; steps: FlowStep[]; stops: number[] } | null {
+  let at: MapWhere;
+  let nav: BriefMap;
+  let sel: number | null;
+  let flows: CallFlow[];
+  if (state.view === 'home' && state.home.tab === 'map') {
+    const h = state.home;
+    at = 'home';
+    nav = { stage: h.mapStage, flow: h.flow, step: h.step, play: h.play };
+    sel = h.sel;
+    flows = state.analysis.flows ?? [];
+  } else if (state.view === 'course' && state.course?.screen === 'brief' && state.peek === null) {
+    at = 'brief';
+    nav = state.briefMap;
+    sel = state.course.id;
+    flows = courseFlows(state.analysis, sel);
+  } else return null;
+  const f = pickFlow({ flows }, nav.flow, sel);
   if (!f) return null;
-  const steps = flowSteps(f, state.home.mapStage);
-  return { steps, stops: stopsOf(steps, state.home.mapStage, state.home.sel) };
+  const steps = flowSteps(f, nav.stage);
+  return { at, nav, steps, stops: stopsOf(steps, nav.stage, sel) };
+}
+
+/** 地図の状態を書き戻す */
+function withNav(state: Loaded, at: MapWhere, nav: BriefMap): Loaded {
+  if (at === 'brief') return { ...state, briefMap: nav };
+  return { ...state, home: { ...state.home, mapStage: nav.stage, flow: nav.flow, step: nav.step, play: nav.play } };
 }
 
 /** 次・前の止まるステップへ。手で動かしたので再生は止める */
 function stepBy(state: Loaded, dir: 1 | -1): Loaded {
-  const nav = flowNav(state);
-  if (!nav) return state;
-  return { ...state, home: { ...state.home, step: nextStop(nav.stops, state.home.step, dir), play: false } };
+  const fm = flowNav(state);
+  if (!fm) return state;
+  return withNav(state, fm.at, { ...fm.nav, step: nextStop(fm.stops, fm.nav.step, dir), play: false });
 }
 
 /** 地図の段を替える。同じ呼び出しのステップに留まる（コースの範囲の外になれば、範囲の最初へ） */
 function toMapStage(state: Loaded, stage: Stage): Loaded {
   const before = flowNav(state);
-  const moved: Loaded = { ...state, home: { ...state.home, tab: 'map', mapStage: stage, play: false } };
+  if (!before) return state;
+  const moved = withNav(before.at === 'home' ? { ...state, home: { ...state.home, tab: 'map' } } : state, before.at, { ...before.nav, stage, play: false });
   const after = flowNav(moved);
-  if (!before || !after) return moved;
-  const step = carryStep(before.steps, after.steps, curStep(before.stops, state.home.step));
-  return { ...moved, home: { ...moved.home, step: curStep(after.stops, step) } };
+  if (!after) return moved;
+  const step = carryStep(before.steps, after.steps, curStep(before.stops, before.nav.step));
+  return withNav(moved, after.at, { ...after.nav, step: curStep(after.stops, step) });
 }
 
 function startHome(state: Loaded): Reduced {
@@ -1494,7 +1543,8 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
     if (state.view === 'hows') return reduceLoaded(state, { id: 'group.toggle' });
     // 入口の Enter はコースに入る（→ は地図の道順を進めることがあるので、course.forward を通さない。2026-11-04）
     if (state.view === 'home') return startHome(state);
-    if (state.view === 'course') return reduceLoaded(state, { id: 'course.forward' });
+    // 読む前の案内の Enter は停留所へ（→ は地図のステップを進める）
+    if (state.view === 'course') return reduceLoaded(state, { id: state.course?.screen === 'brief' ? 'course.ok' : 'course.forward' });
     if (state.view === 'closing') return reduceLoaded(state, { id: 'closing.approve' });
     return none(state);
   }
@@ -1527,24 +1577,24 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
       return none({ ...state, home: { ...state.home, sel: command.courseId, flow: null, ...(state.analysis.flows?.length ? { mapStage: 2 } : {}), step: 0, play: false } });
     }
     case 'map.step': {
-      const nav = flowNav(state);
-      return nav === null ? none(state) : none({ ...state, home: { ...state.home, step: curStep(nav.stops, command.to), play: false } });
+      const fm = flowNav(state);
+      return fm === null ? none(state) : none(withNav(state, fm.at, { ...fm.nav, step: curStep(fm.stops, command.to), play: false }));
     }
     case 'map.play': {
-      const nav = flowNav(state);
-      if (nav === null || nav.stops.length === 0) return none(state);
-      if (state.home.play) return none({ ...state, home: { ...state.home, play: false } });
+      const fm = flowNav(state);
+      if (fm === null || fm.stops.length === 0) return none(state);
+      if (fm.nav.play) return none(withNav(state, fm.at, { ...fm.nav, play: false }));
       // 今表示しているステップから流す。最後まで見ていれば最初から
-      const cur = curStep(nav.stops, state.home.step);
-      const step = cur === nav.stops[nav.stops.length - 1] ? nav.stops[0]! : cur;
-      return none({ ...state, home: { ...state.home, step, play: true } });
+      const cur = curStep(fm.stops, fm.nav.step);
+      const step = cur === fm.stops[fm.stops.length - 1] ? fm.stops[0]! : cur;
+      return none(withNav(state, fm.at, { ...fm.nav, step, play: true }));
     }
     case 'map.tick': {
-      const nav = flowNav(state);
-      if (nav === null || !state.home.play) return none(state);
-      const cur = curStep(nav.stops, state.home.step);
-      if (cur === nav.stops[nav.stops.length - 1]) return none({ ...state, home: { ...state.home, play: false } });
-      return none({ ...state, home: { ...state.home, step: nextStop(nav.stops, cur, 1) } });
+      const fm = flowNav(state);
+      if (fm === null || !fm.nav.play) return none(state);
+      const cur = curStep(fm.stops, fm.nav.step);
+      if (cur === fm.stops[fm.stops.length - 1]) return none(withNav(state, fm.at, { ...fm.nav, play: false }));
+      return none(withNav(state, fm.at, { ...fm.nav, step: nextStop(fm.stops, cur, 1) }));
     }
     case 'how.select': {
       if (state.selectedHow === command.howId) return none({ ...state, selectedHow: null });

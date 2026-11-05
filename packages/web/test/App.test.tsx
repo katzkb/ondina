@@ -6,6 +6,7 @@ import { ConflictError, type Api } from '../src/api.js';
 import { App } from '../src/App.js';
 import { alignRows } from '../src/diff/alignRows.js';
 import { fileRows } from '../src/diff/fileRows.js';
+import { courseFlows } from '../src/map/flowmap/steps.js';
 import { askAnswer, fakeApi, ORDER_KT } from './fakeApi.js';
 import { setOsDark } from './osAppearance.js';
 import { emptyReview, fixtureAnalysis, fixtureWithNeighbors } from './fixture.js';
@@ -1748,6 +1749,45 @@ describe('App（コース。3.3）', () => {
       await key('Escape');
       expect(map.querySelector('.fm-chips')).not.toBeNull();
       expect(head(map)).toBe('ApplyDiscountUseCase.execute → OrderRepositoryImpl.save');
+    });
+  });
+
+  describe('読む前の案内の地図（コースの範囲。2026-11-05）', () => {
+    const head = (map: Element) => map.querySelector('.fm-step .fm-head')?.textContent;
+    const enterBrief = async (k: number) => {
+      const r = await renderCourses();
+      await act(async () => {
+        fireEvent.click(r.container.querySelectorAll('.ccard .pick')[k]!);
+      });
+      await key('Enter');
+      return r;
+    };
+
+    it('このコースが通る流れを ② この PR で出し、→ はそのコースのステップだけを進む。Enter で 1 か所目へ', async () => {
+      const { container } = await enterBrief(4);
+      expect(screen.getByText('コース 5 · 読む前の案内')).toBeInTheDocument();
+      const map = container.querySelector<HTMLElement>('.brief .fmap')!;
+      await waitFor(() => expect(map.querySelector('.fm-box')).not.toBeNull(), { timeout: 3000 });
+      expect(map.querySelector('.fm-stages [aria-pressed="true"] em')!.textContent).toBe('② この PR');
+      // コースの名前は案内の見出しにあるので、地図の上には出さない
+      expect(map.querySelector('.fm-ctitle')).toBeNull();
+      expect(map.querySelector('.fm-say')!.textContent).toContain('このコースの変更は、流れの中の 2 か所です。');
+      expect(head(map)).toBe('ApplyDiscountUseCase.execute → Order.applyDiscount');
+      await key('ArrowRight');
+      expect(container.querySelector('.brief')).not.toBeNull();
+      expect(head(map)).toMatch(/^Order\.applyDiscount → ApplyDiscountUseCase\.execute/);
+      await key('ArrowRight');
+      expect(head(map)).toBe('ApplyDiscountUseCase.execute → OrderRepositoryImpl.save');
+      await key('Enter');
+      expect(container.querySelector('.brief')).toBeNull();
+    });
+
+    it('流れに乗らないコースの読む前の案内には地図を出さない', async () => {
+      const off = [...new Set(a.hunks.flatMap((h) => h.hows))].find((id) => courseFlows(a, id).length === 0)!;
+      const k = [...new Set(a.hows.map((h) => h.id))].sort((x, y) => x - y).indexOf(off);
+      const { container } = await enterBrief(k);
+      expect(screen.getByText(`コース ${off} · 読む前の案内`)).toBeInTheDocument();
+      expect(container.querySelector('.brief .fmap')).toBeNull();
     });
   });
 

@@ -428,7 +428,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
           />
         )}
         {s.view === 'course' && s.analysis && s.review && (
-          <CourseView analysis={s.analysis} review={s.review} diffMode={diffMode.c} course={s.course} courseMap={s.courseMap} fullFile={s.fullFile} fold={s.fold} folded={s.courseFolded} panes={s.ui.panes} peek={s.peek} zoom={s.mapZoom} repoName={s.current?.repoName ?? null} memo={s.memo} draftText={s.draftText} focusLine={s.focusLine} {...defBack} treeShut={s.treeShut.course} ask={s.ask} dispatch={dispatch} />
+          <CourseView analysis={s.analysis} review={s.review} diffMode={diffMode.c} course={s.course} briefMap={s.briefMap} speed={s.ui.mapSpeed ?? 1} courseMap={s.courseMap} fullFile={s.fullFile} fold={s.fold} folded={s.courseFolded} panes={s.ui.panes} peek={s.peek} zoom={s.mapZoom} repoName={s.current?.repoName ?? null} memo={s.memo} draftText={s.draftText} focusLine={s.focusLine} {...defBack} treeShut={s.treeShut.course} ask={s.ask} dispatch={dispatch} />
         )}
         {s.view === 'diff' && (
           <section className="view vd" style={paneStyle(s.ui.panes, ['diffTree'])}>

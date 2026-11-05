@@ -2,7 +2,7 @@
 // 上: 流れの選び方（2 本以上のとき）・段の切り替え（① 背景 = 変わる前の流れ / ② この PR = 同じ流れの上で、足された・変わった呼び出しに色 / ③ マージ後 = 変わった後の流れ）。
 // 中: 地図。レイヤーは上から下の帯（境目は点線）、呼び出しは実線、戻りは同じ道を逆にたどる点線。玉が今のステップの線を走る。下に再生の帯。
 // 下: 今のステップのコード（段の側の行）と、横の欄（① 出てくるクラス / ② 流れの外の変更 / ③ 変わる前との違い / コースの範囲ならそのコースで変わる所）。
-// コースを選んでいれば（home.sel）コースの範囲: ② で、そのコースの変更とその戻りだけ色、ほかは灰色。次・再生はそこだけで止まる。
+// コースを選んでいれば（入口の home.sel、読む前の案内のコース）コースの範囲: ② で、そのコースの変更とその戻りだけ色、ほかは灰色。次・再生はそこだけで止まる。
 // ステップ・箱・配置・コードは map/flowmap の純粋関数が組む（原則 3・5）。押した物は全部コマンド（原則 6）
 import type { Analysis, CallFlow, FlowCall } from '@ondina/model';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement } from 'react';
@@ -29,6 +29,8 @@ export interface FlowMapProps {
   zoom: number;
   /** 選んだコース（コースの範囲）。無ければ全部の変更 */
   course: Course | null;
+  /** 上にコースの名前を出すか（読む前の案内では見出しにあるので出さない） */
+  courseTitle?: boolean;
   dispatch: (c: Command) => void;
   elk?: () => ElkLike;
 }
@@ -51,7 +53,7 @@ const stopKeys = (e: KeyboardEvent) => {
 };
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoom, course, dispatch, elk = workerElk }: FlowMapProps) {
+export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoom, course, courseTitle = true, dispatch, elk = workerElk }: FlowMapProps) {
   const sel = course?.id ?? null;
   const flow = pickFlow({ flows: [...flows] }, flowId, sel)!;
   const facts = useMemo(() => flowFacts(analysis, flow), [analysis, flow]);
@@ -168,7 +170,7 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
         </span>
       </div>
       <div className="fm-say">
-        {course && (
+        {course && courseTitle && (
           <p className="fm-ctitle">
             <span className={`cb cc${course.id}`} style={courseBg(course.id)}>
               {course.id}
