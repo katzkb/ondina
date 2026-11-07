@@ -456,7 +456,7 @@ export function isAskRequest(x: unknown): x is { key: string; place: AskPlace; q
 const optString = (x: unknown): boolean => x === undefined || typeof x === 'string';
 const optDiffMode = (x: unknown): boolean => x === undefined || x === 'sbs' || x === 'uni';
 
-/** PUT /api/ui の本文の形。theme は mode（system / light / dark）と light・dark・accent の全部、diffMode は画面ごと（b / c / d）に任意、ticket の取り方は jira / command、keymap は操作の名前 → キーの配列、panes は列 → px、mapSpeed は正の数 */
+/** PUT /api/ui の本文の形。theme は mode（system / light / dark）と light・dark・accent の全部、diffMode は画面ごと（b / c / d）に任意、ticket の取り方は jira / command、keymap は操作の名前 → キーの配列、panes は列 → px、mapSpeed は正の数、autoCheckImports は真偽値 */
 export function isUiSettings(x: unknown): x is UiSettings {
   if (!isObj(x) || !optString(x['worktreeRoot']) || !optString(x['llmCommand']) || !optString(x['reviewCommand'])) return false;
   const workspace = x['workspace'];
@@ -470,6 +470,8 @@ export function isUiSettings(x: unknown): x is UiSettings {
   if (panes !== undefined && !(isObj(panes) && Object.values(panes).every((px) => typeof px === 'number' && Number.isFinite(px)))) return false;
   const speed = x['mapSpeed'];
   if (speed !== undefined && !(typeof speed === 'number' && Number.isFinite(speed) && speed > 0)) return false;
+  const autoCheck = x['autoCheckImports'];
+  if (autoCheck !== undefined && typeof autoCheck !== 'boolean') return false;
   const ticket = x['ticket'];
   if (ticket !== undefined && !(isObj(ticket) && (ticket['source'] === undefined || ticket['source'] === 'jira' || ticket['source'] === 'command') && optString(ticket['jiraUrl']) && optString(ticket['email']) && optString(ticket['command']))) return false;
   const theme = x['theme'];

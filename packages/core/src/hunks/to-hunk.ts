@@ -5,7 +5,7 @@ import type { Hunk } from '../model.js';
 import type { SemanticHunk } from './extract.js';
 
 export function toHunk(h: SemanticHunk): Hunk {
-  return {
+  const hunk: Hunk = {
     id: h.id,
     path: h.path,
     lang: h.lang,
@@ -20,4 +20,6 @@ export function toHunk(h: SemanticHunk): Hunk {
     lnNew: h.lnNew,
     lines: h.lines,
   };
+  if (h.importsOnly === true) hunk.importsOnly = true;
+  return hunk;
 }

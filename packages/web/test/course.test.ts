@@ -1,6 +1,6 @@
 // コース（設計書 3.3）の並びと停留所の情報。fixture の数字は承認したデモで確かめたもの（2026-09-29 の handover）。
 import { describe, expect, it } from 'vitest';
-import { courseColorVars, courseIntro, courseOf, courseRipples, courses, firstUnseen, nextCourse, OUTSIDE, stopInfo } from '../src/course.js';
+import { courseColorVars, courseIntro, courseOf, courseRipples, courses, firstUnseen, nextCourse, OUTSIDE, stopAfter, stopBefore, stopInfo } from '../src/course.js';
 import { emptyReview, fixtureAnalysis } from './fixture.js';
 
 const analysis = fixtureAnalysis();
@@ -146,6 +146,30 @@ describe('入る位置と次のコース', () => {
     expect(firstUnseen(analysis, c2, review)).toBe(0);
     expect(firstUnseen(analysis, c2, { ...review, viewed: [a!] })).toBe(1);
     expect(firstUnseen(analysis, c2, { ...review, viewed: [a!, b!] })).toBe(0);
+  });
+
+  it('import だけの差分の停留所を飛ばす指定: 入る位置・次・前（コース 6 は 4 と 6 が import だけ）', () => {
+    const c6 = courseOf(all, 6)!;
+    const ids = c6.steps.map((st) => st.hunkId!);
+    // 飛ばさなければ今までどおり
+    expect(firstUnseen(analysis, c6, { ...review, viewed: ids.slice(0, 4) })).toBe(4);
+    expect(firstUnseen(analysis, c6, { ...review, viewed: ids.slice(0, 4) }, true)).toBe(5);
+    expect(firstUnseen(analysis, c6, { ...review, viewed: ids }, true)).toBe(0);
+    expect(stopAfter(analysis, c6, 3, false)).toBe(4);
+    expect(stopAfter(analysis, c6, 3, true)).toBe(5);
+    expect(stopAfter(analysis, c6, 5, true)).toBeNull();
+    expect(stopAfter(analysis, c6, 6, false)).toBeNull();
+    expect(stopBefore(analysis, c6, 5, false)).toBe(4);
+    expect(stopBefore(analysis, c6, 5, true)).toBe(3);
+    expect(stopBefore(analysis, c6, 0, true)).toBeNull();
+  });
+
+  it('先頭が import だけの差分のコース 2 は、飛ばす指定なら最初に止まる停留所が 1', () => {
+    const c2 = courseOf(all, 2)!;
+    const [a, b] = c2.steps.map((st) => st.hunkId!);
+    expect(firstUnseen(analysis, c2, review, true)).toBe(1);
+    expect(firstUnseen(analysis, c2, { ...review, viewed: [a!, b!] }, true)).toBe(1);
+    expect(stopBefore(analysis, c2, 1, true)).toBeNull();
   });
 
   it('次のコースは完了にしていない最初のコース（コース外は数えない）', () => {

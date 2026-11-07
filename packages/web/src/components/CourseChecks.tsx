@@ -272,10 +272,10 @@ export function StopChecks({ checks, k, check, infos, onlyHere = false, dispatch
 }
 
 /** 停留所の右の列の下: この停留所に関わる知っておくこと・ほかのコースの差分の一言・次は X */
-export function StopNotes({ analysis, course, infos, k, dispatch }: { analysis: Analysis; course: Course; infos: readonly StopInfo[]; k: number; dispatch: (c: Command) => void }) {
+export function StopNotes({ analysis, course, infos, k, nextK, dispatch }: { analysis: Analysis; course: Course; infos: readonly StopInfo[]; k: number; nextK: number | null; dispatch: (c: Command) => void }) {
   const info = infos[k]!;
   const facts = callerFacts(analysis, course, infos).filter((f) => f.calls.some((c) => c.k === k));
-  const next = infos[k + 1];
+  const next = nextK === null ? undefined : infos[nextK];
   const reason = next ? nextReason(analysis, next) : '';
   return (
     <>

@@ -11,8 +11,11 @@
 // - 宣言の外側（package / import / トップレベルコメント）の変更は 1 ファイルにつき 1 つのファイル hunk にまとめる
 // - 空白だけの行の変更は hunk を作らない
 // - Kotlin 以外のファイルはファイル単位で 1 hunk
+// - ファイル hunk は、変わった行が package・import・空行だけなら importsOnly を立てる（構文木で決める。コメントや @file: は含めない）
 import path from 'node:path';
+import { changedLines } from './changed-lines.js';
 import { ancestorChain, collectDeclarations, declarationAt, type DeclarationKind, type DeclarationTree } from './declarations.js';
+import { headerLines } from './header-lines.js';
 import { parseKotlin } from './kotlin-parser.js';
 import { changeBlocks, splitLines, unifiedLines, type ChangeBlock } from './line-diff.js';
 import { hunkId } from './stable-id.js';
@@ -42,6 +45,8 @@ export interface SemanticHunk {
   lnNew: number;
   /** 1文字目が ' ' | '+' | '-' の統合形式 */
   lines: string[];
+  /** Kotlin のファイル hunk で、変わった行が package・import・空行だけのとき true。立たないときは欄なし */
+  importsOnly?: true;
 }
 
 export async function extractHunks(file: ChangedFile): Promise<SemanticHunk[]> {
@@ -95,10 +100,8 @@ async function extractKotlinHunks(file: ChangedFile): Promise<SemanticHunk[]> {
   const blocks = changeBlocks(oldLines, newLines);
   if (blocks.length === 0) return [];
 
-  const trees: Record<Side, DeclarationTree> = {
-    old: collectDeclarations(await parseKotlin(file.before ?? '')),
-    new: collectDeclarations(await parseKotlin(file.after ?? '')),
-  };
+  const parsed = { old: await parseKotlin(file.before ?? ''), new: await parseKotlin(file.after ?? '') };
+  const trees: Record<Side, DeclarationTree> = { old: collectDeclarations(parsed.old), new: collectDeclarations(parsed.new) };
   const lines: Record<Side, string[]> = { old: oldLines, new: newLines };
   const outsideLines: Record<Side, number[]> = { old: [], new: [] };
 
@@ -184,15 +187,18 @@ async function extractKotlinHunks(file: ChangedFile): Promise<SemanticHunk[]> {
   const oldFile = fileRange('old');
   const newFile = fileRange('new');
   if (oldFile !== undefined || newFile !== undefined) {
-    hunks.push(
-      fileHunk(
-        file.path,
-        'kotlin',
-        oldFile?.start ?? insertionPoint(blocks, 'old', newFile!.start),
-        newFile?.start ?? insertionPoint(blocks, 'new', oldFile!.start),
-        unifiedLines(slice(oldLines, oldFile), slice(newLines, newFile)),
-      ),
+    const hunk = fileHunk(
+      file.path,
+      'kotlin',
+      oldFile?.start ?? insertionPoint(blocks, 'old', newFile!.start),
+      newFile?.start ?? insertionPoint(blocks, 'new', oldFile!.start),
+      unifiedLines(slice(oldLines, oldFile), slice(newLines, newFile)),
     );
+    const headers: Record<Side, Set<number>> = { old: headerLines(parsed.old), new: headerLines(parsed.new) };
+    const changed = changedLines(hunk);
+    const onlyHeaders = (side: Side, numbers: number[]): boolean => numbers.every((l) => headers[side].has(l) || lines[side][l - 1]?.trim() === '');
+    if (onlyHeaders('old', changed.oldLines) && onlyHeaders('new', changed.newLines)) hunk.importsOnly = true;
+    hunks.push(hunk);
   }
 
   return hunks.sort((a, b) => a.lnNew - b.lnNew || a.lnOld - b.lnOld || a.symbolFqName.localeCompare(b.symbolFqName));

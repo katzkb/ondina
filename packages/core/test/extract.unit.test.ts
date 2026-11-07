@@ -62,3 +62,50 @@ describe('extractHunks: 境界ケース', () => {
     expect(hunks.map((h) => [h.symbolKind, h.lang, h.symbol, h.lines])).toEqual([['file', 'md', 'README.md', ['-# a', '+# b']]]);
   });
 });
+
+describe('extractHunks: importsOnly（package と import の行だけが変わったファイル hunk）', () => {
+  it('import の追加だけなら立つ', async () => {
+    const hunks = await kt(['package p', '', 'import a.A', '', 'class K'], ['package p', '', 'import a.A', 'import a.B', '', 'class K']);
+    expect(hunks.map((h) => [h.symbolKind, h.importsOnly])).toEqual([['file', true]]);
+  });
+
+  it('旧側の import を消して新側の import を足しても立つ。変更の途中の空行も許す', async () => {
+    const hunks = await kt(['package p', '', 'import a.A', '', 'import b.B', '', 'class K'], ['package p', '', 'import a.C', 'import b.B', '', 'class K']);
+    expect(hunks.map((h) => [h.symbolKind, h.importsOnly])).toEqual([['file', true]]);
+  });
+
+  it('新規ファイルの package 行だけでも立つ。宣言の hunk には立たない', async () => {
+    const hunks = await kt(null, ['package p', '', 'class K']);
+    expect(hunks.map((h) => [h.symbolKind, h.importsOnly])).toEqual([
+      ['file', true],
+      ['class', undefined],
+    ]);
+  });
+
+  it('import と同じ hunk にコメントの変更があれば立たない', async () => {
+    const hunks = await kt(['package p', '', 'import a.A', '', '// old', '', 'class K'], ['package p', '', 'import a.B', '', '// new', '', 'class K']);
+    expect(hunks.map((h) => [h.symbolKind, h.lines, h.importsOnly])).toEqual([
+      ['file', ['-import a.A', '+import a.B', ' ', '-// old', '+// new'], undefined],
+    ]);
+  });
+
+  it('ファイル先頭のアノテーションの変更は import ではないので立たない', async () => {
+    const hunks = await kt(['@file:JvmName("A")', 'package p', 'class K'], ['@file:JvmName("B")', 'package p', 'class K']);
+    expect(hunks.map((h) => [h.symbolKind, h.importsOnly])).toEqual([['file', undefined]]);
+  });
+
+  it('トップレベル関数の置き換えがファイル hunk に格上げされたものには立たない', async () => {
+    const hunks = await kt(['package p', '', 'fun old() = 1', 'fun keep() = 0'], ['package p', '', 'fun new() = 2', 'fun keep() = 0']);
+    expect(hunks.map((h) => [h.symbolKind, h.importsOnly])).toEqual([['file', undefined]]);
+  });
+
+  it('立たないときはフィールドごと無い', async () => {
+    const hunks = await kt(['package p', '// a'], ['package p', '// b']);
+    expect('importsOnly' in hunks[0]!).toBe(false);
+  });
+
+  it('Kotlin 以外のファイルには立たない', async () => {
+    const hunks = await kt(['import a'], ['import b'], 'script.py');
+    expect(hunks.map((h) => [h.symbolKind, 'importsOnly' in h])).toEqual([['file', false]]);
+  });
+});

@@ -5,7 +5,7 @@ import type { Analysis, AnalysisSummary, AskCite, CallFlow, AskEntry, AskPlace, 
 import { askKey, askLinesOf, askLinesPlace, askPlace, canMemo } from '../ask.js';
 import type { Command, SettingsTab } from '../commands/commands.js';
 import { keymapWith } from '../commands/keymap.js';
-import { courseOf, courses, doneKey, firstUnseen, nextCourse, OUTSIDE, stepPath, type Step } from '../course.js';
+import { courseOf, courses, doneKey, firstUnseen, nextCourse, OUTSIDE, stepPath, stopAfter, stopBefore, type Step } from '../course.js';
 import { defTargetAt, type DefPlaceTarget } from '../defs.js';
 import { buildTree, dirKeys, under, type TreeName } from '../fileTree.js';
 import { groupFiles, hunkAt, viewedChange, type FileEntry } from '../files.js';
@@ -402,7 +402,7 @@ function sameVersionPlace(state: AppState, to: AnalysisSummary, analysis: Analys
   if (state.view !== 'course') return { ...place, view: state.view, course: null };
   const course = state.course ? courseOf(courses(analysis), state.course.id) : undefined;
   if (!course || course.steps.length === 0) return { ...place, view: 'home', course: null };
-  const i = firstUnseen(analysis, course, review);
+  const i = firstUnseen(analysis, course, review, state.ui.autoCheckImports === true);
   return { ...place, view: 'course', course: { id: course.id, i, screen: state.course?.screen === 'brief' ? 'brief' : 'stop' } };
 }
 
@@ -473,6 +473,24 @@ export function normalizeReview(review: Partial<ReviewState>): ReviewState {
     // 前のバージョンからの引き継ぎの記録（帯の下の 1 行）。保存し直しても消さない
     ...(review.carried && typeof review.carried === 'object' ? { carried: review.carried } : {}),
   };
+}
+
+/** 設定 autoCheckImports が on か。on のとき、コースは import だけの差分の停留所に止まらない（3.3） */
+const skipsImports = (state: AppState): boolean => state.ui.autoCheckImports === true;
+
+/** 設定が on のとき、まだ問題なしでない import だけの差分（Hunk.importsOnly）の id */
+function importsToCheck(ui: UiSettings, analysis: Analysis, review: ReviewState): string[] {
+  if (ui.autoCheckImports !== true) return [];
+  const viewed = new Set(review.viewed);
+  return analysis.hunks.filter((h) => h.importsOnly === true && !viewed.has(h.id)).map((h) => h.id);
+}
+
+/** 読み込み済みの解析に import だけの差分の問題なしを足す。足すものが無ければそのまま。GitHub の Viewed へは reduce の withGithubSet が送る */
+function withImportsChecked(state: AppState): Reduced {
+  if (!state.analysis || !state.review) return none(state);
+  const added = importsToCheck(state.ui, state.analysis, state.review);
+  if (added.length === 0) return none(state);
+  return { state: { ...state, review: { ...state.review, viewed: [...state.review.viewed, ...added] } }, effects: [{ type: 'saveState' }] };
 }
 
 /** ui.json の文字の 1 項目を入れ替える。空文字は項目ごと消す（yaml / 既定に戻る） */
@@ -707,12 +725,16 @@ function reduceAll(state: AppState, command: Command): Reduced {
       // 2026-10-22 より前の ui.json のテーマは古い形（{ flavor, accent }）。読み替えておけば、次の保存で新しい形になる
       const { theme, ...rest } = command.ui;
       const parsed = parseTheme(theme);
-      return none({ ...state, ui: parsed === undefined ? rest : { ...rest, theme: parsed } });
+      // 解析を開いた後に設定が届いたときも、import だけの差分を問題なしにする
+      return withImportsChecked({ ...state, ui: parsed === undefined ? rest : { ...rest, theme: parsed } });
     }
     case 'config.loaded':
       return none({ ...state, config: command.config });
     case 'data.loaded': {
-      const review = normalizeReview(command.review);
+      const opened = normalizeReview(command.review);
+      // 設定が on なら、import だけの差分を開いたときから問題なしにする（保存する。GitHub の Viewed へも手で付けたときと同じに送る）
+      const added = importsToCheck(state.ui, command.analysis, opened);
+      const review = added.length === 0 ? opened : { ...opened, viewed: [...opened.viewed, ...added] };
       const files = groupFiles(command.analysis.hunks, review.viewed, state.config?.packagePrefix);
       const first = files[0];
       // 入口（全体図の地図タブ。3.1）に着く。会話の記録を取りに行き、前の解析で待っていた問いは止める。新しい head も聞く（3.0）
@@ -723,6 +745,8 @@ function reduceAll(state: AppState, command: Command): Reduced {
         { type: 'loadAsk', key, headSha },
         ...(key === 'local' ? [] : [{ type: 'githubRead', key, headSha, quiet: false } as const]),
         { type: 'checkLatest', key, headSha },
+        ...(added.length === 0 ? [] : [{ type: 'saveState' } as const]),
+        ...githubChange(key, headSha, command.analysis, opened.viewed, review.viewed),
       ];
       // 同じ PR のバージョン（解析し直して切り替えた・同じ版を解析し直した・左上で選んだ）なら、今の画面と選んでいるファイルのまま。コースにいれば同じコースの最初の未確認の停留所へ
       const keep = sameVersionPlace(state, command.summary, command.analysis, review, files);
@@ -912,6 +936,10 @@ function reduceAll(state: AppState, command: Command): Reduced {
       const value = prompt.slice(0, command.start) + command.variable + prompt.slice(command.end);
       return { state: { ...state, ui: { ...state.ui, workspace: { ...state.ui.workspace, prompt: value } } }, effects: [{ type: 'saveUi' }] };
     }
+    case 'ui.autoCheckImports': {
+      const r = withImportsChecked({ ...state, ui: { ...state.ui, autoCheckImports: command.value } });
+      return { state: r.state, effects: [{ type: 'saveUi' }, ...r.effects] };
+    }
     case 'ui.reviewCommand':
       return { state: { ...state, ui: withUi(state.ui, 'reviewCommand', command.value) }, effects: [{ type: 'saveUi' }] };
     case 'ui.ticket':
@@ -993,7 +1021,7 @@ function openStop(state: Loaded, courseId: number, i: number, full: boolean, mar
 function enterCourse(state: Loaded, courseId: number, at?: number): Reduced {
   const course = courseOf(courses(state.analysis), courseId);
   if (!course || course.steps.length === 0) return none(state);
-  const i = at === undefined ? firstUnseen(state.analysis, course, state.review) : Math.min(Math.max(at, 0), course.steps.length - 1);
+  const i = at === undefined ? firstUnseen(state.analysis, course, state.review, skipsImports(state)) : Math.min(Math.max(at, 0), course.steps.length - 1);
   return none(toStop({ ...state, briefMap: NO_BRIEF_MAP }, { id: courseId, i, screen: at === undefined && hasBrief(courseId) ? 'brief' : 'stop' }));
 }
 
@@ -1022,7 +1050,10 @@ function courseCommand(state: Loaded, command: Command): Reduced | null {
     case 'course.leave':
       return none({ ...state, view: 'home', ...LEAVE });
     case 'course.again':
-      return at ? none(toStop(state, { id: at.id, i: 0, screen: hasBrief(at.id) ? 'brief' : 'stop' })) : none(state);
+      if (!at) return none(state);
+      if (hasBrief(at.id)) return none(toStop(state, { id: at.id, i: 0, screen: 'brief' }));
+      // 読む前の案内が無いコース（コース外）は、最初に止まる停留所から
+      return none(toStop(state, { id: at.id, i: (course ? stopAfter(state.analysis, course, -1, skipsImports(state)) : null) ?? 0, screen: 'stop' }));
     case 'course.brief':
       if (!at || !hasBrief(at.id)) return none(state);
       return none(toStop(state, { id: at.id, i: at.i, screen: 'brief' }));
@@ -1062,19 +1093,23 @@ function courseCommand(state: Loaded, command: Command): Reduced | null {
       if (!at || !course || command.i < 0 || command.i >= course.steps.length) return none(state);
       return none(toStop(state, { id: at.id, i: command.i, screen: 'stop' }));
     case 'course.ok': {
-      if (at?.screen === 'brief' && course) return none(toStop(state, { id: at.id, i: firstUnseen(state.analysis, course, state.review), screen: 'stop' }));
+      if (at?.screen === 'brief' && course) return none(toStop(state, { id: at.id, i: firstUnseen(state.analysis, course, state.review, skipsImports(state)), screen: 'stop' }));
       if (!at || !course || at.screen !== 'stop') return none(state);
       const marked = markStop(state);
-      const last = at.i === course.steps.length - 1;
-      const next = toStop(marked.state, last ? { ...at, screen: 'summary' } : { id: at.id, i: at.i + 1, screen: 'stop' });
+      // 次に止まる停留所が無ければ（import だけの差分が続くときも）総括へ
+      const after = stopAfter(state.analysis, course, at.i, skipsImports(state));
+      const next = toStop(marked.state, after === null ? { ...at, screen: 'summary' } : { id: at.id, i: after, screen: 'stop' });
       return { state: next, effects: marked.changed ? [{ type: 'saveState' }] : [] };
     }
     case 'course.prev': {
       // 地図（入口の地図タブ・読む前の案内）では前のステップへ
       if (flowNav(state) !== null) return none(stepBy(state, -1));
       if (!at || at.screen === 'brief') return none(state);
-      if (at.screen === 'summary') return none(toStop(state, { id: at.id, i: at.i, screen: 'stop' }));
-      if (at.i > 0) return none(toStop(state, { id: at.id, i: at.i - 1, screen: 'stop' }));
+      const skip = skipsImports(state);
+      // 総括からは、最後に止まる停留所へ（総括の URL は最後の停留所の位置を持つので、それが import だけの差分なら手前へ）
+      if (at.screen === 'summary') return none(toStop(state, { id: at.id, i: (course ? stopBefore(state.analysis, course, at.i + 1, skip) : null) ?? at.i, screen: 'stop' }));
+      const before = course ? stopBefore(state.analysis, course, at.i, skip) : null;
+      if (before !== null) return none(toStop(state, { id: at.id, i: before, screen: 'stop' }));
       return hasBrief(at.id) ? none(toStop(state, { id: at.id, i: 0, screen: 'brief' })) : none(state);
     }
     case 'course.complete': {
@@ -1235,6 +1270,13 @@ export function canSend(state: AppState): boolean {
 function withToast<S extends AppState>(state: S, toast: Omit<GithubToast, 'n'>): S {
   const seq = state.github.seq + 1;
   return { ...state, github: { ...state.github, seq, toast: { ...toast, n: seq } } };
+}
+
+/** 開いたときに足した問題なしで、ファイルの差分が全部になったものを GitHub の Viewed に付ける副作用（local は PR が無いので送らない） */
+function githubChange(key: string, headSha: string, analysis: Analysis, before: readonly string[], after: readonly string[]): Effect[] {
+  if (key === 'local' || before === after) return [];
+  const change = viewedChange(analysis.hunks, before, after);
+  return change.mark.length === 0 && change.unmark.length === 0 ? [] : [{ type: 'githubSet', key, headSha, ...change, retried: false }];
 }
 
 /**
@@ -1596,8 +1638,11 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
         if (!state.course) return none(state);
         const next = command.id === 'hunk.next';
         if (state.course.screen === 'brief') return next ? reduceLoaded(state, { id: 'course.ok' }) : none(state);
-        if (!next && state.course.screen === 'stop' && state.course.i === 0) return reduceLoaded(state, { id: 'course.prev' });
-        return reduceLoaded(state, { id: 'course.jump', i: state.course.i + (next ? 1 : -1) });
+        const course = courseOf(courses(state.analysis), state.course.id);
+        const to = course === undefined ? null : next ? stopAfter(state.analysis, course, state.course.i, skipsImports(state)) : stopBefore(state.analysis, course, state.course.i, skipsImports(state));
+        // 前に止まる停留所が無ければ読む前の案内へ。次が無ければ何もしない
+        if (to === null) return !next && state.course.screen === 'stop' ? reduceLoaded(state, { id: 'course.prev' }) : none(state);
+        return reduceLoaded(state, { id: 'course.jump', i: to });
       }
       const ordered = hunkOrder(state, files);
       if (ordered.length === 0) return none(state);

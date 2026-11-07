@@ -46,6 +46,8 @@ export interface Hunk {
   lnNew: number;
   /** 1文字目が ' ' | '+' | '-' の統合形式 */
   lines: string[];
+  /** Kotlin のファイル hunk で、変わった行が package・import・空行だけのとき true（5.2）。立たないときは欄なし */
+  importsOnly?: true;
   tokens?: TokenLine[];
   /** kind === 'ripple' のときのみ */
   group?: RippleGroup;
@@ -1045,4 +1047,6 @@ export interface UiSettings {
   panes?: Partial<Record<PaneId, number>>;
   /** 入口の地図でコースの道順を再生する速さ（2026-11-04。0.25〜3 倍）。無ければ 1 倍 */
   mapSpeed?: number;
+  /** package と import の行だけが変わった差分を、読み込み時に確認済みにする（3.8。2026-11-07）。コースではそこに止まらない。無ければ off */
+  autoCheckImports?: boolean;
 }

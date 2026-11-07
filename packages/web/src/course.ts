@@ -182,10 +182,34 @@ export function courseIntro(course: Course): Narration {
   return narration(course.intro, course.id === OUTSIDE ? period(course.why) : `${period(course.why)}${course.steps.length} か所。`);
 }
 
-/** 入る位置: 最初の未確認の停留所。全部確認済みなら先頭 */
-export function firstUnseen(analysis: Analysis, course: Course, review: Pick<ReviewState, 'viewed' | 'course'>): number {
-  const k = course.steps.findIndex((_, i) => !stopInfo(analysis, course, i, review).seen);
-  return k < 0 ? 0 : k;
+/**
+ * 設定 autoCheckImports が on のとき、コースが止まらない停留所（package と import の行だけが変わった差分。2026-11-07）。
+ * 停留所は並びに残り（問題なしで出る）、course.jump で押せば開く
+ */
+function importsStop(analysis: Analysis, step: Step): boolean {
+  const hunkId = step.hunkId ?? analysis.symbols.find((s) => s.id === step.symbolId)?.hunkId;
+  return hunkId !== undefined && analysis.hunks.some((h) => h.id === hunkId && h.importsOnly === true);
+}
+
+/** i の次に止まる停留所。skip が真なら import だけの差分を飛ばす。無ければ null（最後の停留所と同じ扱い） */
+export function stopAfter(analysis: Analysis, course: Course, i: number, skip: boolean): number | null {
+  for (let k = i + 1; k < course.steps.length; k++) if (!skip || !importsStop(analysis, course.steps[k]!)) return k;
+  return null;
+}
+
+/** i の前に止まる停留所。skip が真なら import だけの差分を飛ばす。無ければ null */
+export function stopBefore(analysis: Analysis, course: Course, i: number, skip: boolean): number | null {
+  for (let k = i - 1; k >= 0; k--) if (!skip || !importsStop(analysis, course.steps[k]!)) return k;
+  return null;
+}
+
+/** 入る位置: 最初の未確認の停留所。全部確認済みなら先頭（skip が真なら、最初に止まる停留所） */
+export function firstUnseen(analysis: Analysis, course: Course, review: Pick<ReviewState, 'viewed' | 'course'>, skip = false): number {
+  const stops = (k: number) => !skip || !importsStop(analysis, course.steps[k]!);
+  const k = course.steps.findIndex((_, i) => stops(i) && !stopInfo(analysis, course, i, review).seen);
+  if (k >= 0) return k;
+  const first = course.steps.findIndex((_, i) => stops(i));
+  return first < 0 ? 0 : first;
 }
 
 /** 完了にしていない最初のコース（コース外は数えない） */
