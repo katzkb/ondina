@@ -12,7 +12,7 @@ import type { Analysis, CommentDraft, DiffMode, GithubDiffFile, Hunk, ReviewStat
 import { AskButton } from './AskButton.js';
 import { Fragment, useMemo } from 'react';
 import type { Command } from '../commands/commands.js';
-import { courseBg, courseIntro, courseOf, courseRipples, courses, nextCourse, OUTSIDE, stopInfo, type Course, type CourseRipple, type StopInfo } from '../course.js';
+import { courseBg, courseIntro, courseOf, courseRipples, courses, nextCourse, OUTSIDE, stopAfter, stopBefore, stopInfo, type Course, type CourseRipple, type StopInfo } from '../course.js';
 import { DefLinks } from '../diff/DefLinks.js';
 import { DiffList } from '../diff/DiffList.js';
 import { FileView, type FilePlace, type LineMarks } from '../diff/FileView.js';
@@ -48,6 +48,8 @@ export interface CourseViewProps {
   briefMap?: BriefMap;
   /** 流れの地図の再生の速さ（ui.mapSpeed。無ければ 1） */
   speed?: number;
+  /** import だけの差分の停留所に止まらない（ui.autoCheckImports。3.3）。「次へ」「前へ」の出し方に効く */
+  skipImports?: boolean;
   /** 地図の重ね物（null = 閉じている） */
   courseMap: CourseMapSize | null;
   fullFile: boolean;
@@ -332,20 +334,21 @@ function StopNarr({ info, first }: { info: StopInfo; first: boolean }) {
  * そのため、たたんでいる間は紹介・水先案内・チップ・「前へ」「問題なし · 次へ」が右の列（inert）とコードの上下の帯の 2 か所にある（intro / chips / okBtn / prevBtn を共用）。
  * 片方に物を足すときは、もう片方にも足す
  */
-function Stop({ course, infos, memos, open, checks, at, analysis, review, diffMode, courseMap, fullFile, fold, folded, panes, peek, zoom, repoName, memo, draftText, focusLine, defBack, treeShut, ask, dispatch, elk }: ScreenProps & { at: CourseAt }) {
+function Stop({ course, infos, memos, open, checks, at, analysis, review, skipImports = false, diffMode, courseMap, fullFile, fold, folded, panes, peek, zoom, repoName, memo, draftText, focusLine, defBack, treeShut, ask, dispatch, elk }: ScreenProps & { at: CourseAt }) {
   const memoProps = { comments: review.comments, ui: memo ?? NO_MEMO, githubDiff: analysis.githubDiff, draftText: draftText ?? {} };
   const foldKey = useKey('course.fold');
   const calleeKey = useKey('jump.callee');
   const info = infos[at.i]!;
   const first = at.i === 0;
-  const last = at.i === course.steps.length - 1;
+  const nextAt = stopAfter(analysis, course, at.i, skipImports);
+  const last = nextAt === null;
   const { nodeOf, onNode } = useNodeClick(analysis, infos, dispatch);
   const peekSym = peek?.kind === 'symbol' ? analysis.symbols.find((s) => s.id === peek.symbolId) : undefined;
   const peekHunk = peekSym?.hunkId === undefined ? undefined : analysis.hunks.find((h) => h.id === peekSym.hunkId);
   const peekFile = peek?.kind === 'file' ? peek.path : null;
   const peekFileHunks = peekFile === null ? [] : analysis.hunks.filter((h) => h.path === peekFile);
   const peekPath = peekFile ?? (peekSym ? (peekHunk?.path ?? peekSym.path) : null);
-  const next = infos[at.i + 1];
+  const next = nextAt === null ? undefined : infos[nextAt];
   const shownHunk = peekSym ? peekHunk : peekFile !== null ? peekFileHunks[0] : info.hunk;
   // このファイルにある、このコースの読む場所（右のファイル表示の番号の丸。2026-10-19）
   const places = (info.path === null ? [] : (filePlaces(infos).get(info.path) ?? [])).flatMap((k): FilePlace[] => {
@@ -366,7 +369,7 @@ function Stop({ course, infos, memos, open, checks, at, analysis, review, diffMo
       {last ? '問題なし · 総括へ' : '問題なし · 次へ'} <kbd>Enter</kbd>
     </button>
   );
-  const prevBtn = at.i > 0 && (
+  const prevBtn = stopBefore(analysis, course, at.i, skipImports) !== null && (
     <button className="btn" type="button" onClick={() => dispatch({ id: 'course.prev' })}>
       前へ <Key action="course.prev" />
     </button>
@@ -383,7 +386,7 @@ function Stop({ course, infos, memos, open, checks, at, analysis, review, diffMo
         {chips}
         {unmeasured}
         <StopChecks checks={checks} k={at.i} check={at.check} infos={infos} dispatch={dispatch} />
-        <StopNotes analysis={analysis} course={course} infos={infos} k={at.i} dispatch={dispatch} />
+        <StopNotes analysis={analysis} course={course} infos={infos} k={at.i} nextK={nextAt} dispatch={dispatch} />
       </div>
     </>
   );

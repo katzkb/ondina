@@ -106,7 +106,8 @@
     "lnNew": 3,
     "lines": [
       "+import java.time.Instant"
-    ]
+    ],
+    "importsOnly": true
   },
   {
     "id": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
@@ -259,7 +260,8 @@
     "lnNew": 1,
     "lines": [
       "+package com.example.order.api"
-    ]
+    ],
+    "importsOnly": true
   },
   {
     "id": "89802175d3898bded24a787f90beee1a5312f3a7",
@@ -285,7 +287,8 @@
     "lnNew": 8,
     "lines": [
       "+import org.springframework.web.bind.annotation.RequestBody"
-    ]
+    ],
+    "importsOnly": true
   },
   {
     "id": "130e7d62f211839eec7c68582ae3565629d8c673",
@@ -395,7 +398,8 @@
     "lnNew": 3,
     "lines": [
       "+import com.example.order.domain.DiscountCommand"
-    ]
+    ],
+    "importsOnly": true
   },
   {
     "id": "a135ba90941c193b82bb22bc319e52347521ee99",
@@ -427,7 +431,8 @@
     "lnNew": 1,
     "lines": [
       "+package com.example.order.domain"
-    ]
+    ],
+    "importsOnly": true
   },
   {
     "id": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",

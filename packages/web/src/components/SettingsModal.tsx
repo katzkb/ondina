@@ -2,6 +2,7 @@
 // テーマ（システムに合わせる / ライト / ダークと、ライト・ダークそれぞれのフレーバー）はすぐ変わる。
 // worktree の置き場所と LLM コマンドとチケットの取り方は .ondina/ui.json に入り、次の analyze から効く（設計書 3.5 / 5.3 / 5.1）。
 // AI レビューのコマンドも ui.json に入り、次に PR 一覧から頼んだときから効く（3.11）。
+// import だけの差分を自動でチェック済みにする設定もここ（autoCheckImports。押した時点で効く）。
 // タブは 全般 / ショートカットキー（2026-10-20）。ショートカットキーも ui.json に入り、押した時点で効く（KeysSettings）。
 import type { ThemeMode, ThemeSettings, TicketSettings, WorkspaceSettings, WorkspaceTools } from '@ondina/model';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
@@ -33,6 +34,8 @@ export interface SettingsModalProps {
   workspaceTools?: WorkspaceTools | null;
   /** チケットの取り方（.ondina/ui.json の ticket。5.1） */
   ticket: TicketSettings;
+  /** import だけの差分を自動で問題なしにする（.ondina/ui.json の autoCheckImports。3.8） */
+  autoCheckImports?: boolean;
   dispatch: (c: Command) => void;
 }
 
@@ -59,8 +62,8 @@ export function SettingsModal({ tab, dispatch, ...general }: SettingsModalProps)
   );
 }
 
-/** 全般のタブ: テーマ・worktree の置き場所・LLM コマンド・AI レビューのコマンド・チケットの取り方 */
-function General({ theme, worktreeRoot, llmCommand, reviewCommand, workspace = {}, workspaceTools = null, ticket, dispatch }: Omit<SettingsModalProps, 'tab'>) {
+/** 全般のタブ: テーマ・レビューの進め方・worktree の置き場所・LLM コマンド・AI レビューのコマンド・チケットの取り方 */
+function General({ theme, worktreeRoot, llmCommand, reviewCommand, workspace = {}, workspaceTools = null, ticket, autoCheckImports = false, dispatch }: Omit<SettingsModalProps, 'tab'>) {
   const source = ticket.source ?? 'jira';
   return (
     <>
@@ -97,6 +100,16 @@ function General({ theme, worktreeRoot, llmCommand, reviewCommand, workspace = {
             <option key={a}>{a}</option>
           ))}
         </select>
+      </Row>
+      <Row label="import だけの差分を自動でチェック済みにする" note="ファイルの先頭の差分のうち、package と import の行だけが変わったものです。コースではそこに止まりません。">
+        <span className="seg" role="group" aria-label="import だけの差分を自動でチェック済みにする">
+          <button type="button" aria-pressed={autoCheckImports} className={autoCheckImports ? 'on' : ''} onClick={() => dispatch({ id: 'ui.autoCheckImports', value: true })}>
+            オン
+          </button>
+          <button type="button" aria-pressed={!autoCheckImports} className={autoCheckImports ? '' : 'on'} onClick={() => dispatch({ id: 'ui.autoCheckImports', value: false })}>
+            オフ
+          </button>
+        </span>
       </Row>
       <Row label="worktree の置き場所" htmlFor="set-worktree" note="言語サーバー用の base と head を置きます。空なら .ondina の下です。次の analyze から使います">
         <SettingInput id="set-worktree" value={worktreeRoot} placeholder="/path/to/worktrees" onCommit={(value) => dispatch({ id: 'ui.worktreeRoot', value })} />

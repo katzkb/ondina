@@ -228,6 +228,25 @@ describe('非 Kotlin ファイル', () => {
   });
 });
 
+describe('importsOnly（fixture）', () => {
+  it('package / import の行だけが変わったファイル hunk に立つ。SQL と宣言の hunk には立たない', async () => {
+    const hunks = await extractAllHunks(changedFixtureFiles());
+    const flagged = hunks.filter((h) => h.importsOnly === true);
+    expect(flagged.map((h) => [h.path.split('/').pop(), h.symbolKind, h.lines])).toEqual(
+      expect.arrayContaining([
+        ['OrderController.kt', 'file', expect.any(Array)],
+        ['ApplyDiscountUseCase.kt', 'file', ['+import com.example.order.domain.DiscountCommand']],
+        ['Logger.kt', 'file', ['+import java.time.Instant']],
+        ['ApplyDiscountRequest.kt', 'file', ['+package com.example.order.api']],
+        ['DiscountCommand.kt', 'file', ['+package com.example.order.domain']],
+      ]),
+    );
+    expect(flagged).toHaveLength(5);
+    expect(flagged.every((h) => h.symbolKind === 'file' && h.lang === 'kotlin')).toBe(true);
+    expect(hunks.filter((h) => h.path.endsWith('.sql')).some((h) => 'importsOnly' in h)).toBe(false);
+  });
+});
+
 describe('fixture 全体', () => {
   it('変更ファイルは 37（追従 22 + 核 6 + 追従 DTO 3 + テスト 3 + 未帰属 2 + 新規 1）', () => {
     expect(changedFixtureFiles()).toHaveLength(37);

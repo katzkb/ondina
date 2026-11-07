@@ -245,6 +245,10 @@ describe('isUiSettings', () => {
     expect(isUiSettings({ mapSpeed: 1.5 })).toBe(true);
     expect(isUiSettings({ mapSpeed: 0 })).toBe(false);
     expect(isUiSettings({ mapSpeed: '2' })).toBe(false);
+    // import だけの差分を自動で確認済みにする（2026-11-07）。真偽値だけ
+    expect(isUiSettings({ autoCheckImports: true })).toBe(true);
+    expect(isUiSettings({ autoCheckImports: false })).toBe(true);
+    expect(isUiSettings({ autoCheckImports: 'yes' })).toBe(false);
   });
 
   it('チケットの取り方（5.1）を受ける', () => {

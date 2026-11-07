@@ -40,4 +40,9 @@ describe('toHunk', () => {
     expect(hunk.group).toBeUndefined();
     expect(hunk.tokens).toBeUndefined();
   });
+
+  it('importsOnly は立っているときだけ持ち越す', () => {
+    expect(toHunk({ ...semantic, importsOnly: true }).importsOnly).toBe(true);
+    expect('importsOnly' in toHunk(semantic)).toBe(false);
+  });
 });

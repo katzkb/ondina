@@ -443,7 +443,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
           />
         )}
         {s.view === 'course' && s.analysis && s.review && (
-          <CourseView analysis={s.analysis} review={s.review} diffMode={diffMode.c} course={s.course} briefMap={s.briefMap} speed={s.ui.mapSpeed ?? 1} courseMap={s.courseMap} fullFile={s.fullFile} fold={s.fold} folded={s.courseFolded} panes={s.ui.panes} peek={s.peek} zoom={s.mapZoom} repoName={s.current?.repoName ?? null} memo={s.memo} draftText={s.draftText} focusLine={s.focusLine} {...defBack} treeShut={s.treeShut.course} ask={s.ask} dispatch={dispatch} />
+          <CourseView analysis={s.analysis} review={s.review} diffMode={diffMode.c} course={s.course} briefMap={s.briefMap} speed={s.ui.mapSpeed ?? 1} skipImports={s.ui.autoCheckImports === true} courseMap={s.courseMap} fullFile={s.fullFile} fold={s.fold} folded={s.courseFolded} panes={s.ui.panes} peek={s.peek} zoom={s.mapZoom} repoName={s.current?.repoName ?? null} memo={s.memo} draftText={s.draftText} focusLine={s.focusLine} {...defBack} treeShut={s.treeShut.course} ask={s.ask} dispatch={dispatch} />
         )}
         {s.view === 'diff' && (
           <section className="view vd" style={paneStyle(s.ui.panes, ['diffTree'])}>
@@ -486,7 +486,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
       )}
       {s.ask.open && s.analysis && <AskDrawer analysis={s.analysis} ask={s.ask} dispatch={dispatch} />}
       {s.showKeymap && <KeymapHelp dispatch={dispatch} />}
-      {s.settings !== null && <SettingsModal tab={s.settings} theme={theme} worktreeRoot={s.ui.worktreeRoot ?? ''} llmCommand={s.ui.llmCommand ?? ''} reviewCommand={s.ui.reviewCommand ?? ''} workspace={s.ui.workspace ?? {}} workspaceTools={s.workspaceTools} ticket={s.ui.ticket ?? {}} dispatch={dispatch} />}
+      {s.settings !== null && <SettingsModal tab={s.settings} theme={theme} worktreeRoot={s.ui.worktreeRoot ?? ''} llmCommand={s.ui.llmCommand ?? ''} reviewCommand={s.ui.reviewCommand ?? ''} workspace={s.ui.workspace ?? {}} workspaceTools={s.workspaceTools} ticket={s.ui.ticket ?? {}} autoCheckImports={s.ui.autoCheckImports === true} dispatch={dispatch} />}
       <GithubToast toast={s.github.toast} dispatch={dispatch} />
       {s.showPalette && s.analysis && <Palette analysis={s.analysis} packagePrefix={packagePrefix} from={s.paletteFrom} selectedHow={s.view === 'course' ? (s.course?.id ?? null) : s.selectedHow} dispatch={dispatch} />}
     </div>

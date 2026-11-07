@@ -270,6 +270,8 @@ export type Command =
   | { id: 'ui.workspace.insert'; variable: string; start: number; end: number }
   /** AI レビューのコマンド（3.11）。空なら PR 一覧に「AI にレビューを頼む」を出さない */
   | { id: 'ui.reviewCommand'; value: string }
+  /** package と import の行だけが変わった差分を自動で問題なしにする（3.8。2026-11-07）。on にした時点で読み込み済みの解析にも効き、off にしても足した問題なしは外さない */
+  | { id: 'ui.autoCheckImports'; value: boolean }
   /** チケットの取り方の 1 項目（設計書 5.1）。空なら消す。次の analyze から効く */
   | { id: 'ui.ticket'; field: keyof TicketSettings; value: string }
   /** 設定のモーダル（上の帯の歯車）。tab なしは開閉（開くと全般）、tab ありはそのタブで開く（キーの一覧の「設定で変える」） */
