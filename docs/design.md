@@ -1470,8 +1470,9 @@ Extract what should hold in this PR from the retrieved ticket (5.1). The LLM sel
   - Put remaining ripple members in `follow`: representative first within each group, then remaining members in hunk order. Exclude cores and deviations
   - Put everything else, including deviations, in `extra` in hunk order. Omit empty `follow` / `extra` chapters. Cover every hunk at least once
   - Save `Analysis.chapters` only when the ticket yields at least one Spec. Screen changes are a separate task
-- **Fixture**: Preserve recorded text, `why`, and `parentWhy`. Mechanically convert old How mappings to non-group hunks, retaining cores. Eight requirements; six have corresponding diffs. Expired-code and rate-value requirements are empty. The current ripple group has 22 hunks including its representative, OrderAdminView. Logger, FeatureFlags, and the PromoService deviation are `extra`. Goldens: `expected/specs.json` and `expected/chapters.json`
+- **Fixture**: Preserve recorded text, `why`, and `parentWhy`. Mechanically convert old How mappings to non-group hunks, retaining cores. Six requirements; five have corresponding diffs. Expired-code and rate-value requirements are empty. The current ripple group has 22 hunks including its representative, OrderAdminView. Logger, FeatureFlags, and the PromoService deviation are `extra`. Goldens: `expected/specs.json` and `expected/chapters.json`
 - Runs alongside the second LLM call. Cache by the prompt excluding `previous`; identical diffs and tickets reuse the recording
+- **Measured** (2026-11-09, development machine, default `claude -p … opus`, record `llm/spec-output.json`): 22 seconds. 6 requirements; 5 have matching diffs, and “expired codes return 400” has none. Chapters (golden `expected/chapters.json`): 6 requirement chapters, 22 follow hunks, 6 hunks that match no requirement (2 in Logger, FeatureFlags, PromoService, one each in ApplyDiscountUseCaseTest and OrderRepositoryImplTest). Records from when it chose Hows (2026-10-12, 10-29) had 8 requirements
 
 ## 11. Config file `ondina.config.yaml`
 
@@ -1520,8 +1521,6 @@ llm:                                # 任意。LLM コマンド（5.3）。sh -c
 theme: { mode: system, light: latte, dark: mocha, accent: mauve }   # 3.5。mode は system（OS に合わせる）/ light / dark
 ide: { scheme: jetbrains, product: idea, project: order-service }
 ```
-- **Measured** (2026-11-09, development machine, default `claude -p … opus`, record `llm/spec-output.json`): 22 seconds. 6 requirements; 5 have matching diffs, and “expired codes return 400” has none. Chapters (golden `expected/chapters.json`): 6 requirement chapters, 22 follow hunks, 6 hunks that match no requirement (2 in Logger, FeatureFlags, PromoService, one each in ApplyDiscountUseCaseTest and OrderRepositoryImplTest). Records from when it chose Hows (2026-10-12, 10-29) had 8 requirements
-- It runs concurrently with the second call, so analyze waits for the longer of the two (the times do not add up)
 
 ### 11.1 Loading (decided and implemented 2026-09-17)
 

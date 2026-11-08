@@ -1470,8 +1470,9 @@ lead があれば答えを採る（need が一緒にあっても）。lead が�
   - 要求に入らない追従メンバーは `follow` 章。グループごとに代表が先、残りは hunk 順。核と逸脱は含めない
   - 残りは `extra` 章に hunk 順で置く。逸脱もここに入る。空の `follow` / `extra` は作らない。全 hunk を少なくとも 1 つの章に含める
   - チケットから Spec が 1 件以上得られた解析だけ `Analysis.chapters` を保存する。画面の切り替えは別の変更で行う
-- **fixture**: 記録の文・`why`・`parentWhy` は変更しない。旧 How の対応を、グループに属さない hunk へ機械変換した。核は残す。要求 8 件、対応する差分があるもの 6 件。「期限切れ」と率の値の要求は空。現在の追従グループは代表 OrderAdminView を含む 22 hunk。Logger・FeatureFlags・PromoService の逸脱は `extra`。ゴールデンは `expected/specs.json` と `expected/chapters.json`
+- **fixture**: 記録の文・`why`・`parentWhy` は変更しない。旧 How の対応を、グループに属さない hunk へ機械変換した。核は残す。要求 6 件、対応する差分があるもの 5 件。「期限切れ」と率の値の要求は空。現在の追従グループは代表 OrderAdminView を含む 22 hunk。Logger・FeatureFlags・PromoService の逸脱は `extra`。ゴールデンは `expected/specs.json` と `expected/chapters.json`
 - 2 回目の LLM と同時に呼ぶ。保存は `previous` を除いたプロンプトを鍵にする。同じ差分とチケットなら同じ記録を使う
+- **測った結果**（2026-11-09、開発機、既定の `claude -p … opus`、記録 `llm/spec-output.json`）: 22 秒。要求 6 件。対応する差分があるもの 5 件で、「期限切れのコードは 400 を返す」は差分なし。章（ゴールデン `expected/chapters.json`）は、要求の章 6、つられて変わった所 22 件、どの要求にも当たらない差分 6 件（Logger の 2 件、FeatureFlags、PromoService、ApplyDiscountUseCaseTest と OrderRepositoryImplTest の 1 件ずつ）。How を選ばせていた頃の記録（2026-10-12・10-29）は要求 8 件だった
 
 ## 11. 設定ファイル `ondina.config.yaml`
 
@@ -1520,8 +1521,6 @@ llm:                                # 任意。LLM コマンド（5.3）。sh -c
 theme: { mode: system, light: latte, dark: mocha, accent: mauve }   # 3.5。mode は system（OS に合わせる）/ light / dark
 ide: { scheme: jetbrains, product: idea, project: order-service }
 ```
-- **測った結果**（2026-11-09、開発機、既定の `claude -p … opus`、記録 `llm/spec-output.json`）: 22 秒。要求 6 件。対応する差分があるもの 5 件で、「期限切れのコードは 400 を返す」は差分なし。章（ゴールデン `expected/chapters.json`）は、要求の章 6、つられて変わった所 22 件、どの要求にも当たらない差分 6 件（Logger の 2 件、FeatureFlags、PromoService、ApplyDiscountUseCaseTest と OrderRepositoryImplTest の 1 件ずつ）。How を選ばせていた頃の記録（2026-10-12・10-29）は要求 8 件だった
-- 2 回目と同時に走るので、analyze の待ち時間は 2 回目と抜き出しの長い方になる（足し算にならない）
 
 ### 11.1 読み込み（2026-09-17 決定・実装）
 
