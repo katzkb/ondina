@@ -11,89 +11,33 @@
     "kind": "エピック",
     "body": "目的\n4 月の 1 か月、割引コードを配って初めての注文を増やす。コードは SPRING10（全員）と WELCOME5（新しい会員）。\nやること\n- 割引率の表を足す（SHOP-420）\n- 注文に割引コードを適用できるようにする（SHOP-421）\n- キャンペーンのお知らせメール（SHOP-422）\n期日\n3 月 25 日にリリースする"
   },
-  "hows": [
+  "hunks": [
     {
-      "id": 1,
-      "title": "orders テーブルに discount 列を足す",
-      "why": "割引額を行として保存できる置き場を作るため",
-      "hunkIds": [
-        "40e1361cdc0e10bdf58a3323c633e282a8902036"
-      ],
-      "groupIds": []
-    },
-    {
-      "id": 2,
-      "title": "DiscountCommand を追加する",
-      "why": "割引コードをドメインへ渡す入力型を用意するため",
-      "hunkIds": [
-        "08620bbd277424422d535274fc7a98e037583e4c",
-        "6f8c1dd88a901bd7c59c469f1a09023246aff25a"
-      ],
-      "groupIds": []
-    },
-    {
-      "id": 3,
-      "title": "Order に discount と applyDiscount を持たせる",
-      "why": "割引額の保持と合計計算を Order 側で行うため",
-      "hunkIds": [
-        "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
-        "a22e9a886a2fefed19df83983b21f8e1b09098ab",
-        "3c10228566fa653f9ff458cace7a9fea95c16ea9"
-      ],
-      "groupIds": [
-        "g1"
+      "id": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+      "path": "src/main/kotlin/com/example/common/Logger.kt",
+      "symbol": "Logger.kt",
+      "lines": [
+        "+import java.time.Instant"
       ]
     },
     {
-      "id": 4,
-      "title": "discount を読み書きする SQL に変える",
-      "why": "Order の discount を行の列と往復させるため",
-      "hunkIds": [
-        "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
-        "3b823c2027bd0957f11251555393d73cee9318ed",
-        "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
-        "7826f5464b504df32d03817b1421873bc12479bd",
-        "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3"
-      ],
-      "groupIds": []
+      "id": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+      "path": "src/main/kotlin/com/example/common/Logger.kt",
+      "symbol": "format()",
+      "lines": [
+        "-    fun format(level: Level, msg: String) = \"[$level] $msg\"",
+        "+    fun format(level: Level, msg: String) = \"[$level] ${Instant.now()} $msg\""
+      ]
     },
     {
-      "id": 5,
-      "title": "execute にコードを受け取らせ保存する",
-      "why": "コードから割引適用と永続化までを繋ぐため",
-      "hunkIds": [
-        "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
-        "a135ba90941c193b82bb22bc319e52347521ee99",
-        "d81273406425493877cce76b6a078c2f3b98944f",
-        "b89e25202d679c348f253ed8b3ab49f2833eedb5"
-      ],
-      "groupIds": []
+      "id": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c",
+      "path": "src/main/kotlin/com/example/config/FeatureFlags.kt",
+      "symbol": "DISCOUNT_V2",
+      "kindHint": "candidate",
+      "lines": [
+        "+    const val DISCOUNT_V2 = true"
+      ]
     },
-    {
-      "id": 6,
-      "title": "エンドポイントでコードを受け取る",
-      "why": "HTTP から割引コードを渡せるようにするため",
-      "hunkIds": [
-        "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
-        "89802175d3898bded24a787f90beee1a5312f3a7",
-        "02e146608288f588fded777b8b37c3a6f5a00023",
-        "130e7d62f211839eec7c68582ae3565629d8c673"
-      ],
-      "groupIds": []
-    },
-    {
-      "id": 7,
-      "title": "レスポンスに discount を載せる",
-      "why": "割引額を API の出力に含めるため",
-      "hunkIds": [
-        "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
-        "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
-        "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5"
-      ],
-      "groupIds": []
-    }
-  ],
-  "hunks": [
     {
       "id": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
       "path": "src/main/kotlin/com/example/order/api/ApplyDiscountRequest.kt",

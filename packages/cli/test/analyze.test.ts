@@ -856,7 +856,7 @@ describe('analyzeLocal のチケット探し', () => {
 });
 
 // 要求の抜き出し（設計書 10.8。2026-10-12）。取れたチケットから、1 回目の後に 2 回目と同時に呼ぶ。生出力は llm/<鍵>.spec.json。
-// チケットは fixture の SHOP-421.md（ファイルで指定）。偽 LLM（FAKE_LLM_SPEC_MODE）は「要求 1」（最初の How）と「要求 2」（対応なし）を返す
+// チケットは fixture の SHOP-421.md（ファイルで指定）。偽 LLM（FAKE_LLM_SPEC_MODE）は「要求 1」（最初の差分）と「要求 2」（対応なし）を返す
 describe('analyzeLocal の要求の抜き出し', () => {
   let repo5: string;
   let cleanup5: () => void;
@@ -884,7 +884,7 @@ describe('analyzeLocal の要求の抜き出し', () => {
       for (const k of Object.keys(env)) delete process.env[k];
     }
   };
-  const lastInput = () => JSON.parse(readFileSync(dumped, 'utf8')) as { ticket: { body: string }; hows: Array<{ id: number }>; previous?: unknown };
+  const lastInput = () => JSON.parse(readFileSync(dumped, 'utf8')) as { ticket: { body: string }; hunks: Array<{ id: string }>; previous?: unknown };
   /** 別の headSha の解析を「前回」として置く（findPrevious は更新の新しい順に引く） */
   const writePrevious = (from: string, edit: (a: Record<string, unknown>) => Record<string, unknown>) => {
     const prev = JSON.parse(readFileSync(from, 'utf8')) as Record<string, unknown>;
@@ -896,18 +896,24 @@ describe('analyzeLocal の要求の抜き出し', () => {
     const { analysis, info } = await analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421() });
     expect(count('spec')).toBe(1);
     expect(analysis.specs).toEqual([
-      { id: 's1', text: '要求 1', hows: [1] },
-      { id: 's2', text: '要求 2', hows: [] },
+      { id: 's1', text: '要求 1', hunkIds: ['84cd93f6631a05f2093e55ee5ac9d5afefca75e4'], hows: [1] },
+      { id: 's2', text: '要求 2', hunkIds: [], hows: [] },
     ]);
     expect(analysis.hows[0]!.specIds).toEqual(['s1']);
+    expect(analysis.chapters?.filter((c) => c.kind === 'spec')).toEqual([
+      { kind: 'spec', specId: 's1', hunkIds: ['84cd93f6631a05f2093e55ee5ac9d5afefca75e4'] },
+      { kind: 'spec', specId: 's2', hunkIds: [] },
+    ]);
+    expect(new Set(analysis.chapters?.flatMap((c) => c.hunkIds))).toEqual(new Set(analysis.hunks.map((h) => h.id)));
     expect(analysis.llmSpecs).toEqual({ command: expect.stringContaining('fake-llm.mjs'), status: 'ok' });
-    expect(info).toEqual(expect.arrayContaining([expect.stringMatching(/^LLM（要求の抜き出し）: node .*fake-llm\.mjs$/), '要求: 2 件（対応するコースがあるもの 1 件）']));
+    expect(info).toEqual(expect.arrayContaining([expect.stringMatching(/^LLM（要求の抜き出し）: node .*fake-llm\.mjs$/), '要求: 2 件（対応する差分があるもの 1 件）']));
     // なぜ（説明タブの背景。2026-10-29）: チケットの本文にある文だけ残す
     expect(analysis.background?.why).toEqual(['春のキャンペーン（SHOP-400）で割引コードを配る。']);
     expect(info).toContain('チケットの本文にない「なぜ」の文を除外しました: チケットに無い文。');
-    // 入力: チケットの本文と、1 回目が分けた How。前回の解析が無いので previous は無い
+    // 入力: チケットの本文と、1 回目の全差分。前回の解析が無いので previous は無い
     expect(lastInput().ticket.body).toContain('期限切れのコードは 400 を返す');
-    expect(lastInput().hows.map((h) => h.id)).toEqual([1]);
+    expect(lastInput().hunks.map((h) => h.id)).toContain('84cd93f6631a05f2093e55ee5ac9d5afefca75e4');
+    expect(lastInput()).not.toHaveProperty('hows');
     expect(lastInput()).not.toHaveProperty('previous');
   });
 
@@ -925,32 +931,33 @@ describe('analyzeLocal の要求の抜き出し', () => {
 
   it('前回の解析が同じチケットなら、その要求を previous に渡す。違うチケットなら渡さない', async () => {
     const { cachePath } = await analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421() });
-    writePrevious(cachePath, (a) => ({ ...a, specs: [{ id: 's1', text: '前回の要求', hows: [1] }] }));
+    writePrevious(cachePath, (a) => ({ ...a, specs: [{ id: 's1', text: '前回の要求', hunkIds: ['h1'], hows: [1] }] }));
     await analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421(), llm: 'relabel' });
-    expect(lastInput().previous).toEqual({ specs: [{ text: '前回の要求', hows: [1] }] });
-    writePrevious(cachePath, (a) => ({ ...a, pr: { ...(a['pr'] as object), ticket: { ref: 'SHOP-9.md', source: 'file', at: '' } }, specs: [{ id: 's1', text: '別のチケットの要求', hows: [1] }] }));
+    expect(lastInput().previous).toEqual({ specs: [{ text: '前回の要求', hunkIds: ['h1'] }] });
+    writePrevious(cachePath, (a) => ({ ...a, pr: { ...(a['pr'] as object), ticket: { ref: 'SHOP-9.md', source: 'file', at: '' } }, specs: [{ id: 's1', text: '別のチケットの要求', hunkIds: ['h1'], hows: [1] }] }));
     await analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421(), llm: 'relabel' });
     expect(lastInput()).not.toHaveProperty('previous');
   });
 
   it('前回の要求が変わっても、同じ差分・同じチケットなら保存を使う（古い headSha を解析し直しても同じ答え。原則 7）', async () => {
     const { cachePath } = await analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421() });
-    writePrevious(cachePath, (a) => ({ ...a, specs: [{ id: 's1', text: 'もっと前の要求', hows: [] }] }));
+    writePrevious(cachePath, (a) => ({ ...a, specs: [{ id: 's1', text: 'もっと前の要求', hunkIds: ['h1'], hows: [] }] }));
     const before = count('spec');
     const { analysis } = await analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421() });
     expect(count('spec')).toBe(before);
     expect(analysis.specs.map((s) => s.text)).toEqual(['要求 1', '要求 2']);
   });
 
-  it('知らない How の番号は捨てて知らせる', async () => {
+  it('未知の差分の ID は除外して知らせる', async () => {
     const { analysis, info } = await withEnv({ FAKE_LLM_SPEC_MODE: 'bogus' }, () => analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421(), llm: 'relabel' }));
     expect(analysis.specs[0]!.hows).toEqual([1]);
-    expect(info).toContain('要求 1 の対応に不明な How の番号（99）があったので除外しました');
+    expect(info).toContain('要求 1 の対応に不明な差分の ID（unknown）があったので除外しました');
   });
 
   it('抜き出しが失敗したら specs は空で、llmSpecs に理由を残して解析は続ける。案内文は書ける', async () => {
     const { analysis, info } = await withEnv({ FAKE_LLM_SPEC_MODE: 'fail' }, () => analyzeLocal(repo5, 'main', 'feature/discount', { ticket: shop421(), llm: 'relabel' }));
     expect(analysis.specs).toEqual([]);
+    expect(analysis).not.toHaveProperty('chapters');
     expect(analysis.hows.every((h) => h.specIds.length === 0)).toBe(true);
     expect(analysis.llmSpecs).toEqual({ command: expect.stringContaining('fake-llm.mjs'), status: 'failed', reason: '終了コード 2: boom: the spec reader is on strike' });
     expect(analysis.llmText?.status).toBe('ok');
@@ -968,6 +975,7 @@ describe('analyzeLocal の要求の抜き出し', () => {
     for (const { analysis } of [missing, none, failed, off]) {
       expect(analysis.specs).toEqual([]);
       expect(analysis).not.toHaveProperty('llmSpecs');
+      expect(analysis).not.toHaveProperty('chapters');
     }
   });
 });

@@ -27,8 +27,8 @@ describe('meter', () => {
     a.hunks[0]!.hows = [1];
     a.hunks[1]!.hows = [1, 2];
     a.specs = [
-      { id: 's1', text: '', hows: [1] },
-      { id: 's2', text: '', hows: [] },
+      { id: 's1', text: '', hunkIds: [], hows: [1] },
+      { id: 's2', text: '', hunkIds: [], hows: [] },
     ];
     a.tours = [
       { howId: 1, steps: [{ symbolId: 'x', hunkId: a.hunks[0]!.id, call: '' }, { symbolId: 'y', call: '' }] },

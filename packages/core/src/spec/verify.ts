@@ -3,12 +3,13 @@
 // 規則:
 //   1. 文は前後の空白と末尾の句点を落とす（画面はリスト）。空の文は捨てる。同じ文は最初だけ
 //   2. MAX_SPECS 個まで。超えた分は捨てる
-//   3. hows は実在する How の番号だけ。同じ番号は 1 つにして昇順。知らない番号は捨てる
+//   3. hunkIds は入力で選べる差分の ID だけ。重複を除き hunk の入力順にする。不明な ID は知らせて除外する
+//      hows は選んだ hunk.hows から導く（昇順）。束への割当も 1 回目の検証で代表の hunk.hows に入っている
 //   4. id は残った並び順に s1, s2 …。How の specIds は specs から逆に引く
 //   5. なぜの文（2026-10-29）は前後の空白を落とし、チケットの本文に含まれる物だけ残す（空白と Markdown の強調・コードの記号は無視して比べる）。
 //      空の文・同じ文（比べ方は本文と同じ）は捨てる。MAX_WHY 個まで。言い換えた文を「原文」として画面に出さないため
 //   6. 親チケットの文（2026-10-29）も 5 と同じ規則で、親チケットの本文に含まれる物だけ残す（親が無ければ全部捨てる）
-import type { How, Spec } from '../model.js';
+import type { How, Hunk, Spec } from '../model.js';
 import { MAX_WHY } from './schema.js';
 import type { SpecOutput } from './types.js';
 
@@ -26,11 +27,12 @@ export interface SpecResult {
   info: string[];
 }
 
-export function applySpecs(hows: readonly How[], output: SpecOutput, ticketBody: string, parentBody = ''): SpecResult {
+export function applySpecs(hows: readonly How[], hunks: readonly Hunk[], output: SpecOutput, ticketBody: string, parentBody = ''): SpecResult {
   const info: string[] = [];
-  const known = new Set(hows.map((h) => h.id));
+  const known = new Set(hunks.filter((h) => h.group === undefined || h.group.representative === h.id || h.group.deviations.includes(h.id)).map((h) => h.id));
+  const knownHows = new Set(hows.map((h) => h.id));
   const seen = new Set<string>();
-  const kept: Array<{ text: string; hows: number[] }> = [];
+  const kept: SpecOutput['specs'] = [];
   for (const s of output.specs) {
     const text = s.text.trim().replace(/。+$/, '').trim();
     if (text === '') {
@@ -42,7 +44,7 @@ export function applySpecs(hows: readonly How[], output: SpecOutput, ticketBody:
       continue;
     }
     seen.add(text);
-    kept.push({ text, hows: s.hows });
+    kept.push({ text, hunkIds: s.hunkIds });
   }
   if (kept.length > MAX_SPECS) {
     info.push(`要求が ${MAX_SPECS} 個を超えたので、${MAX_SPECS + 1} 個目から除外しました（${kept.length - MAX_SPECS} 個）`);
@@ -50,11 +52,14 @@ export function applySpecs(hows: readonly How[], output: SpecOutput, ticketBody:
   }
 
   const specs = kept.map((s, i): Spec => {
-    const unknown = [...new Set(s.hows.filter((n) => !known.has(n)))];
-    if (unknown.length > 0) info.push(`要求 ${i + 1} の対応に不明な How の番号（${unknown.join('、')}）があったので除外しました`);
-    return { id: `s${i + 1}`, text: s.text, hows: [...new Set(s.hows.filter((n) => known.has(n)))].sort((a, b) => a - b) };
+    const unknown = [...new Set(s.hunkIds.filter((id) => !known.has(id)))];
+    if (unknown.length > 0) info.push(`要求 ${i + 1} の対応に不明な差分の ID（${unknown.join('、')}）があったので除外しました`);
+    const chosen = new Set(s.hunkIds.filter((id) => known.has(id)));
+    const selected = hunks.filter((h) => chosen.has(h.id));
+    const howIds = selected.flatMap((h) => h.hows);
+    return { id: `s${i + 1}`, text: s.text, hunkIds: selected.map((h) => h.id), hows: [...new Set(howIds.filter((id) => knownHows.has(id)))].sort((a, b) => a - b) };
   });
-  info.push(`要求: ${specs.length} 件（対応するコースがあるもの ${specs.filter((s) => s.hows.length > 0).length} 件）`);
+  info.push(`要求: ${specs.length} 件（対応する差分があるもの ${specs.filter((s) => s.hunkIds.length > 0).length} 件）`);
   const why = verifyQuotes(output.why, ticketBody, info, { missing: 'チケットの本文にない「なぜ」の文', many: '「なぜ」の文' });
   const parentWhy = verifyQuotes(output.parentWhy, parentBody, info, { missing: '親チケットの本文にない文', many: '親チケットの文' });
   return { specs, why, parentWhy, hows: hows.map((h) => ({ ...h, specIds: specs.filter((s) => s.hows.includes(h.id)).map((s) => s.id) })), info };

@@ -1,4 +1,4 @@
-// 要求の抜き出し（設計書 10.8）の出力の形と、stdout からの読み取り。形の検査だけで、中身（知らない How など）は verify.ts が見る。
+// 要求の抜き出し（設計書 10.8）の出力の形と、stdout からの読み取り。形の検査だけで、中身（不明な差分の ID など）は verify.ts が見る。
 import { extractJson } from '../label/schema.js';
 import type { SpecOutput } from './types.js';
 
@@ -20,14 +20,14 @@ export const SPEC_OUTPUT_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['text', 'hows'],
-        properties: { text: { type: 'string' }, hows: { type: 'array', items: { type: 'integer' } } },
+        required: ['text', 'hunkIds'],
+        properties: { text: { type: 'string' }, hunkIds: { type: 'array', items: { type: 'string' } } },
       },
     },
   },
 } as const;
 
-/** stdout を出力の形に読む。hows・why・parentWhy が無ければ空。形が違えば場所を言って失敗する */
+/** stdout を出力の形に読む。hunkIds・why・parentWhy が無ければ空。形が違えば場所を言って失敗する */
 export function parseSpecOutput(stdout: string): { output: SpecOutput } | { error: string } {
   const json = extractJson(stdout);
   let doc: unknown;
@@ -44,10 +44,10 @@ export function parseSpecOutput(stdout: string): { output: SpecOutput } | { erro
   const out: SpecOutput['specs'] = [];
   for (const [i, s] of specs.entries()) {
     if (typeof s !== 'object' || s === null || Array.isArray(s)) return { error: `specs[${i}] がオブジェクトではありません` };
-    const { text, hows = [] } = s as Record<string, unknown>;
+    const { text, hunkIds = [] } = s as Record<string, unknown>;
     if (typeof text !== 'string') return { error: `specs[${i}].text が文字列ではありません` };
-    if (!Array.isArray(hows) || !hows.every((n) => Number.isInteger(n))) return { error: `specs[${i}].hows が整数の配列ではありません` };
-    out.push({ text, hows: hows as number[] });
+    if (!isStrings(hunkIds)) return { error: `specs[${i}].hunkIds が文字列の配列ではありません` };
+    out.push({ text, hunkIds });
   }
   return { output: { specs: out, why, parentWhy } };
 }

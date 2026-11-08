@@ -43,6 +43,7 @@ export { buildConfigPaths, firstRestartPath } from './lsp/restart.js';
 export { EXPORT_PROJECT_MODEL_COMMAND, outsideSourceDirs, placeProjectModel, PROJECT_MODEL_FILE, projectModelFiles, projectModelKey, projectModelSourceDirs, type BuildConfigFile } from './lsp/project-model.js';
 export { buildBaseCallEdges, buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphContext, type CallGraphResult, type CallGraphSource, type CallItem, type DeclarationRange } from './lsp/edges.js';
 export { buildDefinitions, defTargetOf, diffLines, drawerFiles, filesToAsk, libName, namePositions, placeTarget, shownAt, type DefinitionAnswer, type DefinitionSource, type DefSide, type NamePosition, type RawDefTarget } from './lsp/definitions.js';
+export { buildChapters, type BuildChaptersArgs } from './chapter/build.js';
 export { buildTours, type BuildToursArgs } from './tour/build.js';
 export { buildBehaviors, type BuildBehaviorsArgs } from './behavior/build.js';
 export { attachCalls, type AttachCallsArgs } from './behavior/calls.js';
@@ -62,7 +63,7 @@ export { buildSpecInput, ticketPlainText, SPEC_BODY_LIMIT, type BuildSpecInputAr
 export { renderSpecPrompt } from './spec/prompt.js';
 export { parseSpecOutput, SPEC_OUTPUT_SCHEMA } from './spec/schema.js';
 export { applySpecs, MAX_SPECS, type SpecResult } from './spec/verify.js';
-export type { SpecInput, SpecInputHow, SpecInputTicket, SpecOutput, SpecPrevious } from './spec/types.js';
+export type { SpecInput, SpecInputTicket, SpecOutput, SpecPrevious } from './spec/types.js';
 export { carryReview, changedHunks, mapLines, type CarrySource } from './review/carry.js';
 export { onGithubDiff } from './review/github-diff.js';
 export { COMMENT_WRITING_RULES, renderReviewPrompt, type ReviewPromptInput } from './review/prompt.js';

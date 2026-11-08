@@ -26,6 +26,15 @@ export interface BuildToursArgs {
 }
 
 export function buildTours(args: BuildToursArgs): Tour[] {
+  const read = readingOrder(args);
+  return args.hows.map((how) => {
+    const seeds = new Set(args.hunks.filter((h) => h.hows.includes(how.id) && (h.group === undefined || h.group.representative === h.id)).map((h) => h.id));
+    return { howId: how.id, steps: read(seeds).steps };
+  });
+}
+
+/** 種の差分を読む順に並べる。steps は既存コース用に、種から呼ぶ変更シンボルも含む */
+export function readingOrder(args: Omit<BuildToursArgs, 'hows'>): (seedHunkIds: ReadonlySet<string>) => { hunkIds: string[]; steps: Tour['steps'] } {
   const byId = new Map(args.symbols.map((s) => [s.id, s]));
   const byHunk = new Map(args.symbols.filter((s) => s.hunkId !== undefined).map((s) => [s.hunkId!, s]));
   const layerIndex = (s: OndinaSymbol): number => {
@@ -33,18 +42,18 @@ export function buildTours(args: BuildToursArgs): Tour[] {
     return i === -1 ? args.layers.length : i;
   };
   const order = (a: OndinaSymbol, b: OndinaSymbol): number => layerIndex(a) - layerIndex(b) || cmp(a.fqName, b.fqName) || cmp(a.id, b.id);
-  // 追従グループの代表ではないメンバー（どの How でも呼ぶ側にも呼ばれる側にも出さない。束は代表 1 件だけ）
+  // 追従グループの代表以外は隠す。ただし要求が明示的に選んだ種は読む順に含める。
+  // 既存コースの種は代表だけなので、これまでの順は変わらない。
   const hidden = new Set(args.hunks.filter((h) => h.group !== undefined && h.group.representative !== h.id).map((h) => byHunk.get(h.id)?.id));
   const callEdges = args.edges
-    .filter((e) => e.kind === 'call' && byId.has(e.from) && byId.has(e.to) && !hidden.has(e.from) && !hidden.has(e.to))
+    .filter((e) => e.kind === 'call' && byId.has(e.from) && byId.has(e.to))
     .slice()
     .sort((a, b) => cmp(a.from, b.from) || cmp(a.to, b.to));
 
-  return args.hows.map((how) => {
-    // 種は How の hunk のうち、追従グループは代表だけ
-    const seedHunks = args.hunks.filter((h) => h.hows.includes(how.id) && (h.group === undefined || h.group.representative === h.id));
+  return (seedHunkIds) => {
+    const seedHunks = args.hunks.filter((h) => seedHunkIds.has(h.id));
     const seeds = new Set(seedHunks.map((h) => byHunk.get(h.id)?.id).filter((id): id is string => id !== undefined));
-    const sub = callEdges.filter((e) => seeds.has(e.from));
+    const sub = callEdges.filter((e) => seeds.has(e.from) && (!hidden.has(e.to) || seeds.has(e.to)));
     const nodes = [...new Set(sub.flatMap((e) => [e.from, e.to]))].map((id) => byId.get(id)!).sort(order);
     const called = new Set(sub.map((e) => e.to));
     const entries = nodes.filter((s) => !called.has(s.id));
@@ -70,13 +79,16 @@ export function buildTours(args: BuildToursArgs): Tour[] {
         queue.push({ symbol: to, call: `${shortName(symbol)} → ${shortName(to)}${e.types?.in === undefined ? '' : `(${e.types.in})`}` });
       }
     }
+    const ordered = new Set(steps.flatMap((s) => s.hunkId !== undefined && seedHunkIds.has(s.hunkId) ? [s.hunkId] : []));
     for (const h of seedHunks) {
       const symbol = byHunk.get(h.id);
       if (symbol === undefined || visited.has(symbol.id)) continue;
       push(symbol, '');
     }
-    return { howId: how.id, steps };
-  });
+    // シンボルを持たない差分も、元の hunk 順で残す。
+    for (const h of seedHunks) ordered.add(h.id);
+    return { hunkIds: [...ordered], steps };
+  };
 }
 
 /** "com.example.order.domain.Order.applyDiscount" → "Order.applyDiscount"。ファイル単位のシンボルはファイル名だけ */

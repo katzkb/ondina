@@ -1,10 +1,9 @@
 // 要求の抜き出し（設計書 10.8）への入力を組む。決定的（原則 7）。
-// - 差分の行は 1 回目の入力（hunks / rippleGroups）をそのまま使い回す。どの How にも入らなかったものは渡さない（選べるのは How だけ）
-// - How ごとの hunk は 1 回目の検証後の hunk.hows から引く。束は代表の How（束は丸ごと 1 つの How。5.4 の 3）
+// - 差分の行は 1 回目の全入力（hunks / rippleGroups）を使う。どの How にも入らなかった差分も選べる
 // - チケットは番号・題・種類と本文の文字。Jira の本文（HTML）はタグを外す。状態と取った時刻は渡さない（要求の文と関係しない）
 // - 親チケット（2026-10-29）も同じ形。案件の目的の文を写させるだけで、要求は親から抜き出させない
 // - 作者の説明・辺・層は渡さない（要求はチケットから、対応は差分の行から決める）
-import type { How, Hunk, ParentTicket, Spec, Ticket } from '../model.js';
+import type { ParentTicket, Spec, Ticket } from '../model.js';
 import type { LlmInput } from '../label/types.js';
 import type { SpecInput, SpecInputTicket } from './types.js';
 
@@ -14,9 +13,6 @@ export const SPEC_BODY_LIMIT = 30_000;
 export interface BuildSpecInputArgs {
   /** 1 回目の入力（buildLlmInput の結果） */
   base: Pick<LlmInput, 'hunks' | 'rippleGroups'>;
-  hows: readonly How[];
-  /** 1 回目の検証後の hunk（hows で How への割当を見る） */
-  hunks: readonly Pick<Hunk, 'id' | 'hows'>[];
   /** 取れたチケット（error の無いもの） */
   ticket: Ticket;
   /** 親チケット（本文が無くても番号と題は渡す） */
@@ -25,25 +21,15 @@ export interface BuildSpecInputArgs {
   previous?: readonly Spec[];
 }
 
-export function buildSpecInput({ base, hows, hunks, ticket, parent, previous }: BuildSpecInputArgs): SpecInput {
-  const howsOf = new Map(hunks.map((h) => [h.id, h.hows]));
-  const inHow = (hunkId: string, howId?: number) => {
-    const hs = howsOf.get(hunkId) ?? [];
-    return howId === undefined ? hs.length > 0 : hs.includes(howId);
-  };
+export function buildSpecInput({ base, ticket, parent, previous }: BuildSpecInputArgs): SpecInput {
+  // 古い Analysis の要求には差分の対応がない。How の対応を空の差分として引き継がない。
+  const prior = previous?.filter((s) => Array.isArray(s.hunkIds)) ?? [];
   return {
     ticket: ticketInput(ticket),
     ...(parent === undefined ? {} : { parent: ticketInput(parent) }),
-    hows: hows.map((w) => ({
-      id: w.id,
-      title: w.title,
-      why: w.why,
-      hunkIds: base.hunks.filter((h) => inHow(h.id, w.id)).map((h) => h.id),
-      groupIds: base.rippleGroups.filter((g) => inHow(g.representative.hunkId, w.id)).map((g) => g.id),
-    })),
-    hunks: base.hunks.filter((h) => inHow(h.id)),
-    rippleGroups: base.rippleGroups.filter((g) => inHow(g.representative.hunkId)),
-    ...(previous === undefined || previous.length === 0 ? {} : { previous: { specs: previous.map((s) => ({ text: s.text, hows: [...s.hows] })) } }),
+    hunks: base.hunks,
+    rippleGroups: base.rippleGroups,
+    ...(prior.length === 0 ? {} : { previous: { specs: prior.map((s) => ({ text: s.text, hunkIds: [...s.hunkIds] })) } }),
   };
 }
 
