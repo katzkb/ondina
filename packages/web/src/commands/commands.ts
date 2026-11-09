@@ -87,8 +87,9 @@ export type Command =
   /** How 分解の画面へ移り、束を開いてその hunk を選ぶ（地図の束の箱から。地図の中で開くのは後） */
   | { id: 'group.reveal'; hunkId: string }
   /** コース（3.3）: コースに入る。at を省くと読む前の案内（コース外は最初の未確認の停留所。2026-10-22）、at を渡すとその停留所 */
-  | { id: 'req.goHunk'; hunkId: string }
   | { id: 'req.go'; chapter: import('../requirement.js').RequirementChapter }
+  /** 要求コース: その hunk を含む最初の章へ移り、その hunk を現在地にする（最後のページのまだのファイル・聞くこと・意見の行から） */
+  | { id: 'req.goHunk'; hunkId: string }
   | { id: 'req.nextChapter' | 'req.prevChapter' | 'req.narrow' }
   | { id: 'req.focus' | 'req.toggleHunk' | 'req.ok' | 'req.undo'; hunkId: string }
   | { id: 'req.file' | 'req.file.unview'; path: string }
