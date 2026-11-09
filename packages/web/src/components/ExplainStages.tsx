@@ -61,22 +61,12 @@ function StageTab({ n, title, sub, stage, dispatch }: { n: 1 | 2; title: string;
 }
 
 function Background({ analysis, dispatch }: { analysis: Analysis; dispatch: (c: Command) => void }) {
-  const { headline } = analysis.summary;
-  const ticket = analysis.pr.ticket;
-  const why = analysis.background?.why ?? [];
   const terms = analysis.background?.terms ?? [];
   return (
     <div className="ex-qa">
       <div className="ex-q">
         <h4>何のための PR？</h4>
-        {headline !== undefined && <p className="ex-headline">{headline}</p>}
-        {why.length > 0 && ticket !== undefined && (
-          <p className="ex-quote">
-            <span className="chip">{`チケット ${ticket.key ?? ticket.ref.split('/').pop()} の原文`}</span>
-            {why.join('')}
-          </p>
-        )}
-        {why.length === 0 && <p className="muted">{ticket === undefined || ticket.error !== undefined ? 'チケットがないので、なぜこの変更をするかは出していません。analyze に --ticket を付けると、チケットの背景をここに出します。' : 'チケットに、なぜこの変更をするかの文が見つかりませんでした。'}</p>}
+        <WhyQ analysis={analysis} />
       </div>
       {analysis.background?.project !== undefined && <ProjectQ project={analysis.background.project} />}
       <Existing analysis={analysis} />
@@ -103,13 +93,30 @@ function Background({ analysis, dispatch }: { analysis: Analysis; dispatch: (c: 
   );
 }
 
+/** 要点とチケットの「なぜ」。見出しと AI 表示は呼び出す画面が付ける。 */
+export function WhyQ({ analysis }: { analysis: Analysis }) {
+  const { headline } = analysis.summary;
+  const ticket = analysis.pr.ticket;
+  const why = analysis.background?.why ?? [];
+  return <>
+    {headline !== undefined && <p className="ex-headline">{headline}</p>}
+    {why.length > 0 && ticket !== undefined && (
+      <p className="ex-quote">
+        <span className="chip">{`チケット ${ticket.key ?? ticket.ref.split('/').pop()} の原文`}</span>
+        {why.join('')}
+      </p>
+    )}
+    {why.length === 0 && <p className="muted">{ticket === undefined || ticket.error !== undefined ? 'チケットがないので、なぜこの変更をするかは出していません。analyze に --ticket を付けると、チケットの背景をここに出します。' : 'チケットに、なぜこの変更をするかの文が見つかりませんでした。'}</p>}
+  </>;
+}
+
 const PR_STATE: Record<ProjectPr['state'], string> = { merged: 'マージ済み', open: 'レビュー中', draft: 'Draft', closed: 'クローズ' };
 
 /**
  * どんな案件の一部？ 親チケットの原文の引用（題は Jira へのリンク、写した目的の文）と、同じ案件の PR の行（状態のチップと番号・題。この PR は太字）。
  * 別のリポジトリの PR は「名前#番号」。見つからない・探さなかった・取れなかったことは灰色の 1 行ずつ（黙って消さない）
  */
-function ProjectQ({ project }: { project: Project }) {
+export function ProjectQ({ project }: { project: Project }) {
   const { parent, why = [], repo, prs, searched = [], skipped, errors = [] } = project;
   return (
     <div className="ex-q ex-project">

@@ -288,3 +288,30 @@ describe('requirement narrowing', () => {
     expect(next.requirement.scroll).not.toBeNull();
   });
 });
+
+
+describe('req.goHunk', () => {
+  it('opens a later chapter at the requested hunk and file, preserving narrowing and resetting transient state', () => {
+    const s = run(enter(), { id: 'req.narrow' });
+    const index = s.analysis!.chapters!.findIndex((c) => c.kind === 'follow');
+    const id = s.analysis!.chapters![index]!.hunkIds[1]!;
+    const h = s.analysis!.hunks.find((h) => h.id === id)!;
+    const ready = { ...s, requirement: { ...s.requirement, editor: { hunkId: s.selectedHunk!, label: 'ask' as const }, openHunks: [id], files: { 'old.kt': true } } };
+    const result = reduce(ready, { id: 'req.goHunk', hunkId: id });
+    expect(result.state).toMatchObject({ view: 'req', selectedHunk: id, selectedFile: h.path, memo: initialState().memo, peek: null, course: null, courseMap: null });
+    expect(result.state.requirement).toEqual({ ...initialState().requirement, chapter: index, narrow: true, focusN: ready.requirement.focusN + 1, files: { [h.path]: true } });
+    expect(result.effects).toEqual([]);
+  });
+  it('chooses the first chapter containing a shared hunk, including from the end page', () => {
+    const s = run(loaded(), { id: 'req.go', chapter: 'end' });
+    const shared = '98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7';
+    const next = run(s, { id: 'req.goHunk', hunkId: shared });
+    expect(next.requirement.chapter).toBe(0);
+    expect(next.selectedHunk).toBe(shared);
+    expect(next.selectedFile).toBe(s.analysis!.hunks.find((h) => h.id === shared)!.path);
+  });
+  it('leaves state unchanged for an unknown hunk', () => {
+    const s = enter();
+    expect(reduce(s, { id: 'req.goHunk', hunkId: 'unknown' })).toEqual({ state: s, effects: [] });
+  });
+});
