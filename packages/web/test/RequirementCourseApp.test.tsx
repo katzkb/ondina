@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App.js';
 import { fakeApi } from './fakeApi.js';
 import { requirementAnalysis } from './requirementFixture.js';
@@ -60,4 +60,52 @@ it('a legacy course URL is redirected to the requirement course URL', async () =
   render(<App api={fakeApi(requirementAnalysis()).api} />);
   await screen.findByLabelText('要求コース');
   await waitFor(() => expect(window.location.pathname).toBe('/local/aaaaaaa/req/start'));
+});
+
+
+it('f toggles between all files and chapter cards in the requirement course', async () => {
+  window.history.replaceState(null, '', '/local/aaaaaaa/req/0');
+  const a = requirementAnalysis();
+  const fake = fakeApi(a);
+  const { container } = render(<App api={fake.api} />);
+  await screen.findByLabelText('要求コース');
+  expect(container.querySelector('[data-req-file]')).not.toBeNull();
+  fireEvent.keyDown(window, { key: 'f' });
+  expect(container.querySelectorAll('.req-card')).toHaveLength(a.chapters![0]!.hunkIds.length);
+  expect(container.querySelector('[data-req-file]')).toBeNull();
+  fireEvent.keyDown(window, { key: 'f' });
+  expect(container.querySelector('.req-card')).toBeNull();
+  expect(container.querySelector('[data-req-file]')).not.toBeNull();
+});
+
+
+it.each(['missing', 'reduce', 'animate'] as const)('keeps focus height with %s view transition support', async (support) => {
+  const { withViewTransition } = await import('../src/viewTransition.js');
+  const start = vi.fn((update: () => void) => { update(); });
+  const descriptor = Object.getOwnPropertyDescriptor(document, 'startViewTransition');
+  Object.defineProperty(document, 'startViewTransition', { configurable: true, value: support === 'missing' ? undefined : start });
+  const media = vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: support === 'reduce' } as MediaQueryList);
+  const center = document.createElement('div');
+  center.className = 'req-center';
+  const before = document.createElement('section');
+  const after = document.createElement('section');
+  center.append(before);
+  center.scrollTop = 80;
+  vi.spyOn(before, 'getBoundingClientRect').mockReturnValue({ top: 120 } as DOMRect);
+  vi.spyOn(after, 'getBoundingClientRect').mockReturnValue({ top: 200 } as DOMRect);
+  let current: HTMLElement | null = before;
+  try {
+    withViewTransition(() => { before.replaceWith(after); current = after; }, () => current);
+    expect(center.scrollTop).toBe(160);
+    expect(start).toHaveBeenCalledTimes(support === 'animate' ? 1 : 0);
+    current = null;
+    withViewTransition(() => { current = after; }, () => current);
+    expect(center.scrollTop).toBe(160);
+    withViewTransition(() => { current = null; }, () => current);
+    expect(center.scrollTop).toBe(160);
+  } finally {
+    media.mockRestore();
+    if (descriptor) Object.defineProperty(document, 'startViewTransition', descriptor);
+    else Reflect.deleteProperty(document, 'startViewTransition');
+  }
 });

@@ -11,7 +11,7 @@ export function requirementGo(state: Loaded, chapter: RequirementChapter): Reduc
   if (!chapters || (typeof chapter === 'number' && (!Number.isInteger(chapter) || !chapters[chapter]))) return none(state);
   const id = typeof chapter === 'number' ? chapters[chapter]!.hunkIds[0] ?? null : null;
   const hunk = state.analysis.hunks.find((h) => h.id === id);
-  return none({ ...state, view: 'req', requirement: { ...NO_REQUIREMENT, chapter, focusN: state.requirement.focusN + 1 }, course: null, courseMap: null, selectedHunk: id, selectedFile: hunk?.path ?? null, memo: NO_MEMO, peek: null });
+  return none({ ...state, view: 'req', requirement: { ...NO_REQUIREMENT, chapter, narrow: state.requirement.narrow, focusN: state.requirement.focusN + 1 }, course: null, courseMap: null, selectedHunk: id, selectedFile: hunk?.path ?? null, memo: NO_MEMO, peek: null });
 }
 
 /** 済んだ場所の次から読む順に探す。先に飛ばした未確認の場所があれば先頭へ戻り、全部済みならその場に残る。 */
@@ -44,6 +44,9 @@ export function requirementCommand(state: Loaded, command: Command): Reduced | n
     return requirementGo(state, next < 0 ? 'start' : next === state.analysis.chapters!.length ? 'end' : next);
   };
   switch (command.id) {
+    case 'req.narrow':
+    case 'file.full':
+      return state.view === 'req' && chapter && chapter.hunkIds.length > 0 ? none({ ...state, requirement: { ...req, narrow: !req.narrow } }) : none(state);
     case 'req.nextChapter':
     case 'course.forward': return moveChapter(1);
     case 'req.prevChapter':
@@ -81,14 +84,14 @@ export function requirementCommand(state: Loaded, command: Command): Reduced | n
     case 'file.next':
     case 'file.prev': {
       const files = requirementFiles(state.analysis);
-      if (files.length === 0) return none(state);
+      if (files.length === 0) return req.narrow ? none({ ...state, requirement: { ...req, narrow: false } }) : none(state);
       const at = files.findIndex((f) => f.path === (req.scroll?.path ?? state.selectedFile));
       const dir = command.id === 'file.next' ? 1 : -1;
       const path = files[(at + dir + files.length) % files.length]!.path;
-      return none({ ...state, requirement: { ...req, files: { ...req.files, [path]: true }, scroll: { path, n: (req.scroll?.n ?? 0) + 1 } } });
+      return none({ ...state, requirement: { ...req, narrow: false, files: { ...req.files, [path]: true }, scroll: { path, n: (req.scroll?.n ?? 0) + 1 } } });
     }
     case 'req.file':
-      return none({ ...state, requirement: { ...req, files: { ...req.files, [command.path]: true }, scroll: { path: command.path, n: (req.scroll?.n ?? 0) + 1 } } });
+      return none({ ...state, requirement: { ...req, narrow: false, files: { ...req.files, [command.path]: true }, scroll: { path: command.path, n: (req.scroll?.n ?? 0) + 1 } } });
     case 'req.toggleFile':
       return none({ ...state, memo: NO_MEMO, requirement: { ...req, editor: null, files: { ...req.files, [command.path]: !command.open } } });
     case 'req.toggleHunk':

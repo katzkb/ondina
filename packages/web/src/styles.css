@@ -1222,6 +1222,19 @@ button.loc{cursor:pointer}
 .req-guide .req-actions{margin-top:10px}.req-editor textarea{display:block;width:100%;min-height:80px;border:1px solid var(--line-2);border-radius:4px;background:var(--panel-2);color:var(--ink);padding:8px;margin-top:8px;font:inherit}
 .req-draft{margin-top:10px}.req-draft>b{font-size:11px;color:var(--muted)}.req-draft.ask>b{color:var(--warn)}.req-draft.imo>b{color:var(--mauve)}.req-draft .mbox{margin:4px 0}
 .req-missing{padding:20px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}.req-start-list{padding-left:24px}.req-start-list li{margin:10px 0}.req-counts{display:grid;grid-template-columns:1fr auto;max-width:480px;gap:10px}.req-counts dd{margin:0;font-variant-numeric:tabular-nums}
+.req-card{display:grid;grid-template-columns:minmax(0,1fr) 300px;border:1px solid var(--line);border-radius:8px;background:var(--panel);margin:16px 0;overflow:hidden;scroll-margin-top:12px}
+.req-card>.req-hunk-head{grid-column:1/-1}.req-card-path{font-family:var(--mono);overflow-wrap:anywhere}
+.req-card.focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.req-card.st-ok{border-left:4px solid var(--ok)}.req-card.st-ask{border-left:4px solid var(--warn)}
+.req-card .req-guide{margin:8px;min-width:0}.req-card.st-ok>.req-hunk-head .req-more{color:var(--ok)}.req-card.st-ask>.req-hunk-head .req-more{color:var(--warn)}
+.btn.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+/* 要求コースの差分だけを移動させ、帯と両脇の列は固定する。 */
+::view-transition-group(*){animation-duration:.5s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+::view-transition-old(*),::view-transition-new(*){animation-duration:.35s;height:100%;object-fit:cover;object-position:top}
+::view-transition-group(req-banner),::view-transition-group(req-nav),::view-transition-group(req-files){z-index:10;animation:none}
+::view-transition-old(req-banner),::view-transition-old(req-nav),::view-transition-old(req-files){display:none}
+::view-transition-new(req-banner),::view-transition-new(req-nav),::view-transition-new(req-files){animation:none}
+@media(max-width:900px){.req-card{grid-template-columns:minmax(0,1fr)}}
 .req-course button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:1180px){.req-course{--req-nav-w:190px;--req-files-w:190px}.req-center{padding:12px}.req-guide{margin-left:20px}}
 @media(max-width:800px){.req-course{--req-nav-w:150px;--req-files-w:0px;grid-template-columns:150px minmax(0,1fr)}.req-files{display:none}.req-guide{margin-left:8px}}

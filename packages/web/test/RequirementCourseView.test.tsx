@@ -5,10 +5,10 @@ import { RequirementCourseView } from '../src/components/RequirementCourseView.j
 import { initialState, reduce } from '../src/state/reducer.js';
 import { emptyReview } from './fixture.js';
 import { requirementAnalysis } from './requirementFixture.js';
-import type { Analysis } from '@ondina/model';
+import type { Analysis, ReviewState } from '@ondina/model';
 
-function Harness({ analysis = requirementAnalysis(), chapter = 0 }: { analysis?: Analysis; chapter?: number | 'start' | 'end' }) {
-  const loaded = reduce(initialState(), { id: 'data.loaded', analysis, review: emptyReview(), summary: { key: 'local', headSha: analysis.pr.headSha, pr: analysis.pr, mtime: 1, repoName: 'order-service' } }).state;
+function Harness({ analysis = requirementAnalysis(), chapter = 0, review = emptyReview() }: { analysis?: Analysis; chapter?: number | 'start' | 'end'; review?: ReviewState }) {
+  const loaded = reduce(initialState(), { id: 'data.loaded', analysis, review, summary: { key: 'local', headSha: analysis.pr.headSha, pr: analysis.pr, mtime: 1, repoName: 'order-service' } }).state;
   const [state, dispatch] = useReducer((s: typeof loaded, c: Parameters<typeof reduce>[1]) => reduce(s, c).state, reduce(loaded, { id: 'req.go', chapter }).state);
   return <RequirementCourseView analysis={state.analysis!} review={state.review!} at={state.requirement} selectedHunk={state.selectedHunk} memo={state.memo} mode="uni" dispatch={dispatch} />;
 }
@@ -141,4 +141,82 @@ it('Files changed shows filename before its directory and preserves the full pat
   expect(button.textContent).toMatch(/^OrderController\.kt/);
   expect(button.querySelector('.req-file-name')).toHaveTextContent('OrderController.kt');
   expect(button.querySelector('.req-file-dir')).toHaveTextContent('src/main/kotlin/com/example/order/api/');
+});
+
+
+it('narrows to cards in chapter order, keeping transition names and toggle state', () => {
+  const a = requirementAnalysis();
+  a.chapters![0]!.hunkIds.reverse();
+  const ids = a.chapters![0]!.hunkIds;
+  const { container } = render(<Harness analysis={a} />);
+  const names = new Map(ids.map((id) => [id, (container.querySelector(`[data-req-hunk="${id}"]`) as HTMLElement).style.viewTransitionName]));
+  for (const id of ids) expect(names.get(id)).toBe(`req-h${a.hunks.findIndex((h) => h.id === id)}`);
+  expect(new Set(names.values()).size).toBe(ids.length);
+  const toggle = screen.getByRole('button', { name: /^この要求の差分だけにする/ });
+  expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  fireEvent.click(toggle);
+  expect(screen.getByText(`この要求の差分 ${ids.length} か所だけを、読む順に並べています`)).toBeInTheDocument();
+  expect(container.querySelector('[data-req-file]')).toBeNull();
+  expect(container.querySelector('.gh-hunk')).toBeNull();
+  const cards = [...container.querySelectorAll<HTMLElement>('.req-card')];
+  expect(cards.map((c) => c.dataset.reqHunk)).toEqual(ids);
+  for (const [i, card] of cards.entries()) {
+    expect(card.style.viewTransitionName).toBe(names.get(ids[i]!));
+    expect(card.querySelector('.req-number')).toHaveTextContent(String(i + 1));
+    expect(card.querySelector('.req-code .cd')).not.toBeNull();
+    expect(card.querySelector('.req-guide')).not.toBeNull();
+  }
+  expect(cards[0]).toHaveClass('focus');
+  fireEvent.click(cards[1]!.querySelector('.req-hunk-head')!);
+  expect(cards[1]).toHaveClass('focus');
+  expect(cards[0]).not.toHaveClass('focus');
+  const back = screen.getByRole('button', { name: /^全部のファイルに戻す/ });
+  expect(back).toHaveAttribute('aria-pressed', 'true');
+  expect(back).toHaveClass('on');
+  fireEvent.click(back);
+  expect(container.querySelector('.req-card')).toBeNull();
+  expect(container.querySelectorAll('[data-req-file]')).toHaveLength(a.githubDiff!.length);
+});
+
+it('does not scroll on narrowing, but scrolls the focused card after moving', () => {
+  const oldScroll = HTMLElement.prototype.scrollIntoView;
+  const calls: HTMLElement[] = [];
+  HTMLElement.prototype.scrollIntoView = function() { calls.push(this); };
+  try {
+    render(<Harness />);
+    expect(calls).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: /^この要求の差分だけにする/ }));
+    expect(calls).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: /^次の場所/ }));
+    expect(calls).toHaveLength(2);
+    expect(calls.at(-1)?.parentElement).toHaveClass('req-card', 'focus');
+  } finally {
+    if (oldScroll) HTMLElement.prototype.scrollIntoView = oldScroll;
+    else delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+  }
+});
+
+
+it.each([
+  { viewed: true, label: 'ask', state: 'draft', status: 'ask', text: '聞く' },
+  { viewed: true, label: 'ask', state: 'discarded', status: 'ok', text: 'わかった' },
+  { viewed: true, label: 'imo', state: 'draft', status: 'ok', text: 'わかった' },
+  { viewed: false, label: 'ask', state: 'draft', status: null, text: null },
+] as const)('card status follows Guide: %j', ({ viewed, label, state, status, text }) => {
+  const a = requirementAnalysis();
+  const id = a.chapters![0]!.hunkIds[0]!;
+  const h = a.hunks.find((h) => h.id === id)!;
+  const review: ReviewState = { ...emptyReview(), viewed: viewed ? [id] : [], comments: [{ id: 'question', source: 'reviewer', label, state, path: h.path, side: 'RIGHT', line: h.lnNew, body: '質問です' }] };
+  const { container } = render(<Harness analysis={a} review={review} />);
+  fireEvent.click(screen.getByRole('button', { name: /^この要求の差分だけにする/ }));
+  const card = container.querySelector('.req-card.focus')!;
+  const badge = card.querySelector('.req-hunk-head .req-more');
+  if (status) {
+    expect(card).toHaveClass(`st-${status}`);
+    expect(badge).toHaveTextContent(text!);
+    expect(card.querySelector('.req-guide-title b')).toHaveTextContent(text!);
+  } else {
+    expect(card).not.toHaveClass('st-ok', 'st-ask');
+    expect(badge).toBeNull();
+  }
 });

@@ -34,6 +34,7 @@ import { isActive, stripOf } from './reanalyze.js';
 import { formatRoute, parseRoute, routeOf, routeTarget, sameEntry, type Route } from './route.js';
 import { canSend, diffModeOf, findable, findIn, initialState, overlayOpen, reduce, themeOf, type AppState, type Effect } from './state/reducer.js';
 import { flavorOf, useOsDark } from './theme.js';
+import { withViewTransition } from './viewTransition.js';
 
 /** 新しい head を聞く間隔（画面を開いている間。画面に戻ったときにも聞く）。見本を比べて 2 分おきにした */
 const CHECK_MS = 2 * 60 * 1000;
@@ -246,14 +247,19 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
 
   const dispatch = useCallback(
     (command: Command) => {
-      const { state, effects } = reduce(stateRef.current, command);
-      // 何も変わらなければ描き直さない（差分一覧のスクロールの知らせは、境目をまたぐたびに来る）
-      if (state !== stateRef.current) {
-        stateRef.current = state;
-        rerender();
-        syncUrl(state, applying.current > 0);
-      }
-      for (const e of effects) run(e, state);
+      const update = () => {
+        const { state, effects } = reduce(stateRef.current, command);
+        // 何も変わらなければ描き直さない（差分一覧のスクロールの知らせは、境目をまたぐたびに来る）
+        if (state !== stateRef.current) {
+          stateRef.current = state;
+          rerender();
+          syncUrl(state, applying.current > 0);
+        }
+        for (const e of effects) run(e, state);
+      };
+      if (command.id === 'req.narrow' || (command.id === 'file.full' && stateRef.current.view === 'req')) {
+        withViewTransition(update, () => document.querySelector<HTMLElement>('.req-center .focus'));
+      } else update();
     },
     [run],
   );
