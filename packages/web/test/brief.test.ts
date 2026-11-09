@@ -83,7 +83,7 @@ describe('callerFacts', () => {
 
 describe('courseSpecs', () => {
   it('Spec.hows にこのコースがある要求の文', () => {
-    const a = { ...analysis, specs: [{ id: 's1', text: '割引コードを 1 つ適用できる', hows: [5, 6] }, { id: 's2', text: '別の要求', hows: [3] }] };
+    const a = { ...analysis, specs: [{ id: 's1', text: '割引コードを 1 つ適用できる', hunkIds: [], hows: [5, 6] }, { id: 's2', text: '別の要求', hunkIds: [], hows: [3] }] };
     expect(courseSpecs(a, c5)).toEqual(['割引コードを 1 つ適用できる']);
   });
 });

@@ -560,7 +560,15 @@ interface Project {                         // どんな案件の一部か（Ana
 }
 interface ParentTicket { key: string; url: string; via: 'parent' | 'epic'; title?: string; kind?: string; status?: string; body?: string; format?: 'html' | 'text' }  // 中身は原文のまま
 interface ProjectPr { repo: string; number: number; title: string; url: string; state: 'open' | 'draft' | 'merged' | 'closed'; keys: string[]; self?: true }  // keys = 含んでいた番号。self = 同じリポジトリで同じ番号か同じブランチ名
-interface Spec { id: string; text: string; hows: number[] }        // チケットから抜き出した要求（10.8）。文と対応は LLM の推定。hows は実在する How だけ（昇順）、空 = 対応するコースなし。id は並び順の s1, s2 …
+interface Spec {
+  id: string; text: string;             // s1, s2 …。文と対応は LLM の推定
+  hunkIds: string[];                     // LLM が選び、プログラムが検証。空 = 対応する差分なし
+  hows: number[];                        // hunkIds から導く How（昇順）
+}
+type Chapter =
+  | { kind: 'spec'; specId: string; hunkIds: string[] } // 読む順。空 = 対応する差分なし
+  | { kind: 'follow'; hunkIds: string[] }               // 核に追従する差分
+  | { kind: 'extra'; hunkIds: string[] };               // 要求に対応しない差分
 interface Claim { text: string; backed: boolean; reason?: string } // 作者説明の各文
 interface Summary { problem: string; approach: string[] | string; untouched: string[] | string; beforeAfter: Array<{target: string; before: string; after: string}> }  // 2 回目の LLM（10.4）。approach は文（2026-10-10 まではリスト）、untouched はリスト。古い解析は文字列
 
@@ -599,6 +607,7 @@ interface Analysis {                         // パイプラインの成果物�
   pr: { number: number; title: string; base: string; head: string; headSha: string; baseSha: string; body?: string; bodyCode?: BodyCode[]; ticket?: Ticket; ticketSearch?: TicketSearch };  // body は作者の説明の原文（3.1。2026-09-19）。bodyCode は本文のコードブロックの色（{ lang; code; tokens: TokenLine[] }。2026-10-10）。ticket は --ticket で指定したか題・ブランチ名・本文から LLM が選んだチケット（5.1。2026-10-12）。欄が無い = 指定も選んだものも無い。ticketSearch は --ticket が無いときに探した記録（欄が無い = --ticket の解析か古い解析）
   hunks: Hunk[]; hows: How[]; symbols: Symbol[]; edges: Edge[]; edgesBase?: Edge[]; tours: Tour[];  // edgesBase は変わる前（base）の呼び出し辺（9.2。2026-11-05）。欄が無い = 古い解析か言語サーバーが無かった
   specs: Spec[]; claims: Claim[]; summary: Summary;
+  chapters?: Chapter[];  // チケットから要求が得られた解析だけ。プログラムが組む（10.8）
   config: AnalysisConfig;                    // ondina.config.yaml の解析に効く部分（11章）。無ければ既定値
   llm?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // Stage 2 の 1 回目（目的ごとに分ける）の記録（5.3）。どのコマンドで出したか
   llmText?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };
@@ -810,7 +819,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
   - `previous` は渡さない。文の言い回しが push ごとに変わっても、メーター・未帰属・コースの分け方は変わらない（数は全部 1 回目とプログラム）。同じ headSha は保存で同じ文（原則 7）。揺れて困ったら previous を渡す
   - 実装: 入力・プロンプト・検証は `packages/core/src/narration/`、起動は `packages/cli/src/analyze.ts`（`runLlm` を 1 回目と共用）。記録は `fixtures/order-service/llm/text-output.json`（`scripts/record-llm-text.mjs`。入力はゴールデン `expected/llm-text-input.json` なので、言語サーバーも fixture の git リポジトリも要らない）
 - **チケット選び（2026-10-12。10.7）**: `--ticket` がなく候補があるとき、1 回目より先に（層の推定・LSP と同時に）同じ LLM コマンドで呼ぶ。保存は `.ondina/<key>/llm/<プロンプトの sha1>.ticket.json`。headSha でなくプロンプトで引くので、題・ブランチ名・本文が同じなら新しいコミットでも前の応答を使う（原則 7）。`--relabel` で起動し直し、`--no-llm` でスキップする（候補だけ残す）。失敗は保存しない
-- **要求の抜き出し（2026-10-12。10.8）**: チケットが取れていて 1 回目が `ok` のとき、1 回目の検証の後に、2 回目と**同時に**同じ LLM コマンドで呼ぶ（待ち時間を足さない）。チケットから「この PR で成り立つべきこと」を抜き出し、要求ごとに対応する How を 1 回目の How から選ばせる。1 回目に混ぜないのは、目的の分け方をチケットの書き方に引きずらせないため（目的は差分だけから分ける）と、チケットが headSha と関係なく変わるため
+- **要求の抜き出し（2026-10-12。10.8）**: チケットが取れていて 1 回目が `ok` のとき、1 回目の検証の後に、2 回目と**同時に**同じ LLM コマンドで呼ぶ（待ち時間を足さない）。チケットから「この PR で成り立つべきこと」を抜き出し、要求ごとに対応する差分を 1 回目の入力の差分から選ばせる（2026-11-09 から。それまでは How を選ばせていた）。1 回目に混ぜないのは、目的の分け方をチケットの書き方に引きずらせないため（目的は差分だけから分ける）と、チケットが headSha と関係なく変わるため
   - 保存は `.ondina/<key>/llm/<鍵>.spec.json`。キーは `previous` を除いたプロンプトの sha1。同じ差分・同じ How・同じチケットなら、前回の解析が変わっても同じ応答を使う（古い headSha を解析し直しても同じ要求。原則 7）。チケットの本文が変われば抜き出し直す。`--relabel` で起動し直す。`--no-llm` では 1 回目が走らないので走らない
   - `previous`: 同じキーの直近の解析（1 回目と同じ `findPrevious`）が同じチケット（`key`、なければ `ref`）なら、その `specs` の文と対応を渡し、同じ要求は同じ文・同じ対応にするよう頼む
   - 失敗は保存せず `Analysis.llmSpecs` に理由を残し、`specs` は空のまま書く（画面は理由と開いた原文。3.1）。stderr に「要求を抜き出せませんでした: 理由」
@@ -826,7 +835,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
 4. How に入った `none` の hunk は `kind: 'core'`（`kindProvenance: 'llm'`）。入らなければ `none` のまま = 未帰属。`ripple` / `test` / `core`（AST 判定）は変えない。LLM に kind を書かせない
 5. LLM が入れなかったファイル hunk（import だけの変更）は、同じファイルのほかの hunk が全部同じ How なら引き継ぐ
 6. `claims` の原文が作者説明（`pr.body`）にそのまま含まれるか（改変検知）。含まれなければ除外する。本文が空なら `claims` は空
-7. 要求の抜き出し（10.8。`packages/core/src/spec/verify.ts`）: 文の前後の空白と末尾の句点を落とし、空の文は除外し、同じ文は最初だけ。11 個目からは除外する（`MAX_SPECS`）。`hows` は実在する How の番号だけ（存在しない番号は除外して stderr に 1 行）、同じ番号は 1 つにして昇順。id は残った並び順に `s1`…。`How.specIds` は `specs` から逆に引く。最後の 1 行「要求: 8 件（対応するコースがあるもの 7 件）」。「なぜ」の文（2026-10-29）は前後の空白を落とし、LLM に渡したチケットの本文に含まれるものだけ残す（空白と Markdown の強調・コードの記号は無視して比べる。言い換えた文を「原文」として出さないため）。空の文・同じ文（空白と記号だけ違うものも同じ文）は除外し、4 個目からは除外する（`MAX_WHY`）。残ったものは `Analysis.background.why`。親チケットの目的の文（`parentWhy`。2026-10-29）も同じ規則で、親チケットの本文に含まれるものだけ残す（親がなければ全部除外する）。残ったものは `Analysis.background.project.why`
+7. 要求の抜き出し（10.8。`packages/core/src/spec/verify.ts`）: 文の前後の空白と末尾の句点を落とし、空の文は除外し、同じ文は最初だけ。11 個目からは除外する（`MAX_SPECS`）。`hunkIds` は入力で選べる差分の ID だけ（不明な ID は除外して stderr に 1 行）。重複を除いて hunk の入力順にする。`Spec.hows` は選んだ差分から導く。id は残った並び順に `s1`…。`How.specIds` は `specs` から逆に引く。最後の 1 行「要求: 6 件（対応する差分があるもの 5 件）」。「なぜ」の文（2026-10-29）は前後の空白を落とし、LLM に渡したチケットの本文に含まれるものだけ残す（空白と Markdown の強調・コードの記号は無視して比べる。言い換えた文を「原文」として出さないため）。空の文・同じ文（空白と記号だけ違うものも同じ文）は除外し、4 個目からは除外する（`MAX_WHY`）。残ったものは `Analysis.background.why`。親チケットの目的の文（`parentWhy`。2026-10-29）も同じ規則で、親チケットの本文に含まれるものだけ残す（親がなければ全部除外する）。残ったものは `Analysis.background.project.why`
 8. `layerGuesses` は「設定に実在する層の名前」かつ「本当に `unlayeredPaths` にあるパス」のものだけ採る（glob で決まった層を推測で上書きさせない）。同じパスが 2 回来たら最初だけ。採ったものは `layerProvenance: 'llm'`（2026-09-22 実装 `packages/core/src/layers/guesses.ts`）
 9. 2 回目（文を書く。`packages/core/src/narration/verify.ts`）: 存在しない `howId` のコース・そのコースの停留所にない `symbolId` の文は除外する／空・空白だけの文はないものとして扱う（画面は自動の文）／同じコース・同じ停留所が 2 回来たら最初だけ（最初の文が空でも後の分は使わない。8 と同じ規則）／経路（並び・呼ばれ方）は変えない／入口の説明（2026-10-29）: 要点・例・箱の文は前後の空白を落とし、空なら欄を付けない。例の根拠の場所は確かめることと同じ規則（停留所はどのコースのものでもよい）。図の箱のコースは実在するものだけで、1 つのコースは全部の図で最初の 1 回だけ。コースが残らない箱・題が空の箱・箱が残らない図は除外する。箱の下の名前はその箱のコースの停留所だけ。入口の説明を書いていれば最後に 1 行（`入口の説明: 要点 あり、例 あり（場所 2）、図 1 本（箱 5）`。どの箱にも入らなかったコースもここに出る）／背景（2026-10-29）: 前からあるものの名前は候補（入力の `existing`）にあるものだけ。1 つの候補は最初の行だけ（同じ行で 2 回来ても 1 回）。消えるものと変えていないものが混ざったら最初の名前と同じ方だけ（チップの事実を 1 つにする）。文が空の行・名前が残らない行は除外し、3 行まで（`MAX_EXISTING`）。消えるか・パス・種類はプログラムが候補から付ける。言葉は言葉が空なら除外し、コードの名前（後ろの `()` と、識別子を `.` で繋いだものは認める）が差分の行に出る識別子でなければ除外する。同じ名前は最初だけ、4 個まで（`MAX_TERMS`）。背景を書いていれば最後に 1 行（`背景: 前からあるもの 3 行（候補 5）、言葉 4 個`）／確かめること（2026-10-22）は、根拠の場所がそのコースの停留所で、行がその停留所の hunk の head 側（文脈か追加の行）にある番号だけ残す（画面がその行を光らせるので、実在しない行を残さない）。行が残らない場所・場所が残らない文・文が空のものは除外する。同じ文で同じ場所は最初だけ。場所は読む順に並べ直し、行は昇順・重複なし。6 個目からは除外する（`MAX_CHECKS`）。除外したものは 1 行ずつ知らせ、最後の 1 行で埋まった数を出す（`案内文: 変わること 7 / 7、この場所 29 / 29、確かめること 23（場所 32）`。書き漏らしが stderr で分かる）
 10. `themes`（地図のまとまり。2026-11-04 `packages/core/src/mapgroup/build.ts`）は How が 8 つ以上のときだけ見る。7 つ以下・名前が空でない・どの How もちょうど 1 つの題に入る・不明な How の番号がない、を全部満たすときだけ使う。満たさなければ全部使わず、理由を stderr に 1 行出して、全景にコースを全部並べる（7 を超えたまま出す。黙って直さない）
@@ -1437,24 +1446,33 @@ lead があれば答えを採る（need が一緒にあっても）。lead が�
 - **検査**: 候補にない id は除外して「選ばなかった」扱いにし、stderr に「LLM が候補にないチケット（c9）を選んだので除外しました」
 - **保存**: 5.3 のチケット選び
 
-### 10.8 要求の抜き出し（2026-10-12 実装。`packages/core/src/spec/`）
+### 10.8 要求の抜き出し（`packages/core/src/spec/`）
 
-取れたチケット（5.1）から「この PR で成り立つべきこと」（要求）を抜き出させ、要求ごとに対応する How を、1 回目が分けた How から選ばせる。LLM は How の番号しか書けず、対応の有無と数はプログラムが決める（原則 3）。呼ぶ時期と保存は 5.3、検証は 5.4 の 7、画面は 3.1。
+取れたチケット（5.1）から「この PR で成り立つべきこと」を抜き出す。LLM は要求ごとに対応する差分の ID を選ぶ。How は選ばせない。対応の検証と章の組み立てはプログラムが行う（原則 3）。
 
-- **入力**（決定的。ゴールデン `fixtures/order-service/expected/llm-spec-input.json`。fixture でプロンプト 17 KB）:
+- **入力**（`buildSpecInput`。ゴールデン `fixtures/order-service/expected/llm-spec-input.json`）:
   ```json
-  { "ticket": { "key": "SHOP-421", "title": "注文に割引コードを適用できるようにする", "kind": "ストーリー", "body": "背景\n…\nやること\n- 注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）\n- …" },
-    "hows": [ { "id": 3, "title": "…", "why": "…", "hunkIds": ["…"], "groupIds": ["g1"] } ],
-    "hunks": [ "…1 回目と同じ形。どれかの How に入ったものだけ" ], "rippleGroups": [ "…同じ" ],
-    "previous": { "specs": [ { "text": "…", "hows": [3] } ] } }
+  { "ticket": { "key": "SHOP-421", "title": "注文に割引コードを適用できるようにする", "kind": "ストーリー", "body": "背景\n…\nやること\n- …" },
+    "hunks": [ "…1 回目の全 hunk。How に入らなかった差分も含む" ],
+    "rippleGroups": [ "…1 回目の全グループ。代表と逸脱の差分の行" ],
+    "previous": { "specs": [ { "text": "…", "hunkIds": ["…"] } ] } }
   ```
-  - 親チケット（2026-10-29。5.1）があれば `parent` に同じ形で渡す（`{ "key": "SHOP-400", "title": "春のキャンペーン", "kind": "エピック", "body": "目的\n4 月の 1 か月、…" }`）。目的の文を写させるだけで、要求は親から抜き出させない
-  - チケットは番号・題・種類と本文の文字。状態と取った時刻は渡さない。Jira の本文（`format: 'html'`）はタグを外す（見出し・段落・表の行・`<br>` は改行、`<li>` は「- 」、表のセルは空白、実体参照は戻す、script / style / コメントの中身は落とす。`ticketPlainText`）。30,000 字（`SPEC_BODY_LIMIT`）を超えたら切って `truncated: true`（stderr に 1 行）
-  - How ごとの hunk は 1 回目の検証後の `hunk.hows` から引く。束は代表の How。どの How にも入らなかった hunk は渡さない（選べるのは How だけ）。作者の説明・辺・層は渡さない
-- **出力**: `{ "specs": [ { "text": "…", "hows": [3, 5] } ], "why": ["春のキャンペーン（SHOP-400）で割引コードを配る。"], "parentWhy": ["4 月の 1 か月、割引コードを配って初めての注文を増やす。"] }`（`hows` / `why` / `parentWhy` がなければ空として読む）。`why` と `parentWhy` は 2026-10-29 から（説明タブの背景。3.1）
-- **指示**（`spec/prompt.ts`）: チケットに書かれた「この PR で成り立つべきこと」（できるようになること・振る舞い・完了の条件）を 1 項目に 1 つ。背景・経緯・目的の説明・担当や期日は入れない。チケットに書かれていないことを足さない。チケットの順に 10 個まで。短い 1 文で句点なし（画面はリスト）。`hows` は入力の How の番号から、その要求が述べる振る舞いを足す・変える差分がその How にあるときだけ（同じ領域なだけ・関係するだけは入れない）。なければ空。満たしているか・十分かは書かない。評価語を使わない。`previous` があれば同じ要求は同じ文・同じ対応。ファイルを読まない・ツールなし・JSON 1 個。例文は別の題材（在庫の引き当て） `why`（2026-10-29）: チケットの本文から、この変更をする理由・きっかけ・目的を述べる文を原文のまま 1〜3 文写す（言い換えない・要約しない・句点までの 1 文を丸ごと。やること・完了の条件は入れない。なければ空）。fixture の記録では「背景」の 2 文をそのまま写した（2026-10-29）。`parentWhy`（2026-10-29）: 親チケットの本文から、この案件をする目的・理由・きっかけを述べる文を原文のまま 1〜3 文（同じ写し方。子のチケットの一覧・やること・担当・期日・このチケットの本文の文は入れない。親がないか書かれていなければ空）。fixture の記録（親は `ticket/jira-parent.json` のエピック）では「目的」の 1 文目をそのまま写した
-- **測った結果**（2026-10-12 06:05 頃、開発機、既定の `claude -p … opus`、記録 `llm/spec-output.json`）: 51 秒。要求 8 件（チケットの「やること」5 項目のうち 1 つを率の決め方と率の値に分け、「保存して応答に含める」を 2 つに分けた）。対応するコースがあるもの 7 件で、「期限切れのコードは 400 を返す」はどのコースにも対応しない（fixture の差分に期限の判定はない）。検証で除外したものはない（ゴールデン `expected/specs.json`）。2026-10-29 に親チケットを足して採り直した記録は 24 秒・要求 8 件で、率の値の行（「SPRING10 は 10%、WELCOME5 は 5% の率で割引する」）も対応するコースなしになった（対応するコースがあるもの 6 件。LLM の分け方の揺れ）
-- 2 回目と同時に走るので、analyze の待ち時間は 2 回目と抜き出しの長い方になる（足し算にならない）
+  - 親チケットがあれば `parent` に同じ形で渡す。親からは案件の目的の文だけを写し、要求は抜き出さない
+  - チケットは番号・題・種類と本文の文字。状態と取得時刻は渡さない。Jira の HTML は `ticketPlainText` で文字にする。30,000 字を超えたら切り、`truncated: true` を付ける
+  - `hunks` と `rippleGroups` は 1 回目の全入力を使う。作者の説明・How の一覧・辺は渡さない。差分に付いた層の情報は元の入力のまま残す
+  - 古い保存データで `hunkIds` のない要求は `previous` に渡さない。古い How の対応から差分を推測しない
+- **出力**: `{ "specs": [{ "text": "…", "hunkIds": ["…"] }], "why": ["…"], "parentWhy": ["…"] }`。`hunkIds` / `why` / `parentWhy` がなければ空として読む
+- **指示**: 要求はチケットの順に 10 個まで。1 項目に短い 1 文、句点なし。背景・担当・期日は入れない。書かれていないことを足さない。差分の行が要求の振る舞いを足す・変える hunk を選ぶ。同じ領域なだけ、関係するだけの差分は選ばない。振る舞いを確かめるテストは選んでよい。代表と逸脱は、要求自体がその場所について述べているときだけ選ぶ。選べるのは `hunks[].id`、`rippleGroups[].representative.hunkId`、`rippleGroups[].deviations[].hunkId` だけ。対応がなければ空。満たしているか、十分かは書かない
+- **引用**: `why` はチケットの理由・きっかけ・目的の文、`parentWhy` は親の案件の目的の文を原文のまま 1〜3 文写す。文を切り出したり要約したりしない。なければ空。プログラムは各本文に含まれる文だけ残す。`previous` があれば同じ要求の文と対応を揃える。ツールは使わず、JSON オブジェクト 1 つで返す。例文は別の題材（在庫の引き当て）
+- **検証**（`applySpecs`）: 不明な ID は知らせて除外する。同じ ID は 1 つにし、入力の hunk 順で保存する。文の空白と末尾の句点を落とす。空の文と重複を除き、10 件まで残す。ID は `s1` から順に振る。`Spec.hows` は選んだ `Hunk.hows` から導く。束への How の割当も代表の `Hunk.hows` に入っている。`How.specIds` は逆に引く。件数は「要求: N 件（対応する差分があるもの M 件）」
+- **章**（`buildChapters`、`packages/core/src/chapter/build.ts`）: Spec の順に `spec` 章を作る。選んだ差分を、既存コースと共有する call 辺の幅優先順で並べる。枝は呼ぶ行、同順位は層・FQ 名・ID の順。辺に乗らない差分は hunk 順。対応がなくても空の章を残す。同じ差分を複数の要求で読める
+  - 未選択の import だけの差分は、同じファイルの別の差分がある最初の `spec` 章の末尾に置く
+  - 要求に入らない追従メンバーは `follow` 章。グループごとに代表が先、残りは hunk 順。核と逸脱は含めない
+  - 残りは `extra` 章に hunk 順で置く。逸脱もここに入る。空の `follow` / `extra` は作らない。全 hunk を少なくとも 1 つの章に含める
+  - チケットから Spec が 1 件以上得られた解析だけ `Analysis.chapters` を保存する。画面の切り替えは別の変更で行う
+- **fixture**: 記録の文・`why`・`parentWhy` は変更しない。旧 How の対応を、グループに属さない hunk へ機械変換した。核は残す。要求 6 件、対応する差分があるもの 5 件。「期限切れ」と率の値の要求は空。現在の追従グループは代表 OrderAdminView を含む 22 hunk。Logger・FeatureFlags・PromoService の逸脱は `extra`。ゴールデンは `expected/specs.json` と `expected/chapters.json`
+- 2 回目の LLM と同時に呼ぶ。保存は `previous` を除いたプロンプトを鍵にする。同じ差分とチケットなら同じ記録を使う
+- **測った結果**（2026-11-09、開発機、既定の `claude -p … opus`、記録 `llm/spec-output.json`）: 22 秒。要求 6 件。対応する差分があるもの 5 件で、「期限切れのコードは 400 を返す」は差分なし。章（ゴールデン `expected/chapters.json`）は、要求の章 6、つられて変わった所 22 件、どの要求にも当たらない差分 6 件（Logger の 2 件、FeatureFlags、PromoService、ApplyDiscountUseCaseTest と OrderRepositoryImplTest の 1 件ずつ）。How を選ばせていた頃の記録（2026-10-12・10-29）は要求 8 件だった
 
 ## 11. 設定ファイル `ondina.config.yaml`
 

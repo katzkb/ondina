@@ -53,9 +53,9 @@ if (Array.isArray(input.candidates)) {
   process.stdout.write(JSON.stringify({ choice }) + '\n');
   process.exit(0);
 }
-// 要求の抜き出し（入力に ticket と hows がある。設計書 10.8）は FAKE_LLM_SPEC_MODE: ok（既定。要求 2 つ: 最初の How に対応する物と、対応の無い物。なぜの文 2 つ。親があれば親の文 2 つ）
-// | fail | garbage | bogus（知らない How の番号 99 を足す）。FAKE_LLM_SPEC_INPUT: 受け取った入力 JSON をそのファイルに書く（previous を見る）
-if (input.ticket !== undefined && Array.isArray(input.hows)) {
+// 要求の抜き出し（入力に ticket と hunks がある。設計書 10.8）は FAKE_LLM_SPEC_MODE: ok（既定。要求 2 つ: 最初の差分に対応する物と、対応の無い物。なぜの文 2 つ。親があれば親の文 2 つ）
+// | fail | garbage | bogus（不明な差分の ID unknown を足す）。FAKE_LLM_SPEC_INPUT: 受け取った入力 JSON をそのファイルに書く（previous を見る）
+if (input.ticket !== undefined && Array.isArray(input.hunks)) {
   if (process.env.FAKE_LLM_LOG) appendFileSync(process.env.FAKE_LLM_LOG, 'spec\n');
   if (process.env.FAKE_LLM_SPEC_INPUT) writeFileSync(process.env.FAKE_LLM_SPEC_INPUT, JSON.stringify(input));
   const mode = process.env.FAKE_LLM_SPEC_MODE ?? 'ok';
@@ -67,11 +67,11 @@ if (input.ticket !== undefined && Array.isArray(input.hows)) {
     process.stdout.write('sorry, no json today\n');
     process.exit(0);
   }
-  const first = input.hows[0]?.id;
-  const hows = [...(first === undefined ? [] : [first]), ...(mode === 'bogus' ? [99] : [])];
+  const first = input.hunks[0]?.id;
+  const hunkIds = [...(first === undefined ? [] : [first]), ...(mode === 'bogus' ? ['unknown'] : [])];
   // なぜ: チケットの背景の 1 文と、チケットに無い 1 文（検証で捨てる）。親チケットがあれば、親の目的の 1 文と親に無い 1 文
   const parentWhy = input.parent === undefined ? [] : ['4 月の 1 か月、割引コードを配って初めての注文を増やす。', '親に無い文。'];
-  process.stdout.write(JSON.stringify({ specs: [{ text: '要求 1', hows }, { text: '要求 2', hows: [] }], why: ['春のキャンペーン（SHOP-400）で割引コードを配る。', 'チケットに無い文。'], parentWhy }) + '\n');
+  process.stdout.write(JSON.stringify({ specs: [{ text: '要求 1', hunkIds }, { text: '要求 2', hunkIds: [] }], why: ['春のキャンペーン（SHOP-400）で割引コードを配る。', 'チケットに無い文。'], parentWhy }) + '\n');
   process.exit(0);
 }
 // 構成の推定（入力に dirs がある。設計書 10.6）は FAKE_LLM_STRUCTURE_MODE: ok（既定）| fail | empty（層が 1 つも無い）。

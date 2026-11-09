@@ -6,10 +6,9 @@ import type { SpecInput } from '../src/spec/types.js';
 
 const input: SpecInput = {
   ticket: { key: 'SHOP-421', title: '割引', body: '- 割引できる' },
-  hows: [{ id: 1, title: 'A', why: 'W', hunkIds: ['h1'], groupIds: [] }],
   hunks: [{ id: 'h1', path: 'a/Order.kt', symbol: 'Order', lines: ['+x'] }],
   rippleGroups: [],
-  previous: { specs: [{ text: '割引できる', hows: [1] }] },
+  previous: { specs: [{ text: '割引できる', hunkIds: ['h1'] }] },
 };
 
 describe('renderSpecPrompt', () => {
@@ -25,9 +24,9 @@ describe('renderSpecPrompt', () => {
     for (const s of ['この PR で成り立つべきこと', 'チケットに書かれていないことを足さない', '10 個まで', '句点を付けない']) expect(p, s).toContain(s);
   });
 
-  it('hows は入力の How から選び、差分が振る舞いを足す・変えるときだけ入れる。満たしているかは書かない', () => {
+  it('hunkIds は入力の差分から選び、差分が振る舞いを足す・変えるときだけ入れる。満たしているかは書かない', () => {
     const p = renderSpecPrompt(input);
-    for (const s of ['hows[].id', '同じ領域なだけ', '空の配列', '満たしているか', '評価語']) expect(p, s).toContain(s);
+    for (const s of ['hunks[].id', 'rippleGroups[].representative.hunkId', 'rippleGroups[].deviations[].hunkId', 'テスト', '同じ領域なだけ', '空の配列', '満たしているか', '評価語']) expect(p, s).toContain(s);
   });
 
   it('previous があれば同じ要求は同じ文にし、ツールを使わず JSON 1 つだけ返すよう指示する', () => {

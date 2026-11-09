@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applyLayerGuesses, applyLlmOutput, applySpecs, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyFlowTitles, applyNarration, attachCalls, attachFlowCalls, buildFlows, copyFlowTitles, attachTokens, buildBaseCallEdges, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
+import { applyLayerGuesses, applyLlmOutput, applySpecs, buildChapters, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyFlowTitles, applyNarration, attachCalls, attachFlowCalls, buildFlows, copyFlowTitles, attachTokens, buildBaseCallEdges, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
 import type { How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
 import { readConfigFile } from './config.js';
 import { changedFiles, git, githubDiff, outsideRepo, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
@@ -264,7 +264,7 @@ async function runAnalysis(
   }
 
   // 読む順番（3.3 のコース）はプログラムが組む（10.3）。2 回目の LLM はその後で、コースの変わること・確かめること・この場所と入口の説明を書く。
-  // 要求の抜き出し（10.8）は How が決まれば呼べるので、2 回目と同時に走らせる（待ち時間を足さない）
+  // 要求の抜き出し（10.8）は 1 回目の入力を使い、2 回目と同時に走らせる（待ち時間を足さない）
   // 案件（親チケット・同じ案件の PR）は 1 回目の間に調べ終えている。親の本文は要求の抜き出しに渡す
   const { project, info: projectInfo, warnings: projectWarnings } = (await projecting) ?? { info: [], warnings: [] };
   info.push(...projectInfo);
@@ -327,6 +327,7 @@ async function runAnalysis(
     ...(baseGraph === undefined ? {} : { edgesBase: baseGraph.edges }),
     tours,
     specs,
+    ...(specs.length === 0 ? {} : { chapters: buildChapters({ specs, hunks, symbols, edges: graph.edges, layers: layering.bands }) }),
     claims,
     summary,
     ...(why.length === 0 && project === undefined && Object.keys(background).length === 0
@@ -368,13 +369,13 @@ interface Specing {
 }
 
 /**
- * 要求の抜き出し（10.8）。取れたチケットと 1 回目の How から。前回の解析が同じチケットなら、その要求を previous に渡す（原則 7）。
- * 保存の鍵は previous を除いたプロンプトの sha1。同じ差分・同じ How・同じチケットなら、前回の解析が変わっても同じ答えを使う
+ * 要求の抜き出し（10.8）。取れたチケットと 1 回目の全差分から。前回の解析が同じチケットなら、その要求を previous に渡す（原則 7）。
+ * 保存の鍵は previous を除いたプロンプトの sha1。同じ差分・同じチケットなら、前回の解析が変わっても同じ答えを使う
  * （古い headSha を解析し直しても同じ要求。headSha でなく鍵で引くのは、チケットが headSha と関係なく変わるから）
  */
 async function specsFor(a: { repo: string; key: string; command: string; mode: 'auto' | 'off' | 'relabel'; base: LlmInput; hows: How[]; hunks: readonly Hunk[]; ticket: Ticket; parent: ParentTicket | undefined; prev: Analysis | undefined }): Promise<Specing> {
   const same = a.prev?.pr.ticket !== undefined && ticketName(a.prev.pr.ticket) === ticketName(a.ticket);
-  const input = buildSpecInput({ base: a.base, hows: a.hows, hunks: a.hunks, ticket: a.ticket, ...(a.parent === undefined ? {} : { parent: a.parent }), ...(same ? { previous: a.prev!.specs } : {}) });
+  const input = buildSpecInput({ base: a.base, ticket: a.ticket, ...(a.parent === undefined ? {} : { parent: a.parent }), ...(same ? { previous: a.prev!.specs } : {}) });
   const identity = renderSpecPrompt(withoutPrevious(input));
   const sha = createHash('sha1').update(identity).digest('hex');
   const ran = await runLlm({ repo: a.repo, key: a.key, headSha: sha, call: 'spec' }, a.command, renderSpecPrompt(input), a.mode, parseSpecOutput, identity);
@@ -384,7 +385,7 @@ async function specsFor(a: { repo: string; key: string; command: string; mode: '
   ];
   if (ran.status !== 'ok') return { specs: [], why: [], parentWhy: [], hows: a.hows, run: runOf(ran), info: [...cut, `要求を抜き出せませんでした: ${ran.reason}`] };
   const head = ran.reused ? `LLM（要求の抜き出し）: ${ran.command}（.ondina/${a.key}/llm/${sha}.spec.json を再利用）` : `LLM（要求の抜き出し）: ${ran.command}`;
-  const applied = applySpecs(a.hows, ran.output, input.ticket.body, input.parent?.body);
+  const applied = applySpecs(a.hows, a.hunks, ran.output, input.ticket.body, input.parent?.body);
   return { specs: applied.specs, why: applied.why, parentWhy: applied.parentWhy, hows: applied.hows, run: runOf(ran), info: [head, ...cut, ...applied.info] };
 }
 

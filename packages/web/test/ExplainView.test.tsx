@@ -224,8 +224,8 @@ function drawSpecs(over: Partial<Pick<Analysis, 'specs' | 'llmSpecs'>> = {}, hom
   const a = fixtureAnalysis();
   a.pr.ticket = SHOP421;
   a.specs = over.specs ?? [
-    { id: 's1', text: '割引コードを 1 つ適用できる', hows: [3, 5] },
-    { id: 's2', text: '期限切れのコードは 400 を返す', hows: [] },
+    { id: 's1', text: '割引コードを 1 つ適用できる', hunkIds: [], hows: [3, 5] },
+    { id: 's2', text: '期限切れのコードは 400 を返す', hunkIds: [], hows: [] },
   ];
   a.llmSpecs = over.llmSpecs ?? OK_RUN;
   const r = view(a, 'mocha', home, dispatch);

@@ -235,13 +235,22 @@ export interface TicketSettings {
 
 /**
  * チケットから抜き出した要求（3.1 / 10.8。2026-10-12）。文と対応は LLM が書いた推定（画面は点線の枠と「AI」）。
- * hows は LLM が今ある How から選び、プログラムが実在するものだけ残した番号。空 = 対応するコースなし。id は並び順の s1, s2 …
+ * id は並び順の s1, s2 …
  */
 export interface Spec {
   id: string;
   text: string;
+  /** LLM が選び、プログラムが検証した差分の ID。空 = この要求に対応する差分が見つからない */
+  hunkIds: string[];
+  /** hunkIds からプログラムが導いた How の番号（昇順） */
   hows: number[];
 }
+
+/** 要求ごとの読む順。章の割当と並びはプログラムが組む */
+export type Chapter =
+  | { kind: 'spec'; specId: string; hunkIds: string[] } // 読む順。空 = 対応する差分なし
+  | { kind: 'follow'; hunkIds: string[] } // 核の変更に追従するメンバー
+  | { kind: 'extra'; hunkIds: string[] }; // どの要求にも対応しない差分
 
 /** 作者説明の各文 */
 export interface Claim {
@@ -672,6 +681,8 @@ export interface Analysis {
   edgesBase?: Edge[];
   tours: Tour[];
   specs: Spec[];
+  /** チケットから要求が得られたときだけ、要求・追従・その他の章を持つ */
+  chapters?: Chapter[];
   claims: Claim[];
   summary: Summary;
   /** 説明タブの背景（3.1）。無い = チケットの「なぜ」も 2 回目の LLM の前からあるもの・言葉も無い（LLM が動かなかった・古い解析など） */
