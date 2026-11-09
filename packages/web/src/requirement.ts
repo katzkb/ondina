@@ -6,6 +6,7 @@ import { onGithubDiff, pickRange, type MemoPick } from './memo.js';
 export type RequirementChapter = 'start' | number | 'end';
 export interface RequirementUi {
   chapter: RequirementChapter;
+  narrow: boolean;
   /** 同じ章や場所を押し直しても、その見出しへ戻す一時的な合図 */
   focusN: number;
   openHunks: string[];
@@ -13,7 +14,7 @@ export interface RequirementUi {
   editor: { hunkId: string; label: 'ask' | 'imo' } | null;
   scroll: { path: string; n: number } | null;
 }
-export const NO_REQUIREMENT: RequirementUi = { chapter: 'start', focusN: 0, openHunks: [], files: {}, editor: null, scroll: null };
+export const NO_REQUIREMENT: RequirementUi = { chapter: 'start', narrow: false, focusN: 0, openHunks: [], files: {}, editor: null, scroll: null };
 
 /** local と古い解析には GitHub の並びが無いので、従来のファイル順で表示する。 */
 export function requirementFiles(analysis: Analysis): Array<{ path: string }> {

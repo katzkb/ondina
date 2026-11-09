@@ -235,3 +235,56 @@ it('explain next opens requirements even when no diffs or How courses were produ
   const withoutHows = { ...s, analysis: { ...s.analysis!, hows: [], tours: [], hunks: [], chapters: s.analysis!.chapters!.map((c) => ({ ...c, hunkIds: [] })) } };
   expect(run(withoutHows, { id: 'course.forward' }).view).toBe('req');
 });
+
+
+describe('requirement narrowing', () => {
+  it.each(['req.narrow', 'file.full'] as const)('%s toggles without moving focus or saving', (id) => {
+    const s = enter();
+    expect(s.requirement.narrow).toBe(false);
+    const on = reduce(s, { id });
+    expect(on.state.requirement).toEqual({ ...s.requirement, narrow: true });
+    expect(on.state.selectedHunk).toBe(s.selectedHunk);
+    expect(on.effects).toEqual([]);
+    expect(run(on.state, { id }).requirement.narrow).toBe(false);
+  });
+  it('keeps narrowing across chapter navigation including start and end', () => {
+    let s = run(enter(), { id: 'req.narrow' }, { id: 'req.nextChapter' });
+    expect(s.requirement).toMatchObject({ chapter: 1, narrow: true });
+    for (const chapter of ['start', 'end', 0] as const) {
+      s = run(s, { id: 'req.go', chapter });
+      expect(s.requirement).toMatchObject({ chapter, narrow: true });
+    }
+  });
+  it.each(['req.narrow', 'file.full'] as const)('%s does nothing at start, end, or an empty chapter', (id) => {
+    const s = loaded();
+    const empty = s.analysis!.chapters!.findIndex((c) => c.hunkIds.length === 0);
+    expect(empty).toBeGreaterThanOrEqual(0);
+    for (const chapter of ['start', 'end', empty] as const) {
+      const at = run(s, { id: 'req.go', chapter });
+      for (const narrow of [false, true]) {
+        const ready = { ...at, requirement: { ...at.requirement, narrow } };
+        expect(reduce(ready, { id })).toEqual({ state: ready, effects: [] });
+      }
+    }
+  });
+  it('req.narrow only applies in the requirement view', () => {
+    const s = { ...enter(), view: 'diff' as const };
+    expect(reduce(s, { id: 'req.narrow' })).toEqual({ state: s, effects: [] });
+  });
+  it.each(['file.next', 'file.prev'] as const)('%s leaves narrowing even when no files are listed', (id) => {
+    const s = run(enter(), { id: 'req.narrow' });
+    const ready = { ...s, analysis: { ...s.analysis!, githubDiff: [] } };
+    const next = run(ready, { id });
+    expect(next.requirement.narrow).toBe(false);
+    expect(next.selectedHunk).toBe(s.selectedHunk);
+    expect(next.requirement.scroll).toBeNull();
+  });
+  it.each(['req.file', 'file.next', 'file.prev'] as const)('%s leaves narrowing and preserves the current hunk', (id) => {
+    const s = run(enter(), { id: 'req.narrow' });
+    const path = s.analysis!.hunks.at(-1)!.path;
+    const next = run(s, id === 'req.file' ? { id, path } : { id });
+    expect(next.requirement.narrow).toBe(false);
+    expect(next.selectedHunk).toBe(s.selectedHunk);
+    expect(next.requirement.scroll).not.toBeNull();
+  });
+});

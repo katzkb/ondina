@@ -43,7 +43,7 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
     return hunks.length > 0 && hunks.every((h) => viewed.has(h.id));
   };
   useEffect(() => {
-    center.current?.querySelector('.gh-hunk.focus > .req-hunk-head')?.scrollIntoView?.({ block: 'start' });
+    center.current?.querySelector('.focus > .req-hunk-head')?.scrollIntoView?.({ block: 'start' });
   }, [selectedHunk, at.chapter, at.focusN]);
   useEffect(() => {
     if (!at.scroll) return;
@@ -65,20 +65,21 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
   );
   return (
     <section className="view req-course" aria-label="要求コース">
-      <nav className="req-nav" aria-label="章">
+      <nav className="req-nav" aria-label="章" style={{ viewTransitionName: 'req-nav' }}>
         <h2>読む順番</h2>
         {nav('start', 'はじめに')}
         {chapters.map((c, i) => <div key={i}>{nav(i, chapterLabel(analysis, i), chapterText(analysis, c), c.hunkIds)}</div>)}
         {nav('end', 'Approve の前に')}
       </nav>
       <div className="req-center" role="region" aria-label="読む差分" ref={center}>
-        <div className="req-banner">
+        <div className="req-banner" style={{ viewTransitionName: 'req-banner' }}>
           <h2>{at.chapter === 'start' ? 'はじめに' : at.chapter === 'end' ? 'Approve の前に' : chapterLabel(analysis, at.chapter)}</h2>
           {chapter && <p>{chapterText(analysis, chapter)}</p>}
           <div className="req-actions">
             <button className="btn sm" type="button" disabled={at.chapter === 'start'} onClick={() => dispatch({ id: 'req.prevChapter' })}>前の章 <Key action="course.prev" /></button>
             <button className="btn sm" type="button" disabled={at.chapter === 'end'} onClick={() => dispatch({ id: 'req.nextChapter' })}>次の章 <Key action="course.forward" /></button>
             {chapter && chapter.hunkIds.length > 0 && <>
+              <button className={`btn sm${at.narrow ? ' on' : ''}`} type="button" aria-pressed={at.narrow} onClick={() => dispatch({ id: 'req.narrow' })}>{at.narrow ? '全部のファイルに戻す' : 'この要求の差分だけにする'} <Key action="file.full" /></button>
               <button className="btn sm" type="button" onClick={() => dispatch({ id: 'hunk.prev' })}>前の場所 <Key action="hunk.prev" /></button>
               <button className="btn sm" type="button" onClick={() => dispatch({ id: 'hunk.next' })}>次の場所 <Key action="hunk.next" /></button>
               <span className="seg"><button type="button" className={props.mode === 'sbs' ? 'on' : ''} onClick={() => dispatch({ id: 'diff.mode.sbs' })}>左右</button><button type="button" className={props.mode === 'uni' ? 'on' : ''} onClick={() => dispatch({ id: 'diff.mode.unified' })}>統合</button></span>
@@ -96,7 +97,26 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
         </>}
         {chapter?.kind === 'spec' && chapter.hunkIds.length === 0 && <p className="req-missing">この要求に当たる差分が見つかりません</p>}
         {chapter && <DefLinks defs={analysis.defs} dispatch={dispatch}>
-          {files.map((file) => {
+          {at.narrow && chapter.hunkIds.length > 0 ? <>
+            <p>この要求の差分 {chapter.hunkIds.length} か所だけを、読む順に並べています</p>
+            {chapter.hunkIds.map((id, i) => {
+              const h = analysis.hunks.find((h) => h.id === id);
+              if (!h) return null;
+              const current = selectedHunk === id;
+              const asked = hunkComments(analysis, review, h).some((c) => c.label === 'ask' && c.state !== 'discarded');
+              const status = viewed.has(id) ? asked ? 'ask' : 'ok' : null;
+              return <section className={`req-card${current ? ' focus' : ''}${status ? ` st-${status}` : ''}`} key={id} data-req-hunk={id} style={{ viewTransitionName: `req-h${analysis.hunks.indexOf(h)}` }}>
+                <button className="req-hunk-head" type="button" onClick={() => dispatch({ id: 'req.focus', hunkId: id })}>
+                  <span className="req-number">{i + 1}</span>{current && <span className="here">いまここ</span>}
+                  <span className="req-card-path">{h.path}</span>
+                  <span>@@ −{h.lnOld} +{h.lnNew} @@ {h.symbol}</span>
+                  {chapters.map((c, n) => c.hunkIds.includes(id) && <span className="chip" key={n}>{chapterLabel(analysis, n)}</span>)}
+                  {status && <span className="req-more">{asked ? '聞く' : 'わかった'}</span>}
+                </button>
+                <HunkBody {...props} hunk={h} guide member={chapter.kind === 'follow' && h.group !== undefined && h.group.representative !== h.id} />
+              </section>;
+            })}
+          </> : files.map((file) => {
             const hunks = hunksOf(file.path);
             const relevant = hunks.some((h) => mine.has(h.id));
             const open = at.files[file.path] ?? relevant;
@@ -114,17 +134,14 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
                 const own = mine.has(h.id);
                 const expanded = own || at.openHunks.includes(h.id);
                 const current = own && selectedHunk === h.id;
-                return <section className={`gh-hunk${current ? ' focus' : ''}`} key={h.id} data-req-hunk={h.id}>
+                return <section className={`gh-hunk${current ? ' focus' : ''}`} key={h.id} data-req-hunk={h.id} style={own ? { viewTransitionName: `req-h${analysis.hunks.indexOf(h)}` } : undefined}>
                   <button className="req-hunk-head" type="button" aria-expanded={expanded} onClick={() => dispatch({ id: own ? 'req.focus' : 'req.toggleHunk', hunkId: h.id })}>
                     {current && <span className="here">いまここ</span>}{own && <span className="req-number">{chapter.hunkIds.indexOf(h.id) + 1}</span>}
                     <span>@@ −{h.lnOld} +{h.lnNew} @@ {h.symbol}</span>
                     {chapters.map((c, i) => c.hunkIds.includes(h.id) && <span className="chip" key={i}>{chapterLabel(analysis, i)}</span>)}
                     {!own && <span className="req-more">{expanded ? 'たたむ' : `${h.lines.length} 行 · 開く`}</span>}
                   </button>
-                  {expanded && <>
-                    <div className="req-code"><DiffList embedded hunks={[h]} mode={props.mode} full viewed={review.viewed} selectedHunk={null} focusLine={props.focusLine ?? null} dispatch={dispatch} memo={{ selectionOnly: true, comments: [], ui: props.memo.pick && requirementPick(analysis, h.id, props.memo.pick) ? props.memo : { ...props.memo, pick: null }, githubDiff: analysis.githubDiff, draftText: {} }} /></div>
-                    {own && <Guide {...props} hunk={h} member={chapter.kind === 'follow' && h.group !== undefined && h.group.representative !== h.id} />}
-                  </>}
+                  {expanded && <HunkBody {...props} hunk={h} guide={own} member={chapter.kind === 'follow' && h.group !== undefined && h.group.representative !== h.id} />}
                 </section>;
               })}
             </section>;
@@ -135,7 +152,7 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
         <span>この章の差分をすべて見ました。</span>
         <button type="button" className="btn sm" onClick={() => dispatch({ id: 'req.nextChapter' })}>次の章へ <Key action="course.forward" /></button>
       </div>}
-      <aside className="req-files" aria-label="Files changed">
+      <aside className="req-files" aria-label="Files changed" style={{ viewTransitionName: 'req-files' }}>
         <h2>Files changed</h2><p>{files.filter((f) => doneFile(f.path)).length} / {files.length} Viewed</p>
         {files.map((f) => <div className={`req-file-row${hunksOf(f.path).some((h) => h.id === selectedHunk) ? ' now' : ''}`} key={f.path}>
           <button type="button" className="req-path" title={f.path} onClick={() => dispatch({ id: 'req.file', path: f.path })}>
@@ -147,6 +164,17 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
       </aside>
     </section>
   );
+}
+
+function HunkBody(props: RequirementCourseViewProps & { hunk: Hunk; guide: boolean; member: boolean }) {
+  const { analysis, review, hunk: h, dispatch } = props;
+  return <>
+    <div className="req-code"><DiffList embedded hunks={[h]} mode={props.mode} full viewed={review.viewed} selectedHunk={null} focusLine={props.focusLine ?? null} dispatch={dispatch} memo={{ selectionOnly: true, comments: [], ui: props.memo.pick && requirementPick(analysis, h.id, props.memo.pick) ? props.memo : { ...props.memo, pick: null }, githubDiff: analysis.githubDiff, draftText: {} }} /></div>
+    {props.guide && <Guide {...props} />}
+  </>;
+}
+function hunkComments(analysis: Analysis, review: ReviewState, hunk: Hunk): CommentDraft[] {
+  return review.comments.filter((c) => c.source === 'reviewer' && hunkAt(analysis.hunks, c.path, c.line, c.side)?.id === hunk.id);
 }
 
 function Viewed({ path, checked, dispatch }: { path: string; checked: boolean; dispatch: (c: Command) => void }) {
@@ -161,7 +189,7 @@ function Intent({ note }: { note: IntentNote }) {
 function Guide(props: RequirementCourseViewProps & { hunk: Hunk; member: boolean }) {
   const { analysis, review, at, hunk, member, memo, dispatch } = props;
   const g = hunk.group;
-  const comments = review.comments.filter((c) => c.source === 'reviewer' && hunkAt(analysis.hunks, c.path, c.line, c.side)?.id === hunk.id);
+  const comments = hunkComments(analysis, review, hunk);
   const viewed = review.viewed.includes(hunk.id);
   const asked = comments.some((c) => c.label === 'ask' && c.state !== 'discarded');
   const editing = at.editor?.hunkId === hunk.id;

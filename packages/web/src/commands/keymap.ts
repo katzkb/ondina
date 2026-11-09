@@ -29,7 +29,7 @@ export const KEY_ACTIONS = {
   'file.prev': { command: { id: 'file.prev' }, keys: ['['], group: 'all', label: '前のファイル' },
   'diff.mode.sbs': { command: { id: 'diff.mode.sbs' }, keys: ['s'], group: 'all', label: '左右に並べる', help: '差分を左右に並べる' },
   'diff.mode.unified': { command: { id: 'diff.mode.unified' }, keys: ['u'], group: 'all', label: '1 列にまとめる', help: '差分を統合して 1 列にまとめる' },
-  'file.full': { command: { id: 'file.full' }, keys: ['f'], group: 'all', label: 'すべて表示 / 変更の近くだけ', help: 'すべて表示 / 変更の近くだけ（差分一覧・目的ごと。コースではファイル全体 / 前後だけ）' },
+  'file.full': { command: { id: 'file.full' }, keys: ['f'], group: 'all', label: 'すべて表示 / 変更の近くだけ', help: 'すべて表示 / 変更の近くだけ（差分一覧・目的ごと。コースではファイル全体 / 前後だけ。要求コースでは、この要求の差分だけ / 全部のファイル）' },
   'find.open': { command: { id: 'find.open' }, keys: ['Mod+f'], group: 'all', label: '差分の中を検索', help: '差分の中を検索（差分一覧・目的ごと。画面の外の行と畳んだ行も探します。Enter で次、⇧Enter で前）' },
   'def.back': { command: { id: 'def.back' }, keys: ['Mod+['], group: 'all', label: '定義から戻る', help: '名前を ⌘+クリックして定義へ移る前の場所に戻る（差分一覧・目的ごと・コース。定義の引き出しでは前の定義）' },
   'jump.ide': { command: { id: 'jump.ide' }, keys: ['g i'], group: 'all', label: 'IDEA で開く' },
