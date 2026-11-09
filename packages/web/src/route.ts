@@ -9,6 +9,7 @@ export type CourseScreen = { kind: 'brief' } | { kind: 'stop'; i: number } | { k
 
 /** 解析の中の画面。explain / map は入口の説明タブ / 地図タブ。diff の file は選んだファイル */
 export type Page =
+  | { kind: 'req'; chapter: import('./requirement.js').RequirementChapter }
   | { kind: 'explain' }
   | { kind: 'map' }
   | { kind: 'hows'; how: number | null }
@@ -59,6 +60,11 @@ function parsePage(rest: readonly string[], query: URLSearchParams): Page {
     if (name === 'diff') return { kind: 'diff', file: query.get('file') };
     if (name === 'closing') return { kind: 'closing' };
   }
+  if (name === 'req' && rest.length === 2) {
+    if (id === 'start' || id === 'end') return { kind: 'req', chapter: id };
+    const chapter = int(id);
+    if (chapter !== null) return { kind: 'req', chapter };
+  }
   const how = int(id);
   if (name === 'hows' && rest.length === 2 && how !== null) return { kind: 'hows', how };
   const course = int(id);
@@ -80,6 +86,8 @@ export function formatRoute(route: Route): string {
 
 function pagePath(page: Page): string {
   switch (page.kind) {
+    case 'req':
+      return `/req/${page.chapter}`;
     case 'explain':
     case 'map':
     case 'closing':
@@ -104,6 +112,8 @@ export function routeOf(state: AppState): Route | null {
 function pageOf(state: AppState): Page {
   const c = state.course;
   switch (state.view) {
+    case 'req':
+      return { kind: 'req', chapter: state.requirement.chapter };
     case 'hows':
       return { kind: 'hows', how: state.selectedHow };
     case 'course':
@@ -137,6 +147,7 @@ export function routeTarget(analyses: readonly AnalysisSummary[], route: Exclude
  */
 export function sameEntry(a: Route, b: Route): boolean {
   if (a.kind !== 'analysis' || b.kind !== 'analysis') return a.kind === b.kind;
+  if (a.page.kind === 'req' && b.page.kind === 'req' && a.page.chapter !== b.page.chapter) return false;
   if (a.page.kind === 'course' && b.page.kind === 'course' && a.page.course !== b.page.course) return false;
   return a.key === b.key && a.sha === b.sha && a.page.kind === b.page.kind;
 }

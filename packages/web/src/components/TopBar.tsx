@@ -16,6 +16,7 @@ export interface TopBarProps {
   course: CourseAt | null;
   /** 解析を読めているか。読めていなければ画面の行き先は押せない（PR 一覧と設定は押せる） */
   loaded: boolean;
+  requirement?: boolean;
   /** serve の解析の列。順番待ちか解析中があれば歯車の左に出す */
   jobs: AnalyzeJob[];
   /** serve の AI レビュー。レビュー中があれば同じ所に数を出す */
@@ -23,7 +24,7 @@ export interface TopBarProps {
   dispatch: (c: Command) => void;
 }
 
-export function TopBar({ analyses, current, meter, view, course, loaded, jobs, reviews, dispatch }: TopBarProps) {
+export function TopBar({ analyses, current, meter, view, course, requirement = false, loaded, jobs, reviews, dispatch }: TopBarProps) {
   const paletteKey = useKey('palette.open');
   const label = (a: AnalysisSummary) => `${a.key === 'local' ? 'local' : `#${a.key}`} ${a.headSha.slice(0, 7)}`;
   return (
@@ -67,7 +68,9 @@ export function TopBar({ analyses, current, meter, view, course, loaded, jobs, r
         <button type="button" className={`btn quiet${view === 'home' ? ' on' : ''}`} aria-current={view === 'home' ? 'page' : undefined} disabled={!loaded} onClick={() => dispatch({ id: 'view.home' })}>
           全体図{view === 'course' && <kbd>Esc</kbd>}
         </button>
-        {course !== null && view !== 'course' && (
+        {requirement ? (
+          <button type="button" className={`btn quiet${view === 'req' ? ' on' : ''}`} aria-current={view === 'req' ? 'page' : undefined} onClick={() => dispatch({ id: 'view.course' })}>コース</button>
+        ) : course !== null && view !== 'course' && (
           <button type="button" className="btn quiet" onClick={() => dispatch({ id: 'view.course' })}>
             {course.id === 0 ? 'コース外に戻る' : `コース ${course.id} に戻る`}
           </button>

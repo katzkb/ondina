@@ -378,6 +378,8 @@ export interface Term {
 }
 
 export interface CommentDraft {
+  /** レビュアーの下書きの種類。ask = 作者への質問、imo = 意見。無いものは従来のメモ。GitHub には送らない */
+  label?: 'ask' | 'imo';
   id: string;
   path: string;
   /** 範囲なら最後の行（GitHub の `line`） */

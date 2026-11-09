@@ -20,11 +20,13 @@ import { ideaUrl } from '../ide.js';
 import { isMemo, memoPlace, memoStop, mergeDraft, newMemo, onGithubDiff, pickFor, pickRange, spanLabel, stopShows, type MemoPick, type PickScreen } from '../memo.js';
 import { DEFAULT_PR_FILTER, reviewActive, type DetailTab, type PrFilter } from '../prs.js';
 import { enqueue, finished, isActive, jobOf, mergeJobs, NO_REANALYZE, type ReanalyzeUi } from '../reanalyze.js';
+import { NO_REQUIREMENT, type RequirementUi } from '../requirement.js';
+import { requirementCommand, requirementGo } from './requirement.js';
 import type { Page } from '../route.js';
 import { DEFAULT_THEME, parseTheme } from '../theme.js';
 
 /** PR 一覧（3.11）/ 入口（全体図。3.1）/ 目的ごとに分けた画面（How 分解。3.2）/ コース（3.3）/ 差分一覧（3.4）/ 締め（3.9） */
-export type View = 'prs' | 'home' | 'hows' | 'course' | 'diff' | 'closing';
+export type View = 'prs' | 'home' | 'hows' | 'course' | 'diff' | 'closing' | 'req';
 
 /** PR 一覧（3.11）。list は最後に取れた一覧（取り直しに失敗しても残す）、error は最後の取得の失敗の理由。保存しない */
 export interface PrsUi {
@@ -243,6 +245,7 @@ export type SendStatus = { status: 'idle' } | { status: 'sending' } | { status: 
 
 export interface AppState {
   view: View;
+  requirement: RequirementUi;
   analyses: AnalysisSummary[];
   current: AnalysisSummary | null;
   analysis: Analysis | null;
@@ -375,7 +378,7 @@ export interface Reduced {
 }
 
 export function initialState(): AppState {
-  return { view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false }, course: null, briefMap: NO_BRIEF_MAP, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], workspaces: [], workspaceTools: null, memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
+  return { requirement: NO_REQUIREMENT, view: 'home', analyses: [], current: null, analysis: null, review: null, selectedFile: null, selectedHunk: null, diffFile: null, diffJump: { hunkId: null, to: 'hunk', n: 0 }, selectedHow: null, openGroups: [], home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false }, course: null, briefMap: NO_BRIEF_MAP, courseMap: null, fullFile: false, fold: {}, courseFolded: false, peek: null, mapZoom: 1, rel: null, def: null, defBack: [], showKeymap: false, settings: null, showPalette: false, paletteFrom: null, ui: {}, send: { status: 'idle' }, github: NO_GITHUB, reanalyze: NO_REANALYZE, prs: NO_PRS, reviews: [], workspaces: [], workspaceTools: null, memo: NO_MEMO, draftText: {}, ask: NO_ASK, focusLine: null, config: null, treeShut: NO_TREE, find: NO_FIND };
 }
 
 const none = (state: AppState): Reduced => ({ state, effects: [] });
@@ -399,6 +402,7 @@ function sameVersionPlace(state: AppState, to: AnalysisSummary, analysis: Analys
     selectedHunk: hunk?.id ?? files[0]?.hunks[0]?.id ?? null,
     selectedHow: analysis.hows.some((h) => h.id === state.selectedHow) ? state.selectedHow : null,
   };
+  if (state.view === 'req') return { ...place, view: analysis.chapters ? 'req' : 'home', course: null };
   if (state.view !== 'course') return { ...place, view: state.view, course: null };
   const course = state.course ? courseOf(courses(analysis), state.course.id) : undefined;
   if (!course || course.steps.length === 0) return { ...place, view: 'home', course: null };
@@ -531,7 +535,11 @@ function withPane(ui: UiSettings, pane: PaneId, px: number | null): UiSettings {
 const FULL_ON_MOVE: readonly Command['id'][] = ['comment.open', 'ask.cite', 'ask.memo'];
 
 export function reduce(state: AppState, command: Command): Reduced {
-  const r = withGithubSet(state, reduceAll(state, command));
+  const raw = reduceAll(state, command);
+  // 旧 URL・パレット・締めからのリンクなど、どの入口もここで同じ画面に揃える。
+  // chapters の無い解析は従来の How コースのまま。
+  const redirected = raw.state.view === 'course' && loaded(raw.state) && raw.state.analysis.chapters !== undefined ? requirementGo(raw.state, 'start') : null;
+  const r = withGithubSet(state, redirected === null ? raw : { state: redirected.state, effects: [...raw.effects, ...redirected.effects] });
   // スクロールは「移った」ではない（書く枠・光らせた行・すべて表示・ツリーのフォルダをそのままにし、スクロールの合図も出さない）
   if (command.id === 'diff.viewport') return r;
   // 画面・停留所・覗く箱・ファイルが変わったら、選んでいる行と直す枠は外す（見えない所に残さない）。
@@ -588,7 +596,7 @@ function nextJump(before: AppState, after: AppState, fullFile: boolean): DiffJum
 }
 
 /** 画面・コース・停留所のどれかが変わった */
-const stopMoved = (a: AppState, b: AppState): boolean => a.view !== b.view || a.course?.id !== b.course?.id || a.course?.i !== b.course?.i || a.course?.screen !== b.course?.screen;
+const stopMoved = (a: AppState, b: AppState): boolean => a.requirement.chapter !== b.requirement.chapter || a.view !== b.view || a.course?.id !== b.course?.id || a.course?.i !== b.course?.i || a.course?.screen !== b.course?.screen;
 
 /** 定義の引き出しと戻り先を消す「移った」: コード欄（defColumn）が替わった。目的ごとの画面は、プレビューのファイルが替わったときだけ */
 function defMoved(a: AppState, b: AppState): boolean {
@@ -755,6 +763,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
         view: command.view ?? keep?.view ?? 'home',
         home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false },
         memo: NO_MEMO,
+        requirement: NO_REQUIREMENT,
         draftText: {},
         current: command.summary,
         analysis: command.analysis,
@@ -836,6 +845,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
     case 'view.closing':
       return none({ ...state, view: 'closing', peek: null });
     case 'view.course':
+      if (loaded(state) && state.analysis.chapters) return requirementGo(state, 'start');
       return state.course === null ? none(state) : none({ ...state, view: 'course', peek: null });
     case 'home.tab':
       return state.view === 'home' ? none({ ...state, home: { ...state.home, tab: command.tab, play: false } }) : none(state);
@@ -874,6 +884,12 @@ function reduceAll(state: AppState, command: Command): Reduced {
       if (state.settings !== null) return none({ ...state, settings: null });
       if (state.ask.open) return none({ ...state, ask: { ...state.ask, open: false, ...NO_MEMO_ASK } });
       if (state.find.open && findable(state)) return none({ ...state, find: { ...state.find, open: false } });
+      if (state.view === 'req') {
+        if (state.rel !== null) return none({ ...state, rel: null });
+        if (state.def !== null) return none({ ...state, def: null });
+        if (state.requirement.editor !== null || state.memo.pick !== null || state.memo.editing !== null) return none({ ...state, memo: NO_MEMO, requirement: { ...state.requirement, editor: null } });
+        return none({ ...state, view: 'home' });
+      }
       if (state.memo.pick !== null || state.memo.editing !== null) return none({ ...state, memo: NO_MEMO });
       // 差分の無い相手の引き出しと定義の引き出しは、読んでいた差分に戻るだけ（コースは出ない）
       if (state.rel !== null) return none({ ...state, rel: null });
@@ -962,7 +978,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
     case 'diff.mode.sbs':
     case 'diff.mode.unified': {
       // 今いる画面の設定に効く（鍵は How 分解のプレビューが b、コースの停留所の画面が c、差分一覧が d）。他の画面では何もしない
-      const key = state.view === 'hows' ? 'b' : state.view === 'diff' ? 'd' : state.view === 'course' && state.course?.screen === 'stop' ? 'c' : null;
+      const key = state.view === 'hows' ? 'b' : state.view === 'diff' ? 'd' : (state.view === 'req' || state.view === 'course' && state.course?.screen === 'stop') ? 'c' : null;
       if (key === null) return none(state);
       const mode = command.id === 'diff.mode.sbs' ? 'sbs' : 'uni';
       return { state: { ...state, ui: { ...state.ui, diffMode: { ...state.ui.diffMode, [key]: mode } } }, effects: [{ type: 'saveUi' }] };
@@ -1186,6 +1202,7 @@ function toMapStage(state: Loaded, stage: Stage): Loaded {
 }
 
 function startHome(state: Loaded): Reduced {
+  if (state.analysis.chapters !== undefined) return requirementGo(state, 'start');
   if (state.home.sel !== null) return enterCourse(state, state.home.sel);
   const all = courses(state.analysis);
   const nx = nextCourse(all, state.review);
@@ -1203,6 +1220,8 @@ function goTo(state: Loaded, page: Page): Reduced {
     }, none(state));
   const explain = () => via({ id: 'view.home' }, { id: 'home.tab', tab: 'text' });
   switch (page.kind) {
+    case 'req':
+      return state.analysis.chapters && (typeof page.chapter !== 'number' || state.analysis.chapters[page.chapter]) ? requirementGo(state, page.chapter) : explain();
     case 'explain':
       return explain();
     case 'map':
@@ -1501,10 +1520,11 @@ function askMemo(state: Loaded, entryId: string): Reduced {
  * path = コースの画面（覗いているファイル・覗いている箱・停留所の画面の停留所）と目的ごとの画面（プレビュー）のコード欄の 1 ファイル。
  * null = コードを出していない（入口・読む前の案内・総括など）
  */
-type DefColumn = 'diff' | { path: string } | null;
+type DefColumn = 'req' | 'diff' | { path: string } | null;
 
 function defColumn(state: Loaded): DefColumn {
   const a = state.analysis;
+  if (state.view === 'req') return 'req';
   if (state.view === 'diff') return 'diff';
   const at = (path: string | null | undefined) => (path === null || path === undefined ? null : { path });
   if (state.view === 'hows') return at(a.hunks.find((h) => h.id === state.selectedHunk)?.path);
@@ -1525,6 +1545,7 @@ function defColumn(state: Loaded): DefColumn {
  */
 function defLanding(t: DefPlaceTarget, col: Exclude<DefColumn, null>): DefBack | null {
   const shown = t.shown === undefined ? null : { path: t.path, side: t.shown.side, line: t.shown.line };
+  if (col === 'req') return null;
   if (col === 'diff') return shown;
   if (t.path !== col.path) return null;
   return t.side === 'head' ? { path: t.path, side: 'RIGHT', line: t.line } : shown;
@@ -1611,6 +1632,8 @@ function relCommand(state: Loaded, command: Command): Reduced | null {
 }
 
 function reduceLoaded(state: Loaded, command: Command): Reduced {
+  const req = requirementCommand(state, command);
+  if (req !== null) return req;
   const def = defCommand(state, command);
   if (def !== null) return def;
   const rel = relCommand(state, command);
@@ -1838,7 +1861,7 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
     case 'memo.edit': {
       const c = state.review.comments.find((x) => x.id === command.commentId);
       // 書く枠は一度に 1 つ。書きかけは「やめる」と同じく捨て、直す枠の文は今の本文から始める
-      return c && c.state !== 'sent' ? none({ ...state, memo: { ...NO_MEMO, editing: c.id, draft: c.body, focus: state.memo.focus } }) : none(state);
+      return c && c.state !== 'sent' ? none({ ...state, requirement: { ...state.requirement, editor: null }, memo: { ...NO_MEMO, editing: c.id, draft: c.body, focus: state.memo.focus } }) : none(state);
     }
     case 'memo.update': {
       const c = state.review.comments.find((x) => x.id === command.commentId);

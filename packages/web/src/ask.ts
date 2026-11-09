@@ -11,7 +11,7 @@ import { onGithubDiff, pickSpan, spanLabel, type MemoPick } from './memo.js';
 
 /** askPlace が見る画面の状態（AppState の一部。reducer を import しない） */
 export interface AskScreen {
-  view: 'prs' | 'home' | 'hows' | 'course' | 'diff' | 'closing';
+  view: 'req' | 'prs' | 'home' | 'hows' | 'course' | 'diff' | 'closing';
   course: { id: number; i: number; screen: 'brief' | 'stop' | 'summary' } | null;
   selectedHunk: string | null;
   selectedFile: string | null;
@@ -31,7 +31,7 @@ export function askPlace(analysis: Analysis, s: AskScreen): AskPlace {
     return { kind: 'symbol', symbolId: step.symbolId, courseId: s.course.id };
   }
   if (s.view === 'diff') return s.selectedHunk !== null ? { kind: 'hunk', hunkId: s.selectedHunk } : s.selectedFile !== null ? { kind: 'file', path: s.selectedFile } : { kind: 'pr' };
-  if (s.view === 'hows' && s.selectedHunk !== null) return { kind: 'hunk', hunkId: s.selectedHunk };
+  if ((s.view === 'hows' || s.view === 'req') && s.selectedHunk !== null) return { kind: 'hunk', hunkId: s.selectedHunk };
   return { kind: 'pr' };
 }
 
@@ -49,7 +49,7 @@ export function askLinesOf(pick: MemoPick): AskLines {
 export function askLinesPlace(analysis: Analysis, s: AskScreen, pick: MemoPick): AskPlace | null {
   const lines = askLinesOf(pick);
   const stop = s.view === 'course' && s.course?.screen === 'stop' ? s.course : null;
-  if (stop === null && s.view !== 'diff') return null;
+  if (stop === null && s.view !== 'diff' && s.view !== 'req') return null;
   const step = stop === null ? undefined : courseOf(courses(analysis), stop.id)?.steps[stop.i];
   if (stop !== null && (!step || stepPath(analysis, step) === lines.path)) {
     const place = askPlace(analysis, s);

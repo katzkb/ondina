@@ -32,6 +32,8 @@ import { courseBg, OUTSIDE } from '../course.js';
 
 /** メモを書ける画面が渡す物（FileView の memo と同じ形） */
 export interface DiffMemo {
+  /** 行の選択だけを使い、書く枠は呼び出し元に置く */
+  selectionOnly?: boolean;
   comments: readonly CommentDraft[];
   ui: MemoUi;
   githubDiff: readonly GithubDiffFile[] | undefined;
@@ -40,6 +42,8 @@ export interface DiffMemo {
 }
 
 export interface DiffListProps {
+  /** 外側がスクロールを持つ小さな hunk の埋め込み。既存の行描画を共有する */
+  embedded?: boolean;
   hunks: readonly Hunk[];
   mode: DiffMode;
   viewed: readonly string[];
@@ -115,7 +119,7 @@ const SMOOTH_SCREENS = 2;
 /** なめらかなスクロールを控える設定か（jsdom には matchMedia が無い） */
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, focusLine = null, file, open, full = false, jump, find }: DiffListProps) {
+export function DiffList({ embedded = false, hunks, mode, viewed, selectedHunk, dispatch, memo, focusLine = null, file, open, full = false, jump, find }: DiffListProps) {
   const list = jump !== undefined;
   const base = useMemo(() => (file ? buildFileRows(file, hunks, mode) : buildRows(hunks, mode, list)), [hunks, mode, file, list]);
   const comments = memo?.comments;
@@ -131,12 +135,13 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
   const marks = useMemo(() => marksByRow(hits, cur), [hits, cur]);
   // 畳むのはメモの行を差し込んだ後（メモの行とその前後を残す）。スクロールの効果は base を見るので、帯を開いても選んだ hunk へ跳び直さない
   const rows = useMemo(
-    () => foldVirtual(comments ? withMemos(base, comments, editAt) : base, opened, full, (r) => r === curRow || litRow(r, focusLine)),
-    [base, comments, editAt, opened, full, focusLine, curRow],
+    () => foldVirtual(comments ? withMemos(base, comments, memo?.selectionOnly ? null : editAt) : base, opened, full, (r) => r === curRow || litRow(r, focusLine)),
+    [base, comments, editAt, opened, full, focusLine, curRow, memo?.selectionOnly],
   );
   const layout = useMemo(() => layoutOf(rows), [rows]);
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
+    enabled: !embedded,
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: (i) => (rows[i]!.kind === 'file' ? FILE_HEAD_H : rows[i]!.kind === 'header' ? 34 : rows[i]!.kind === 'memo' ? 96 : rows[i]!.kind === 'fold' ? 30 : 21),
@@ -154,7 +159,7 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
   const scrolledBase = useRef<VirtualRow[] | null>(null);
 
   useEffect(() => {
-    if (list || selectedHunk === null) return;
+    if (embedded || list || selectedHunk === null) return;
     const i = rowsRef.current.findIndex((r) => r.kind === 'header' && r.hunk.id === selectedHunk);
     if (i < 0) return;
     if (!file) {
@@ -169,7 +174,7 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
     scrolledBase.current = base;
     virtualizer.scrollToIndex(i, { align: 'start', ...(smooth ? { behavior: 'smooth' as const } : {}) });
     // base が変わったとき（ファイル切替・左右と統合の切替）も選んだ hunk まで戻す
-  }, [selectedHunk, base, virtualizer, file, list]);
+  }, [selectedHunk, base, virtualizer, file, list, embedded]);
 
   // 差分一覧: reducer の合図（jump.n が進んだとき）でだけ動かす。スクロールに付いてきた選びでは動かさない（選んだ見出しへ引き戻さない）
   const jumpN = jump?.n;
@@ -265,7 +270,7 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
     span !== null && path === pick?.path && order >= span.start.order && order <= span.end.order && (side === undefined || side === span.start.side || side === span.end.side);
 
   return (
-    <div className="dscroll" ref={parentRef}>
+    <div className={embedded ? 'dembedded' : 'dscroll'} ref={parentRef}>
       {stuck && (
         // 仮想行の外に重ねる（高さ 0 で貼り付き、行の並びに触らない）
         <div className="dstick">
@@ -275,18 +280,18 @@ export function DiffList({ hunks, mode, viewed, selectedHunk, dispatch, memo, fo
         </div>
       )}
       {find?.open && <FindBar label="差分の中を検索" find={find} count={hits.length} cur={cur} below={list} dispatch={dispatch} />}
-      <div className="dbody" style={{ height: virtualizer.getTotalSize() }}>
-        {virtualizer.getVirtualItems().map((v) => {
+      <div className="dbody" style={embedded ? undefined : { height: virtualizer.getTotalSize() }}>
+        {(embedded ? rows.map((_, index) => ({ index, key: rowKey(rows[index]!), start: 0 })) : virtualizer.getVirtualItems()).map((v) => {
           const row = rows[v.index]!;
           const m = marks.get(row);
           // 貼り付いている見出しの本物の行は、重ねた見出しの下（見えない所）にあるので隠す（同じボタンを 2 つ出さない）
           const under = stuck?.head === v.index ? { visibility: 'hidden' as const } : {};
           return (
-            <div key={v.key} className="vrow" data-index={v.index} ref={virtualizer.measureElement} style={{ transform: `translateY(${v.start}px)`, ...under }}>
+            <div key={v.key} className={embedded ? 'erow' : 'vrow'} data-index={v.index} ref={embedded ? undefined : virtualizer.measureElement} style={embedded ? undefined : { transform: `translateY(${v.start}px)`, ...under }}>
               {row.kind === 'file' ? (
                 <FileHead path={row.path} outside={outside.get(row.path)} marks={m?.path} dispatch={dispatch} />
               ) : row.kind === 'header' ? (
-                <Header hunk={row.hunk} viewed={viewedSet.has(row.hunk.id)} selected={row.hunk.id === selectedHunk} marks={m?.head} dispatch={dispatch} />
+                !embedded && <Header hunk={row.hunk} viewed={viewedSet.has(row.hunk.id)} selected={row.hunk.id === selectedHunk} marks={m?.head} dispatch={dispatch} />
               ) : row.kind === 'memo' ? (
                 memo && <MemoRow row={row} mode={mode} memo={memo} dispatch={dispatch} />
               ) : row.kind === 'fold' ? (
