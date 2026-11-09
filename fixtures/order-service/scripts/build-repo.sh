@@ -38,7 +38,7 @@ g checkout -q -b feature/discount
 done
 cp -R "$here/head/." "$dest/"
 g add -A
-g commit -q -m "Apply discount to orders"
+g commit -q -F "$here/discount-commit-message.txt"
 
 g checkout -q main
 printf '%s\n' "$dest"

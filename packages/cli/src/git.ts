@@ -10,7 +10,7 @@ import { copyFileSync, existsSync, mkdtempSync, realpathSync, rmSync } from 'nod
 import os from 'node:os';
 import path from 'node:path';
 import { buildConfigPaths, type BuildConfigFile, type ChangedFile } from '@ondina/core';
-import type { GithubDiffFile } from '@ondina/model';
+import type { CommitNote, GithubDiffFile } from '@ondina/model';
 
 export interface RefPair {
   baseSha: string;
@@ -227,6 +227,19 @@ function removeDir(repo: string, dir: string): void {
     rmSync(dir, { recursive: true, force: true });
     git(repo, 'worktree', 'prune');
   }
+}
+
+/** 差分の範囲のコミットの説明。作業ツリーの tree なら base..HEAD（未コミット分の説明は無い） */
+export function commitNotes(repo: string, refs: RefPair): CommitNote[] {
+  const head = isCommit(repo, refs.headSha) ? refs.headSha : git(repo, 'rev-parse', 'HEAD^{commit}');
+  const out = git(repo, 'log', '--no-merges', '--reverse', '--format=%H%x00%s%x00%b%x00', `${refs.baseSha}..${head}`);
+  // 各レコードの末尾も NUL。git がレコード間に足す改行だけ sha の前から落とす。
+  const fields = out.split('\0');
+  const notes: CommitNote[] = [];
+  for (let i = 0; i + 2 < fields.length; i += 3) {
+    notes.push({ sha: fields[i]!.replace(/^\n+/, ''), title: fields[i + 1]!, body: fields[i + 2]!.trimEnd() });
+  }
+  return notes;
 }
 
 /** baseSha..headSha で変わったファイルを、base / head の内容付きでパス順に返す */

@@ -569,6 +569,13 @@ type Chapter =
   | { kind: 'spec'; specId: string; hunkIds: string[] } // 読む順。空 = 対応する差分なし
   | { kind: 'follow'; hunkIds: string[] }               // 核に追従する差分
   | { kind: 'extra'; hunkIds: string[] };               // 要求に対応しない差分
+interface CommitNote { sha: string; title: string; body: string }  // マージ以外のコミット。古い順
+type IntentSource = 'pr-body' | 'ticket' | 'parent' | 'commit';
+type IntentNote =
+  | { kind: 'written'; text: string; from: IntentSource; quote: string; commit?: string } // commit は検証した完全な sha
+  | { kind: 'guess'; text: string }   // provenance: llm
+  | { kind: 'none'; text: string };   // provenance: llm
+interface HunkIntent { hunkId: string; notes: IntentNote[]; ask?: string } // ask は作者への質問の下書き
 interface Claim { text: string; backed: boolean; reason?: string } // 作者説明の各文
 interface Summary { problem: string; approach: string[] | string; untouched: string[] | string; beforeAfter: Array<{target: string; before: string; after: string}> }  // 2 回目の LLM（10.4）。approach は文（2026-10-10 まではリスト）、untouched はリスト。古い解析は文字列
 
@@ -608,10 +615,12 @@ interface Analysis {                         // パイプラインの成果物�
   hunks: Hunk[]; hows: How[]; symbols: Symbol[]; edges: Edge[]; edgesBase?: Edge[]; tours: Tour[];  // edgesBase は変わる前（base）の呼び出し辺（9.2。2026-11-05）。欄が無い = 古い解析か言語サーバーが無かった
   specs: Spec[]; claims: Claim[]; summary: Summary;
   chapters?: Chapter[];  // チケットから要求が得られた解析だけ。プログラムが組む（10.8）
+  intents?: HunkIntent[]; commits?: CommitNote[];  // 空なら省く（10.9）
   config: AnalysisConfig;                    // ondina.config.yaml の解析に効く部分（11章）。無ければ既定値
   llm?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // Stage 2 の 1 回目（目的ごとに分ける）の記録（5.3）。どのコマンドで出したか
   llmText?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };
   llmSpecs?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // 要求の抜き出し（10.8）の記録。欄が無い = 走らせていない（チケットが無い・取れなかった、1 回目が ok でない、古い解析）  // 2 回目（文を書く）の記録（5.3）。欄が無い = 走らせていない（--no-llm、1 回目が ok でない、古い解析）
+  llmIntents?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // 差分ごとの意図（10.9）。1 回目が ok でないときと古い解析には無い
   lsp?: { command: string; status: 'ok'|'unavailable'; reason?: string; waitedMs?: number };  // LSP の記録（9.1 / 9.5）。欄が無い = 動かしていない（--no-lsp か古い解析）
   structure?: {                              // 構成の推定の記録（10.6。2026-10-09）。欄が無い = 設定の layers を使った解析か古い解析
     status: 'ok'|'skipped'|'failed'; reason?: string; command?: string;
@@ -1473,6 +1482,25 @@ lead があれば答えを採る（need が一緒にあっても）。lead が�
 - **fixture**: 記録の文・`why`・`parentWhy` は変更しない。旧 How の対応を、グループに属さない hunk へ機械変換した。核は残す。要求 6 件、対応する差分があるもの 5 件。「期限切れ」と率の値の要求は空。現在の追従グループは代表 OrderAdminView を含む 22 hunk。Logger・FeatureFlags・PromoService の逸脱は `extra`。ゴールデンは `expected/specs.json` と `expected/chapters.json`
 - 2 回目の LLM と同時に呼ぶ。保存は `previous` を除いたプロンプトを鍵にする。同じ差分とチケットなら同じ記録を使う
 - **測った結果**（2026-11-09、開発機、既定の `claude -p … opus`、記録 `llm/spec-output.json`）: 22 秒。要求 6 件。対応する差分があるもの 5 件で、「期限切れのコードは 400 を返す」は差分なし。章（ゴールデン `expected/chapters.json`）は、要求の章 6、つられて変わった所 22 件、どの要求にも当たらない差分 6 件（Logger の 2 件、FeatureFlags、PromoService、ApplyDiscountUseCaseTest と OrderRepositoryImplTest の 1 件ずつ）。How を選ばせていた頃の記録（2026-10-12・10-29）は要求 8 件だった
+
+### 10.9 差分ごとの意図（`packages/core/src/intent/`）
+
+差分ごとに、作者が書いた理由と推定を分ける。この PR はデータだけを足す。表示は別の変更で行う。
+
+- **入力**（`buildIntentInput`）: 1 回目の `hunks` と `rippleGroups` をそのまま渡す。対象は単独の差分、追従の代表、逸脱。追従メンバーは代表の意図を使う。差分の行を別の形式に直さない
+- 引用元は `prBody`、`ticket.body`、`parent.body`、`commits`（sha・title・body）。チケットがなくても実行する。HTML は `ticketPlainText` で文字にする。本文は切らずに渡す
+- `commitNotes` は `baseSha..headSha` のマージ以外のコミットを古い順に取る。作業ツリーの head が tree なら `baseSha..HEAD` を使う。未コミット分の説明は作らない。空なら `Analysis.commits` を省く
+- **出力**: `{ "intents": [{ "hunkId": "…", "notes": [{ "kind": "written", "text": "…", "from": "commit", "quote": "…", "commit": "sha" }], "ask": "…" }] }`
+- `written` は作者が書いた理由。引用と出典を持つ。`guess` は理由が書かれていない場合の短い推定。`none` は何が書かれていないかを述べる。推定できる場合は `guess` と `none` を並べる。両方とも LLM による読み取り（provenance: llm）。正しさや品質は判断しない
+- `ask` は理由が書かれていない場合だけ付ける。作者に理由を尋ねる、です・ますの短い質問の下書き。送信しない。検証後に `written` が残る差分からは外す
+- **検証**（`applyIntents`）: 不明な ID と重複は知らせて除く。残りは入力の hunk 順。空の文を除き、メモがなくなった差分も除く。引用は spec と共通の規則で比べる。空白と Markdown の強調・コードの記号を除き、指定した出典の本文にあることを確かめる。空や記号だけの引用は認めない
+- コミットの引用は、そのコミットの題と本文で確かめる。sha の一意な先頭部分も受け付け、完全な sha に直す。sha がなければ引用を含む最初のコミットを使う。指定した sha が不明・曖昧、引用がない、出典が不明なら `guess` に変えて知らせる
+- 最後に「意図: 差分 N 件（書いてある K 件、推定 G 件、書いていない M 件）」と出す。差分ごとの最も強いメモ（written > guess > none）で数える。件数は LLM に書かせない
+- **実行と保存**: 1 回目が成功した後、案内文と要求の抜き出しと同時に呼ぶ。2 回目の入力は増やさない。`previous` は同じ変更の前回の意図。同じチケットと親の番号のときだけ渡す。チケットなしどうしも引き継ぐ。保存の鍵は `previous` を除いた全入力のプロンプトの sha1。出典や差分が同じなら前回の文が変わっても同じ記録を使う。生出力は `llm/<鍵>.intent.json`
+- 失敗したら「意図を書けませんでした: 理由」と知らせる。`Analysis.llmIntents` に理由を残す。解析と案内文は続ける。意図が空なら `Analysis.intents` を省く。1 回目が成功しなければ呼ばず、実行記録も省く
+- **fixture**: コミット本文は `discount-commit-message.txt` に 1 か所だけ置く。入力は `expected/llm-intent-input.json`、検証後は `expected/intents.json`。`llm/intent-output.json` は手書きの仮記録。実際の LLM は起動していない。`record-llm-intent.mjs` で記録し直す
+
+---
 
 ## 11. 設定ファイル `ondina.config.yaml`
 

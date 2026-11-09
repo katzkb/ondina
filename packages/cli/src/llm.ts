@@ -1,6 +1,6 @@
 // LLM コマンドの起動と、出力の保存・再利用、前回結果の検索（設計書 5.3 / 5.5）。
 // 呼び出しは label = 目的ごとに分ける（<headSha>.json）、text = 文を書く（<headSha>.text.json）、
-// ticket = チケット選び（<プロンプトの sha1>.ticket.json）、spec = 要求の抜き出し（<previous を除いたプロンプトの sha1>.spec.json）。
+// ticket = チケット選び（<プロンプトの sha1>.ticket.json）、spec = 要求の抜き出し（<previous を除いたプロンプトの sha1>.spec.json）、intent = 差分ごとの意図（同じ鍵の .intent.json）。
 // LLM は Claude とは限らない。約束は「sh -c で起動し、stdin にプロンプト全文、stdout に JSON 1 個」だけで、CLI 固有のフラグは足さない
 // （既定コマンドの文字列の中にあるだけ）。生の stdout は .ondina/<key>/llm/<headSha>.json に残し、同じ headSha では起動しない（原則 7）。
 import { spawn } from 'node:child_process';
@@ -93,17 +93,17 @@ export function runLlmCommand(command: string, prompt: string, cwd: string, time
 
 /**
  * どの呼び出しか。label = 1 回目（目的ごとに分ける）、text = 2 回目（文を書く）、ticket = チケット選び（10.7。headSha の代わりにプロンプトの sha1 で保存する）、
- * spec = 要求の抜き出し（10.8。headSha の代わりに previous を除いたプロンプトの sha1 で保存する）
+ * spec = 要求の抜き出し（10.8）、intent = 差分ごとの意図（10.9。どちらも previous を除いたプロンプトの sha1 で保存する）
  */
-export type LlmCall = 'label' | 'text' | 'ticket' | 'spec';
+export type LlmCall = 'label' | 'text' | 'ticket' | 'spec' | 'intent';
 
-/** .ondina/<key>/llm/<headSha>.json（text は <headSha>.text.json、ticket は <プロンプトの sha1>.ticket.json、spec は <鍵>.spec.json）の中身。stdout は生のまま（検証は core が毎回やり直す） */
+/** .ondina/<key>/llm/<headSha>.json（text は <headSha>.text.json、ticket は <プロンプトの sha1>.ticket.json、spec / intent は <鍵>.spec.json / <鍵>.intent.json）の中身。stdout は生のまま（検証は core が毎回やり直す） */
 export interface LlmRecord {
   command: string;
   stdout: string;
   stderr: string;
   recordedAt: string;
-  /** text / ticket / spec: プロンプトの sha1（spec は previous を除いたもの）。今のプロンプトと違えば保存を使わない（1 回目の結果が変わると 2 回目の入力も変わる） */
+  /** text / ticket / spec / intent: プロンプトの sha1（spec / intent は previous を除いたもの）。今のプロンプトと違えば保存を使わない（1 回目の結果が変わると 2 回目の入力も変わる） */
   promptSha1?: string;
 }
 

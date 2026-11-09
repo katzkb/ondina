@@ -1,0 +1,5 @@
+Apply discount to orders
+
+getDiscount() を discount に変え、保存している割引額を読むだけだと呼び出し側に伝える。
+割引額の計算は applyDiscount に集め、値を読む処理と分ける。
+既存の行を読み続けられるように、discount 列の初期値は 0 にする。

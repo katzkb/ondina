@@ -68,16 +68,20 @@ export function applySpecs(hows: readonly How[], hunks: readonly Hunk[], output:
 /** 比べるときは空白と、Markdown の強調・コードの記号を落とす */
 const bare = (t: string): string => t.replace(/[\s`*_]+/g, '');
 
+/** 引用が原文にあるか。空白と Markdown の強調・コードの記号を除いて比べる */
+export function quoteInSource(quote: string, source: string): boolean {
+  return bare(source).includes(bare(quote));
+}
+
 /** 規則 5 / 6。words は知らせの文の主語 */
 function verifyQuotes(why: readonly string[], source: string, info: string[], words: { missing: string; many: string }): string[] {
-  const body = bare(source);
   const out: string[] = [];
   const seen = new Set<string>();
   for (const w of why) {
     const text = w.trim();
     if (text === '' || seen.has(bare(text))) continue;
     seen.add(bare(text));
-    if (!body.includes(bare(text))) {
+    if (!quoteInSource(text, source)) {
       info.push(`${words.missing}を除外しました: ${text}`);
       continue;
     }

@@ -7,9 +7,10 @@
 // hunk には Shiki の字句トークンを付ける（設計書 7 章）。
 // ondina.config.yaml（11 章）は対象リポジトリ直下から読み、解析に効く部分を Analysis.config に入れる（表示だけの部分は serve が読む）。
 // 追従検出（8 章）で hunk の kind / group を埋める（core の detectRipples）。
-// LLM（10 章）: 入力 JSON とプロンプトは core が組み、ここが LLM コマンドを起動して（llm.ts）、出力の検証も core に任せる。PR の呼び出しは 2 回（5.3）:
+// LLM（10 章）: 入力 JSON とプロンプトは core が組み、ここが LLM コマンドを起動して（llm.ts）、出力の検証も core に任せる。PR の呼び出し（5.3）:
 // 1 回目（目的ごとに分ける）で hows / hunk.hows / kind（How に入った none → core）/ claims を埋め、読む順番（tours）を組んだ後、
 // 2 回目（文を書く）で summary（入口の説明）と tours の変わること・確かめること・この場所を埋める。2 回目は 1 回目が ok のときだけ。
+// 差分ごとの意図（10.9）も 2 回目と同時に呼ぶ。チケットが無くても走る。
 // チケットが取れていれば、2 回目と同時に要求の抜き出し（10.8）で specs と How の specIds を埋める（これも 1 回目が ok のときだけ）。
 // チケットを Jira から取れたら、どんな案件の一部か（親チケット・同じ案件の PR。project.ts）を層の推定・LSP・1 回目と同時に調べる。
 // symbols（5.2 の 4）は hunk と 1 対 1 で、層は設定の glob で付く。設定に layers が無ければ、リポジトリ全体から推定した構成（10.6）で付く。
@@ -23,10 +24,10 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applyLayerGuesses, applyLlmOutput, applySpecs, buildChapters, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyFlowTitles, applyNarration, attachCalls, attachFlowCalls, buildFlows, copyFlowTitles, attachTokens, buildBaseCallEdges, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
-import type { How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
+import { applyIntents, buildIntentInput, parseIntentOutput, renderIntentPrompt, type IntentInput, applyLayerGuesses, applyLlmOutput, applySpecs, buildChapters, buildSpecInput, defaultLspConfig, parseSpecOutput, renderSpecPrompt, type CallGraphSource, type DefinitionSource, type LayerRule, type LlmInput, type SpecInput, type StructureRun, applyFlowTitles, applyNarration, attachCalls, attachFlowCalls, buildFlows, copyFlowTitles, attachTokens, buildBaseCallEdges, buildBehaviors, buildCallGraph, buildMapGroups, buildDefinitions, buildLlmInput, buildNarrationInput, buildSymbols, bodyCodeTokens, buildTicketInput, buildTours, chooseProbeTargets, detectRipples, drawerFiles, extractAllHunks, findTicketCandidates, removedDeclarations, headFileSources, headFileTokens, KOTLIN_IMPORT_NOTIFICATION, parseLlmOutput, parseNarrationOutput, parseTicketOutput, previousFrom, renderNarrationPrompt, renderPrompt, renderTicketPrompt, splitConfig, testPathsFor, TICKET_CANDIDATE_LIMIT, toHunk, verifyLayerGuesses, verifyTicketChoice, type Analysis, type ChangedFile, type LlmRun, type LspRun, type SavedStructure, type SemanticSource, type TicketSource } from '@ondina/core';
+import type { CommitNote, HunkIntent, How, Hunk, ParentTicket, Project, Spec, Ticket, TicketSearch, TicketSettings } from '@ondina/model';
 import { readConfigFile } from './config.js';
-import { changedFiles, git, githubDiff, outsideRepo, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
+import { changedFiles, commitNotes, git, githubDiff, outsideRepo, readBlobs, resolveLocalRefs, resolveWorkingTree, type RefPair } from './git.js';
 import { findPrevious, readLlmCache, resolveLlmCommand, runLlmCommand, writeLlmCache, type LlmCall } from './llm.js';
 import { installedLspCommand, lspCacheDir, lspInstallPath, lspWorktreeRoot, resolveLspCommand } from './lsp.js';
 import { findServe, requestServeLsp, toJobArgs, type LspJobRequest } from './lsp-remote.js';
@@ -114,6 +115,7 @@ async function runAnalysis(
   const dir = keyDir(repo, key);
   opts.progress?.('base と head のコードを用意しています');
   const files = changedFiles(repo, refs);
+  const commits = commitNotes(repo, refs);
   const analysisConfig = splitConfig(config).analysis;
   const command = resolveLlmCommand({ override: opts.llmCommand, env: process.env['ONDINA_LLM_COMMAND'], yaml: analysisConfig.llm?.command });
   const mode = opts.llm ?? 'auto';
@@ -287,12 +289,17 @@ async function runAnalysis(
   let parentWhy: string[] = [];
   let background: NonNullable<Analysis['background']> = {};
   let llmSpecs: LlmRun | undefined;
+  let llmIntents: LlmRun | undefined;
+  let intents: HunkIntent[] = [];
   if (labeled.status === 'ok') {
     opts.progress?.('AI が案内文を書いています');
     const narrationInput = buildNarrationInput({ base: input, hows, hunks, symbols, edges: graph.edges, tours, removed: await removedDeclarations(files), flows });
     const prompt = renderNarrationPrompt(narrationInput);
     const extracting = ticket === undefined || ticket.error !== undefined ? undefined : specsFor({ repo, key, command, mode, base: input, hows, hunks, ticket, parent: project?.parent, prev });
-    const [narrated, extracted] = await Promise.all([runLlm({ repo, key, headSha: refs.headSha, call: 'text' }, command, prompt, mode, parseNarrationOutput), extracting]);
+    const intending = intentsFor({ repo, key, command, mode, base: input, hunks, prBody: opts.body ?? '', commits, ticket, parent: project?.parent, prev });
+    const [narrated, extracted, intended] = await Promise.all([runLlm({ repo, key, headSha: refs.headSha, call: 'text' }, command, prompt, mode, parseNarrationOutput), extracting, intending]);
+    intents = intended.intents;
+    llmIntents = intended.run;
     llmText = runOf(narrated);
     if (narrated.status === 'ok') {
       info.push(narrated.reused ? `LLM（案内文）: ${narrated.command}（.ondina/${key}/llm/${refs.headSha}.text.json を再利用）` : `LLM（案内文）: ${narrated.command}`);
@@ -312,6 +319,7 @@ async function runAnalysis(
       llmSpecs = extracted.run;
       info.push(...extracted.info);
     }
+    info.push(...intended.info);
   }
 
   // 入口の地図のまとまり（3.3）。箱をコースで分ける。コースが 8 つ以上なら 1 回目の LLM の題でまとめる
@@ -328,6 +336,8 @@ async function runAnalysis(
     tours,
     specs,
     ...(specs.length === 0 ? {} : { chapters: buildChapters({ specs, hunks, symbols, edges: graph.edges, layers: layering.bands }) }),
+    ...(intents.length === 0 ? {} : { intents }),
+    ...(commits.length === 0 ? {} : { commits }),
     claims,
     summary,
     ...(why.length === 0 && project === undefined && Object.keys(background).length === 0
@@ -337,6 +347,7 @@ async function runAnalysis(
     llm,
     ...(llmText === undefined ? {} : { llmText }),
     ...(llmSpecs === undefined ? {} : { llmSpecs }),
+    ...(llmIntents === undefined ? {} : { llmIntents }),
     ...(lsp === undefined ? {} : { lsp }),
     ...(layering.structure === undefined ? {} : { structure: tests.provenance === 'llm' && layering.tests !== undefined ? { ...layering.structure, tests: [...layering.tests] } : layering.structure }),
     files: fileTexts,
@@ -389,6 +400,22 @@ async function specsFor(a: { repo: string; key: string; command: string; mode: '
   return { specs: applied.specs, why: applied.why, parentWhy: applied.parentWhy, hows: applied.hows, run: runOf(ran), info: [head, ...cut, ...applied.info] };
 }
 
+/** 差分ごとの意図（10.9）。チケットなしでも実行し、保存の鍵から previous を除く（10.8 と同じ） */
+async function intentsFor(a: { repo: string; key: string; command: string; mode: 'auto' | 'off' | 'relabel'; base: LlmInput; hunks: readonly Hunk[]; prBody: string; commits: CommitNote[]; ticket: Ticket | undefined; parent: ParentTicket | undefined; prev: Analysis | undefined }): Promise<{ intents: HunkIntent[]; run: LlmRun; info: string[] }> {
+  const ticket = a.ticket?.error === undefined ? a.ticket : undefined;
+  const priorTicket = a.prev?.pr.ticket?.error === undefined ? a.prev?.pr.ticket : undefined;
+  const same = (ticket === undefined ? priorTicket === undefined : priorTicket !== undefined && ticketName(priorTicket) === ticketName(ticket))
+    && a.prev?.background?.project?.parent?.key === a.parent?.key;
+  const input = buildIntentInput({ base: a.base, prBody: a.prBody, commits: a.commits, ...(ticket === undefined ? {} : { ticket }), ...(a.parent === undefined ? {} : { parent: a.parent }), ...(same && a.prev?.intents !== undefined ? { previous: a.prev.intents } : {}) });
+  const identity = renderIntentPrompt(withoutPrevious(input));
+  const sha = createHash('sha1').update(identity).digest('hex');
+  const ran = await runLlm({ repo: a.repo, key: a.key, headSha: sha, call: 'intent' }, a.command, renderIntentPrompt(input), a.mode, parseIntentOutput, identity);
+  if (ran.status !== 'ok') return { intents: [], run: runOf(ran), info: [`意図を書けませんでした: ${ran.reason}`] };
+  const head = ran.reused ? `LLM（差分ごとの意図）: ${ran.command}（.ondina/${a.key}/llm/${sha}.intent.json を再利用）` : `LLM（差分ごとの意図）: ${ran.command}`;
+  const applied = applyIntents(a.hunks, ran.output, input);
+  return { intents: applied.intents, run: runOf(ran), info: [head, ...applied.info] };
+}
+
 /**
  * どんな案件の一部か（project.ts）。知らせは 1 行の要約（stderr）、取れなかった物は警告。
  * 思いがけない失敗も解析を止めず、画面に出す理由にする
@@ -414,7 +441,7 @@ function withWhy(project: Project, why: string[]): Project {
 const ticketName = (t: Ticket): string => t.key ?? t.ref;
 
 /** 保存の鍵にする入力（previous を除く） */
-function withoutPrevious(input: SpecInput): SpecInput {
+function withoutPrevious<T extends SpecInput | IntentInput>(input: T): T {
   const rest = { ...input };
   delete rest.previous;
   return rest;
@@ -470,8 +497,8 @@ const runOf = (r: Ran<unknown>): LlmRun => (r.status === 'ok' ? { command: r.com
 
 /**
  * 保存した出力があればそれを、無ければコマンドを起動して stdout を読む。成功したときだけ保存する（失敗は次回やり直す）。
- * 2 回目（text）・チケット選び（ticket）・要求の抜き出し（spec）はプロンプトの sha1 を保存に残し、今のプロンプトと違えば保存を使わない
- * （1 回目の結果が変わると 2 回目の入力も変わる）。identity は照合に使う文字列（既定はプロンプト。spec は previous を除いたプロンプト）
+ * 2 回目（text）・チケット選び（ticket）・要求の抜き出し（spec）・意図（intent）はプロンプトの sha1 を保存に残し、今のプロンプトと違えば保存を使わない
+ * （1 回目の結果が変わると 2 回目の入力も変わる）。identity は照合に使う文字列（既定はプロンプト。spec / intent は previous を除いたプロンプト）
  */
 async function runLlm<T>(at: { repo: string; key: string; headSha: string; call: LlmCall }, command: string, prompt: string, mode: 'auto' | 'off' | 'relabel', parse: Parse<T>, identity = prompt): Promise<Ran<T>> {
   if (mode === 'off') return { command, status: 'skipped', reason: '--no-llm' };
