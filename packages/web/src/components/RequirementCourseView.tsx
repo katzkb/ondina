@@ -160,6 +160,7 @@ function Intent({ note }: { note: IntentNote }) {
 }
 function Guide(props: RequirementCourseViewProps & { hunk: Hunk; member: boolean }) {
   const { analysis, review, at, hunk, member, memo, dispatch } = props;
+  const g = hunk.group;
   const comments = review.comments.filter((c) => c.source === 'reviewer' && hunkAt(analysis.hunks, c.path, c.line, c.side)?.id === hunk.id);
   const viewed = review.viewed.includes(hunk.id);
   const asked = comments.some((c) => c.label === 'ask' && c.state !== 'discarded');
@@ -167,7 +168,7 @@ function Guide(props: RequirementCourseViewProps & { hunk: Hunk; member: boolean
   const canSave = requirementPick(analysis, hunk.id, memo.pick) && memo.draft.trim() !== '';
   return <div className={`req-guide thread${member ? ' mini' : ''}`}>
     <div className="req-guide-title">ondina の案内{viewed && <b>{asked ? '聞く' : 'わかった'}</b>}</div>
-    {member ? <p>サンプルと同じ形です</p> : intentOf(analysis, hunk)?.notes.map((note, i) => <Intent key={i} note={note} />)}
+    {member && g ? <p>{`同じ書き換え ${g.members.length} 件の 1 つです。パターン: ${g.pattern}`}</p> : intentOf(analysis, hunk)?.notes.map((note, i) => <Intent key={i} note={note} />)}
     {comments.map((c: CommentDraft) => <div key={c.id} className={`req-draft ${c.label ?? ''}`}>
       {c.label && <b>{c.label === 'ask' ? '聞く（下書き）' : '意見（下書き）'}</b>}
       {memo.editing === c.id ? <MemoEditor path={c.path} span={c} memo={c} draft={memo.draft} dispatch={dispatch} /> : <MemoSaved memo={c} githubDiff={analysis.githubDiff} dispatch={dispatch} />}

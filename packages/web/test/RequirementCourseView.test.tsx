@@ -47,7 +47,7 @@ describe('requirement course from goldens', () => {
     const { container } = render(<Harness analysis={a} chapter={index} />);
     const member = a.hunks.find((h) => a.chapters![index]!.hunkIds.includes(h.id) && h.group && h.group.representative !== h.id)!;
     const guide = container.querySelector(`[data-req-hunk="${member.id}"] .req-guide`)! as HTMLElement;
-    expect(guide).toHaveTextContent('サンプルと同じ形です');
+    expect(guide).toHaveTextContent('同じ書き換え 22 件の 1 つです。パターン: getDiscount() → discount');
     expect(within(guide).getByRole('button', { name: '聞く' })).toBeInTheDocument();
     expect(within(guide).getByRole('button', { name: '意見を書く' })).toBeInTheDocument();
   });
