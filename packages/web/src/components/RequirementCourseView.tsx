@@ -9,6 +9,8 @@ import { hunkAt } from '../files.js';
 import { pickRange } from '../memo.js';
 import { chapterLabel, chapterText, intentOf, requirementFiles, requirementPick, type RequirementChapter, type RequirementUi } from '../requirement.js';
 import type { FocusLine, MemoUi } from '../state/reducer.js';
+import { ProjectQ, WhyQ } from './ExplainStages.js';
+import { Lines } from './Lines.js';
 import { Key } from './Key.js';
 import { MemoEditor, MemoSaved } from './MemoBox.js';
 
@@ -32,6 +34,11 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
   const { analysis, review, at, selectedHunk, dispatch } = props;
   const chapters = analysis.chapters ?? [];
   const chapter = typeof at.chapter === 'number' ? chapters[at.chapter] : undefined;
+  const specs = chapters.filter((c) => c.kind === 'spec');
+  const missing = chapters.flatMap((c, i) => c.kind === 'spec' && c.hunkIds.length === 0 ? [i] : []);
+  const comments = review.comments.filter((c) => c.source === 'reviewer' && c.state !== 'discarded');
+  const asks = comments.filter((c) => c.label === 'ask');
+  const imos = comments.filter((c) => c.label === 'imo');
   const mine = new Set(chapter?.hunkIds ?? []);
   const viewed = new Set(review.viewed);
   const complete = chapter !== undefined && chapter.hunkIds.length > 0 && chapter.hunkIds.every((id) => viewed.has(id));
@@ -88,12 +95,59 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
           </div>
         </div>
         {at.chapter === 'start' && <>
-          <ol className="req-start-list">{chapters.map((c, i) => c.kind === 'spec' && <li key={i}><button className="btn" type="button" onClick={() => dispatch({ id: 'req.go', chapter: i })}>{chapterLabel(analysis, i)} · {chapterText(analysis, c)}</button></li>)}</ol>
-          <button className="btn" type="button" onClick={() => dispatch({ id: 'route.go', page: { kind: 'explain' } })}>説明を開く</button>
+          {analysis.background?.project !== undefined && <div className="box"><div className="bd ex-qa"><ProjectQ project={analysis.background.project} /></div></div>}
+          <div className={analysis.summary.headline !== undefined ? 'box ai' : 'box'}>
+            <h3>このチケットの理由{analysis.summary.headline !== undefined && <span className="chip ai">AI</span>}</h3>
+            <div className="bd ex-qa"><WhyQ analysis={analysis} /></div>
+          </div>
+          {analysis.summary.example !== undefined && <div className="box ai">
+            <h3>この PR で変わること<span className="chip ai">AI</span></h3>
+            <div className="bd"><Lines text={analysis.summary.example.text} /></div>
+          </div>}
+          <div className="box">
+            <h3>要求と差分の対応<span className="chip">自動</span></h3>
+            <div className="bd">
+              <p>{`チケットの要求 ${specs.length} 件のうち、差分があるもの ${specs.length - missing.length} 件${missing.length > 0 ? `、差分が見つからないもの ${missing.length} 件` : ''}です。`}</p>
+              <div className="req-rows">{chapters.map((c, i) => <button className="req-row" type="button" key={i} onClick={() => dispatch({ id: 'req.go', chapter: i })}>
+                <b>{chapterLabel(analysis, i)}</b>
+                {c.kind === 'spec' && <span className="req-row-text" title={chapterText(analysis, c)}>{chapterText(analysis, c)}</span>}
+                <span className="req-row-count">{c.hunkIds.length > 0 ? `差分 ${c.hunkIds.length} か所` : <span className="chip">{MISSING_LABEL}</span>}</span>
+              </button>)}</div>
+            </div>
+          </div>
+          <div className="req-actions">
+            <button className="btn primary" type="button" onClick={() => dispatch({ id: 'req.nextChapter' })}>次へ · {chapterLabel(analysis, 0)} <Key action="enter" /></button>
+            <button className="btn" type="button" onClick={() => dispatch({ id: 'route.go', page: { kind: 'explain' } })}>説明を開く</button>
+          </div>
         </>}
         {at.chapter === 'end' && <>
-          <dl className="req-counts"><dt>わかった・聞く</dt><dd>{review.viewed.length} / {analysis.hunks.length}</dd><dt>聞く</dt><dd>{review.comments.filter((c) => c.label === 'ask' && c.state !== 'discarded').length}</dd><dt>意見</dt><dd>{review.comments.filter((c) => c.label === 'imo' && c.state !== 'discarded').length}</dd><dt>Viewed が付いていないファイル</dt><dd>{files.filter((f) => !doneFile(f.path)).length}</dd></dl>
-          <button className="btn" type="button" onClick={() => dispatch({ id: 'view.closing' })}>締めを開く</button>
+          <div className="req-tiles">
+            <div><b>{files.filter((f) => doneFile(f.path)).length} / {files.length}</b><span>GitHub の Viewed</span></div>
+            <div><b>{asks.length}</b><span>聞くこと</span></div>
+            <div><b>{imos.length}</b><span>意見</span></div>
+            <div><b>{files.filter((f) => !doneFile(f.path)).length}</b><span>まだのファイル</span></div>
+          </div>
+          <div className="box">
+            <h3>要求と差分のずれ<span className="chip">自動</span></h3>
+            <div className="bd req-rows">
+              {missing.map((i) => <button className="req-row" type="button" key={i} onClick={() => dispatch({ id: 'req.go', chapter: i })}>{chapterLabel(analysis, i)} · {chapterText(analysis, chapters[i]!)}</button>)}
+              {missing.length === 0 && <p>差分が見つからない要求はありません。</p>}
+            </div>
+          </div>
+          <RequirementComments title="聞くこと" comments={asks} analysis={analysis} dispatch={dispatch} />
+          <RequirementComments title="意見" comments={imos} analysis={analysis} dispatch={dispatch} />
+          <div className="box">
+            <h3>まだ「わかった」も「聞く」も付けていないファイル</h3>
+            <div className="bd req-rows">
+              {files.filter((f) => !doneFile(f.path)).map((f) => {
+                const first = hunksOf(f.path).find((h) => !viewed.has(h.id));
+                return first ? <button className="req-row" type="button" key={f.path} onClick={() => dispatch({ id: 'req.goHunk', hunkId: first.id })}><span className="req-row-path">{f.path}</span></button>
+                  : <div className="req-row" key={f.path}><span className="req-row-path">{f.path}</span></div>;
+              })}
+              {files.every((f) => doneFile(f.path)) && <p>ありません。</p>}
+            </div>
+          </div>
+          <div className="req-actions"><button className="btn" type="button" onClick={() => dispatch({ id: 'view.closing' })}>締めを開く</button></div>
         </>}
         {chapter?.kind === 'spec' && chapter.hunkIds.length === 0 && <p className="req-missing">この要求に当たる差分が見つかりません</p>}
         {chapter && <DefLinks defs={analysis.defs} dispatch={dispatch}>
@@ -164,6 +218,21 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
       </aside>
     </section>
   );
+}
+
+function RequirementComments({ title, comments, analysis, dispatch }: { title: string; comments: CommentDraft[]; analysis: Analysis; dispatch: (c: Command) => void }) {
+  return <div className="box">
+    <h3>{title}</h3>
+    <div className="bd req-rows">
+      {comments.map((c) => {
+        const hunk = hunkAt(analysis.hunks, c.path, c.line, c.side);
+        const body = <><span className="req-row-path">{c.path}:{c.line}</span><span className="req-row-body">{c.body}</span></>;
+        return hunk ? <button className="req-row req-comment" type="button" key={c.id} onClick={() => dispatch({ id: 'req.goHunk', hunkId: hunk.id })}>{body}</button>
+          : <div className="req-row req-comment" key={c.id}>{body}</div>;
+      })}
+      {comments.length === 0 && <p>まだありません。</p>}
+    </div>
+  </div>;
 }
 
 function HunkBody(props: RequirementCourseViewProps & { hunk: Hunk; guide: boolean; member: boolean }) {

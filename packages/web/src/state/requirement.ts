@@ -30,6 +30,13 @@ function afterReviewed(state: Loaded, hunkId: string, viewed: readonly string[])
 }
 
 export function requirementCommand(state: Loaded, command: Command): Reduced | null {
+  if (command.id === 'req.goHunk') {
+    const index = state.analysis.chapters?.findIndex((c) => c.hunkIds.includes(command.hunkId)) ?? -1;
+    const hunk = state.analysis.hunks.find((h) => h.id === command.hunkId);
+    if (index < 0 || !hunk) return none(state);
+    const moved = requirementGo(state, index);
+    return none({ ...moved.state, selectedHunk: hunk.id, selectedFile: hunk.path, requirement: { ...moved.state.requirement, files: { [hunk.path]: true } } });
+  }
   if (command.id === 'req.go') return requirementGo(state, command.chapter);
   if (state.analysis.chapters && (command.id === 'course.enter' || command.id === 'view.course' || (command.id === 'enter' && state.view === 'home'))) {
     return requirementGo(state, 'start');
