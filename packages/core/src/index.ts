@@ -67,3 +67,8 @@ export type { SpecInput, SpecInputTicket, SpecOutput, SpecPrevious } from './spe
 export { carryReview, changedHunks, mapLines, type CarrySource } from './review/carry.js';
 export { onGithubDiff } from './review/github-diff.js';
 export { COMMENT_WRITING_RULES, renderReviewPrompt, type ReviewPromptInput } from './review/prompt.js';
+export { buildIntentInput, type BuildIntentInputArgs } from './intent/input.js';
+export { renderIntentPrompt } from './intent/prompt.js';
+export { parseIntentOutput, INTENT_OUTPUT_SCHEMA } from './intent/schema.js';
+export { applyIntents, type IntentResult } from './intent/verify.js';
+export type { IntentInput, IntentOutput, IntentSources } from './intent/types.js';

@@ -315,13 +315,13 @@ describe('analyzeLocal の 2 回目の LLM（文を書く）', () => {
       terms: [{ word: '言葉', code: expect.stringMatching(/^[A-Za-z_]\w*$/), meaning: '意味。' }],
     });
     const n = steps.length;
-    expect(info.slice(-5)).toEqual([
+    expect(info).toEqual(expect.arrayContaining([
       expect.stringMatching(/^LLM（案内文）: node .*fake-llm\.mjs$/),
       `案内文: 変わること 1 / 1、この場所 ${n} / ${n}、確かめること 1（場所 1）`,
       '入口の説明: 要点 あり、例 なし、図 1 本（箱 1）',
       '前からあるもの 1 から候補にない名前を除外しました: x.Nope',
       '背景: 前からあるもの 1 行（候補 2）、言葉 1 個',
-    ]);
+    ]));
     expect(existsSync(textFile(cachePath))).toBe(true);
   });
 
@@ -366,7 +366,7 @@ describe('analyzeLocal の 2 回目の LLM（文を書く）', () => {
       expect(analysis.tours[0]).not.toHaveProperty('checks');
       expect(analysis.tours[0]!.steps.some((s) => s.role !== undefined)).toBe(false);
       expect(analysis.summary).toEqual({});
-      expect(info.at(-1)).toBe('案内文を書けませんでした: 終了コード 2: boom: the model is on strike');
+      expect(info).toContain('案内文を書けませんでした: 終了コード 2: boom: the model is on strike');
     } finally {
       delete process.env['FAKE_LLM_TEXT_MODE'];
     }
@@ -1138,4 +1138,104 @@ describe('analyzeLocal の作業ツリー（head を渡さない。設計書 5.1
     expect(b.analysis.hunks.some((h) => h.path === '.gitignore')).toBe(true);
     expect(b.analysis.hunks.some((h) => h.path.startsWith('.ondina'))).toBe(false);
   }, TWICE_MS);
+});
+
+// 差分ごとの意図はチケットの有無によらず、1 回目が成功したときだけ別に呼ぶ。
+describe('analyzeLocal の差分ごとの意図', () => {
+  let dir: string;
+  let cleanup: () => void;
+  let dumped: string;
+  let log: string;
+  beforeAll(() => {
+    ({ dir, cleanup } = buildFixtureRepo());
+    dumped = path.join(dir, 'intent-input.json');
+    log = path.join(dir, 'intent-log.txt');
+    process.env['FAKE_LLM_INTENT_INPUT'] = dumped;
+    process.env['FAKE_LLM_LOG'] = log;
+  });
+  afterAll(() => {
+    for (const key of ['FAKE_LLM_INTENT_INPUT', 'FAKE_LLM_LOG', 'FAKE_LLM_INTENT_MODE']) delete process.env[key];
+    cleanup();
+  });
+  const count = () => existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter((s) => s === 'intent').length : 0;
+  const last = () => JSON.parse(readFileSync(dumped, 'utf8')) as { prBody: string; ticket?: unknown; commits: unknown[]; previous?: unknown };
+  const withMode = async <T,>(mode: string, run: () => Promise<T>) => {
+    process.env['FAKE_LLM_INTENT_MODE'] = mode;
+    try { return await run(); } finally { delete process.env['FAKE_LLM_INTENT_MODE']; }
+  };
+
+  it('チケットなしでも意図とコミット説明・実行記録を保存する', async () => {
+    const { analysis, info } = await analyzeLocal(dir, 'main', 'feature/discount', { body: '作者が書いた理由。' });
+    expect(analysis.commits).toEqual([{ sha: analysis.pr.headSha, title: 'Apply discount to orders', body: expect.stringContaining('getDiscount() を discount に変え') }]);
+    expect(analysis.intents).toEqual([{ hunkId: '84cd93f6631a05f2093e55ee5ac9d5afefca75e4', notes: [{ kind: 'written', text: '作者の理由', from: 'pr-body', quote: '作者が書いた理由。' }] }]);
+    expect(analysis.llmIntents?.status).toBe('ok');
+    expect(analysis.llmText?.status).toBe('ok');
+    expect(info).toContain('意図: 差分 1 件（書いてある 1 件、推定 0 件、書いていない 0 件）');
+    expect(last()).toMatchObject({ prBody: '作者が書いた理由。', commits: analysis.commits });
+    expect(last()).not.toHaveProperty('ticket');
+    expect(last()).not.toHaveProperty('previous');
+  });
+
+  it('同じ入力なら保存を使い、本文・チケットが変われば別に呼ぶ', async () => {
+    const before = count();
+    const same = await analyzeLocal(dir, 'main', 'feature/discount', { body: '作者が書いた理由。' });
+    expect(count()).toBe(before);
+    expect(same.info.some((s) => /\.intent\.json を再利用/.test(s))).toBe(true);
+    await analyzeLocal(dir, 'main', 'feature/discount', { body: '別の理由。' });
+    expect(count()).toBe(before + 1);
+    const { analysis } = await analyzeLocal(dir, 'main', 'feature/discount', { body: '別の理由。', ticket: { ref: 'SHOP-421.md', cwd: path.join(FIXTURE_ROOT, 'ticket') } });
+    expect(count()).toBe(before + 2);
+    expect(last().ticket).toHaveProperty('body');
+    expect(analysis.llmSpecs?.status).toBe('ok');
+    expect(analysis.llmIntents?.status).toBe('ok');
+  });
+
+  it('前回の意図を渡し、その文が変わってもキャッシュの鍵を変えない。別チケットの意図は渡さない', async () => {
+    const options = { body: '前回の意図を渡す理由。' };
+    const { analysis, cachePath } = await analyzeLocal(dir, 'main', 'feature/discount', options);
+    const fake = 'f'.repeat(40);
+    const file = path.join(path.dirname(cachePath), `${fake}.json`);
+    const prior = [{ hunkId: analysis.hunks[0]!.id, notes: [{ kind: 'guess', text: '前回の推定' }] }];
+    writeFileSync(file, JSON.stringify({ ...analysis, pr: { ...analysis.pr, headSha: fake }, intents: prior }));
+    await analyzeLocal(dir, 'main', 'feature/discount', { ...options, llm: 'relabel' });
+    expect(last().previous).toEqual({ intents: prior });
+    const before = count();
+    writeFileSync(file, JSON.stringify({ ...analysis, pr: { ...analysis.pr, headSha: fake }, intents: [] }));
+    await analyzeLocal(dir, 'main', 'feature/discount', options);
+    expect(count()).toBe(before);
+    writeFileSync(file, JSON.stringify({ ...analysis, pr: { ...analysis.pr, headSha: fake, ticket: { ref: 'OTHER-1' } }, intents: prior }));
+    await analyzeLocal(dir, 'main', 'feature/discount', { ...options, llm: 'relabel' });
+    expect(last()).not.toHaveProperty('previous');
+  });
+
+  it('チケットを取得できなくても意図を呼ぶ', async () => {
+    const { analysis } = await analyzeLocal(dir, 'main', 'feature/discount', { body: 'チケットなしでの理由。', ticket: { ref: 'NOT-FOUND-1', cwd: dir } });
+    expect(analysis.pr.ticket?.error).toBeDefined();
+    expect(analysis.llmIntents?.status).toBe('ok');
+    expect(analysis.intents).toHaveLength(1);
+    expect(last()).not.toHaveProperty('ticket');
+  });
+
+  it('意図の呼び出しが失敗しても案内文と解析を残す', async () => {
+    const { analysis, info } = await withMode('fail', () => analyzeLocal(dir, 'main', 'feature/discount', { llm: 'relabel' }));
+    expect(analysis).not.toHaveProperty('intents');
+    expect(analysis.llmIntents).toMatchObject({ status: 'failed', reason: '終了コード 2: boom: the intent writer is on strike' });
+    expect(analysis.llmText?.status).toBe('ok');
+    expect(info).toContain('意図を書けませんでした: 終了コード 2: boom: the intent writer is on strike');
+  });
+
+  it('1 回目が動かなければ意図を呼ばない。空のコミット範囲は省く', async () => {
+    const before = count();
+    const { analysis } = await analyzeLocal(dir, 'main', 'main', { llm: 'off' });
+    expect(count()).toBe(before);
+    expect(analysis).not.toHaveProperty('intents');
+    expect(analysis).not.toHaveProperty('commits');
+    expect(analysis).not.toHaveProperty('llmIntents');
+    process.env['FAKE_LLM_MODE'] = 'fail';
+    try {
+      const failed = await analyzeLocal(dir, 'main', 'feature/discount', { llm: 'relabel' });
+      expect(failed.analysis).not.toHaveProperty('llmIntents');
+      expect(count()).toBe(before);
+    } finally { delete process.env['FAKE_LLM_MODE']; }
+  });
 });

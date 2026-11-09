@@ -569,6 +569,13 @@ type Chapter =
   | { kind: 'spec'; specId: string; hunkIds: string[] } // Reading order; empty = no corresponding diff found
   | { kind: 'follow'; hunkIds: string[] }               // Ripple members following a core change
   | { kind: 'extra'; hunkIds: string[] };               // Diffs matching no requirement
+interface CommitNote { sha: string; title: string; body: string }  // non-merge commits, oldest first
+type IntentSource = 'pr-body' | 'ticket' | 'parent' | 'commit';
+type IntentNote =
+  | { kind: 'written'; text: string; from: IntentSource; quote: string; commit?: string } // commit is the verified full sha
+  | { kind: 'guess'; text: string }   // provenance: llm
+  | { kind: 'none'; text: string };   // provenance: llm
+interface HunkIntent { hunkId: string; notes: IntentNote[]; ask?: string } // ask is a draft question to the author
 interface Claim { text: string; backed: boolean; reason?: string } // 作者説明の各文
 interface Summary { problem: string; approach: string[] | string; untouched: string[] | string; beforeAfter: Array<{target: string; before: string; after: string}> }  // 2 回目の LLM（10.4）。approach は文（2026-10-10 まではリスト）、untouched はリスト。古い解析は文字列
 
@@ -608,10 +615,12 @@ interface Analysis {                         // パイプラインの成果物�
   hunks: Hunk[]; hows: How[]; symbols: Symbol[]; edges: Edge[]; edgesBase?: Edge[]; tours: Tour[];  // edgesBase is the call edges before the change (base) (9.2. 2026-11-05). No field = an old analysis or one without a language server
   specs: Spec[]; claims: Claim[]; summary: Summary;
   chapters?: Chapter[];  // Program-built when a ticket yields requirements (10.8)
+  intents?: HunkIntent[]; commits?: CommitNote[];  // omitted when empty (10.9)
   config: AnalysisConfig;                    // ondina.config.yaml の解析に効く部分（11章）。無ければ既定値
   llm?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // Stage 2 の 1 回目（目的ごとに分ける）の記録（5.3）。どのコマンドで出したか
   llmText?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };
   llmSpecs?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // 要求の抜き出し（10.8）の記録。欄が無い = 走らせていない（チケットが無い・取れなかった、1 回目が ok でない、古い解析）  // 2 回目（文を書く）の記録（5.3）。欄が無い = 走らせていない（--no-llm、1 回目が ok でない、古い解析）
+  llmIntents?: { command: string; status: 'ok'|'skipped'|'failed'; reason?: string };  // per-hunk intent (10.9). Absent if the first call was not ok, or in old analyses
   lsp?: { command: string; status: 'ok'|'unavailable'; reason?: string; waitedMs?: number };  // LSP の記録（9.1 / 9.5）。欄が無い = 動かしていない（--no-lsp か古い解析）
   structure?: {                              // 構成の推定の記録（10.6。2026-10-09）。欄が無い = 設定の layers を使った解析か古い解析
     status: 'ok'|'skipped'|'failed'; reason?: string; command?: string;
@@ -1473,6 +1482,26 @@ Extract what should hold in this PR from the retrieved ticket (5.1). The LLM sel
 - **Fixture**: Preserve recorded text, `why`, and `parentWhy`. Mechanically convert old How mappings to non-group hunks, retaining cores. Six requirements; five have corresponding diffs. Expired-code and rate-value requirements are empty. The current ripple group has 22 hunks including its representative, OrderAdminView. Logger, FeatureFlags, and the PromoService deviation are `extra`. Goldens: `expected/specs.json` and `expected/chapters.json`
 - Runs alongside the second LLM call. Cache by the prompt excluding `previous`; identical diffs and tickets reuse the recording
 - **Measured** (2026-11-09, development machine, default `claude -p … opus`, record `llm/spec-output.json`): 22 seconds. 6 requirements; 5 have matching diffs, and “expired codes return 400” has none. Chapters (golden `expected/chapters.json`): 6 requirement chapters, 22 follow hunks, 6 hunks that match no requirement (2 in Logger, FeatureFlags, PromoService, one each in ApplyDiscountUseCaseTest and OrderRepositoryImplTest). Records from when it chose Hows (2026-10-12, 10-29) had 8 requirements
+
+### 10.9 Per-hunk intent (`packages/core/src/intent/`)
+
+Separate the author's stated reasons from guesses for each hunk. This change adds data only. Rendering follows separately.
+
+- **Input** (`buildIntentInput`): reuse the first call's `hunks` and `rippleGroups`, including their diff lines. Eligible hunks are standalone hunks, ripple representatives, and deviations. Ripple members use their representative's intent
+- Sources are `prBody`, `ticket.body`, `parent.body`, and `commits` (sha, title, body). Run even without a ticket. Convert HTML using `ticketPlainText`. Pass the full source bodies without truncation
+- `commitNotes` reads non-merge commits in `baseSha..headSha`, oldest first. If the working-tree head is a tree, use `baseSha..HEAD`. Do not invent notes for uncommitted changes. Omit `Analysis.commits` when empty
+- **Output**: `{ "intents": [{ "hunkId": "…", "notes": [{ "kind": "written", "text": "…", "from": "commit", "quote": "…", "commit": "sha" }], "ask": "…" }] }`
+- `written` is a reason stated by the author, with a quote and source. `guess` is a short inference when no reason is written. `none` describes what is unwritten. Include both `guess` and `none` when an inference is possible. Both are LLM readings (provenance: llm). Do not judge correctness or quality
+- `ask` is a short, polite draft question about an unwritten reason, using Japanese desu/masu. It is never sent. Remove it if any verified `written` note remains
+- **Verification** (`applyIntents`): report and drop unknown or duplicate IDs. Keep input hunk order. Drop empty texts and hunks with no remaining notes. Use the quote comparison shared with spec: remove whitespace and Markdown emphasis/code markers, then check the named source body. Reject empty quotes and quotes consisting only of markers
+- Check commit quotes against that commit's title and body. Accept a unique SHA prefix and store the full SHA. With no SHA, choose the first commit containing the quote. Unknown or ambiguous supplied SHAs, missing quotes, and unknown sources become `guess`, with an info line
+- End with `意図: 差分 N 件（書いてある K 件、推定 G 件、書いていない M 件）`. Count each hunk by its strongest note: written > guess > none. The program counts; the LLM does not
+- **Execution and caching**: after the first call succeeds, run alongside narration and spec extraction. Do not add to the second-call input. Pass prior intents in `previous` only for the same change with matching ticket and parent identities; ticketless runs may also carry prior intents. Hash the full prompt without `previous` for the cache key. Identical sources and diffs reuse the same record even when previous wording changes. Store raw output in `llm/<key>.intent.json`
+- On failure, report `意図を書けませんでした: reason` and record the reason in `Analysis.llmIntents`. Continue analysis and narration. Omit empty `Analysis.intents`. If the first call does not succeed, skip intent and omit its run record
+- **Fixture**: keep the commit message in one place, `discount-commit-message.txt`. Input golden: `expected/llm-intent-input.json`; verified output: `expected/intents.json`. `llm/intent-output.json` is real LLM output recorded with `record-llm-intent.mjs`
+- **Measured** (2026-11-09, `claude -p --model opus`, 18 KB prompt): 60 seconds. 27 diffs. 14 written, 13 guessed (each with a "not written" note). It runs alongside the second call and requirement extraction, so analyze waits for the longest call
+
+---
 
 ## 11. Config file `ondina.config.yaml`
 

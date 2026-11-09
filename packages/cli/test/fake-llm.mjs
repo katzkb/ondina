@@ -53,6 +53,18 @@ if (Array.isArray(input.candidates)) {
   process.stdout.write(JSON.stringify({ choice }) + '\n');
   process.exit(0);
 }
+// 差分ごとの意図（10.9）。チケットが無くても prBody と commits を渡す。
+if (typeof input.prBody === 'string' && Array.isArray(input.commits)) {
+  if (process.env.FAKE_LLM_LOG) appendFileSync(process.env.FAKE_LLM_LOG, 'intent\n');
+  if (process.env.FAKE_LLM_INTENT_INPUT) writeFileSync(process.env.FAKE_LLM_INTENT_INPUT, JSON.stringify(input));
+  if (process.env.FAKE_LLM_INTENT_MODE === 'fail') {
+    process.stderr.write('boom: the intent writer is on strike\n');
+    process.exit(2);
+  }
+  const notes = input.prBody ? [{ kind: 'written', text: '作者の理由', from: 'pr-body', quote: input.prBody }] : [{ kind: 'none', text: '理由は書かれていません' }];
+  process.stdout.write(JSON.stringify({ intents: input.hunks.slice(0, 1).map((h) => ({ hunkId: h.id, notes })) }) + '\n');
+  process.exit(0);
+}
 // 要求の抜き出し（入力に ticket と hunks がある。設計書 10.8）は FAKE_LLM_SPEC_MODE: ok（既定。要求 2 つ: 最初の差分に対応する物と、対応の無い物。なぜの文 2 つ。親があれば親の文 2 つ）
 // | fail | garbage | bogus（不明な差分の ID unknown を足す）。FAKE_LLM_SPEC_INPUT: 受け取った入力 JSON をそのファイルに書く（previous を見る）
 if (input.ticket !== undefined && Array.isArray(input.hunks)) {

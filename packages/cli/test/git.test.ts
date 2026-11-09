@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSyn
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { changedFixtureFiles } from '../../core/test/fixture.js';
-import { buildConfigFiles, changedFiles, githubDiff, hasPath, parseDiffHunks, readBlobs, resolveLocalRefs, resolveWorkingTree, snapshotWorkingTree, switchWorktree } from '../src/git.js';
+import { commitNotes, buildConfigFiles, changedFiles, githubDiff, hasPath, parseDiffHunks, readBlobs, resolveLocalRefs, resolveWorkingTree, snapshotWorkingTree, switchWorktree } from '../src/git.js';
 import { buildFixtureRepo, FIXTURE_ROOT, git } from './fixture-repo.js';
 
 let repo: string;
@@ -339,5 +339,48 @@ describe('作業ツリーの解析の base と head、worktree（設計書 5.1�
     expect(existsSync(path.join(dir, 'NOTES.md'))).toBe(false);
     expect(readFileSync(path.join(dir, order), 'utf8')).not.toContain('// 作業中');
     expect(git(dir, 'status', '--porcelain', '--untracked-files=no')).toBe('');
+  });
+});
+
+
+describe('commitNotes', () => {
+  it('base..head のコミットの sha・題・複数行の本文を返す。空の範囲は空', () => {
+    const refs = resolveLocalRefs(repo, 'main', 'feature/discount');
+    const message = readFileSync(path.join(FIXTURE_ROOT, 'discount-commit-message.txt'), 'utf8').trimEnd();
+    const [title, , ...body] = message.split('\n');
+    expect(commitNotes(repo, refs)).toEqual([{ sha: refs.headSha, title, body: body.join('\n') }]);
+    expect(commitNotes(repo, { baseSha: refs.headSha, headSha: refs.headSha })).toEqual([]);
+  });
+
+  it('作業ツリーの tree は base..HEAD の説明を返す。未コミット分は作らない', () => {
+    const fixture = buildFixtureRepo();
+    try {
+      git(fixture.dir, 'checkout', '-q', 'feature/discount');
+      writeFileSync(path.join(fixture.dir, 'pending.txt'), 'pending');
+      const refs = resolveWorkingTree(fixture.dir, 'main', undefined);
+      expect(commitNotes(fixture.dir, refs)).toEqual(commitNotes(fixture.dir, resolveLocalRefs(fixture.dir, 'main', 'HEAD')));
+    } finally { fixture.cleanup(); }
+  });
+
+  it('古い順に返し、本文なしのコミットと区切り文字に似た改行を保ち、マージを除く', () => {
+    const fixture = buildFixtureRepo();
+    try {
+      const d = fixture.dir;
+      git(d, 'checkout', '-q', 'feature/discount');
+      const baseSha = git(d, 'rev-parse', 'HEAD');
+      const commit = (title: string, body?: string) => git(d, '-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', 'commit', '--allow-empty', '-q', '-m', title, ...(body === undefined ? [] : ['-m', body]));
+      commit('First', 'Line 1\n\nLine 2');
+      const first = git(d, 'rev-parse', 'HEAD');
+      git(d, 'checkout', '-q', '-b', 'other');
+      commit('Side');
+      const side = git(d, 'rev-parse', 'HEAD');
+      git(d, 'checkout', '-q', 'feature/discount');
+      commit('Second');
+      git(d, '-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', 'merge', '--no-ff', '-m', 'Merge', 'other');
+      const notes = commitNotes(d, { baseSha, headSha: git(d, 'rev-parse', 'HEAD') });
+      expect(notes.map((n) => n.title).sort()).toEqual(['First', 'Second', 'Side']);
+      expect(notes[0]).toEqual({ sha: first, title: 'First', body: 'Line 1\n\nLine 2' });
+      expect(notes.find((n) => n.sha === side)?.body).toBe('');
+    } finally { fixture.cleanup(); }
   });
 });

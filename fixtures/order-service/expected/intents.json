@@ -1,0 +1,342 @@
+[
+  {
+    "hunkId": "64b251772fa1ec50d3343c65710a0f6634aad62c",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "保存している割引額を読むだけだと呼び出し側に伝えるため",
+        "from": "commit",
+        "quote": "getDiscount() を discount に変え、保存している割引額を読むだけだと呼び出し側に伝える。",
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  {
+    "hunkId": "84cd93f6631a05f2093e55ee5ac9d5afefca75e4",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、ログの行に時刻を出すため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜログに時刻を足したかは、どこにも書いていません"
+      }
+    ],
+    "ask": "ログに時刻を足した理由を教えていただけますか。"
+  },
+  {
+    "hunkId": "b91e4ac0ef4d3df4ebcc660169b9e4abdb92d74b",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、ログの行に時刻を出すため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜログに時刻を足したかは、どこにも書いていません"
+      }
+    ],
+    "ask": "ログの書式に時刻を足した理由を教えていただけますか。"
+  },
+  {
+    "hunkId": "f04213b0d07c9a9cac6ddf2ab193a40840c0348c",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、新しい割引の処理を切り替えるため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜ DISCOUNT_V2 のフラグを足したかは、どこにも書いていません"
+      }
+    ],
+    "ask": "DISCOUNT_V2 のフラグを足した理由と、使う場所を教えていただけますか。"
+  },
+  {
+    "hunkId": "22e8d4bb4a95da297c6c1ae798a5e3dbe6a4d731",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "注文に割引コードを適用する API でコードを受け取るため",
+        "from": "ticket",
+        "quote": "注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）"
+      }
+    ]
+  },
+  {
+    "hunkId": "89802175d3898bded24a787f90beee1a5312f3a7",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "注文に割引コードを適用する API でコードを受け取るため",
+        "from": "ticket",
+        "quote": "注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）"
+      }
+    ]
+  },
+  {
+    "hunkId": "02e146608288f588fded777b8b37c3a6f5a00023",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "注文に割引コードを適用する API でコードを受け取るため",
+        "from": "ticket",
+        "quote": "注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）"
+      }
+    ]
+  },
+  {
+    "hunkId": "130e7d62f211839eec7c68582ae3565629d8c673",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "注文に割引コードを適用する API でコードを受け取るため",
+        "from": "ticket",
+        "quote": "注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）"
+      },
+      {
+        "kind": "none",
+        "text": "なぜコントローラーでも注文を保存するかは、どこにも書いていません"
+      }
+    ]
+  },
+  {
+    "hunkId": "d50a6b62c81cb87db22faef4ab62bf9d5217e713",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "割引額を注文の応答に含めるため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "009b597cd765e85db0dcc7fb4619c29e2adf98b7",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "割引額を注文の応答に含めるため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "1e0f9c50d9be3c3a027d4b6e38d4974cac7dffb5",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "割引額を注文の応答に含めるため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "7ae997273f6f4dd35261fe64143a5b2ad7fc8960",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "受け取った割引コードを注文に適用するため",
+        "from": "ticket",
+        "quote": "注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）"
+      }
+    ]
+  },
+  {
+    "hunkId": "a135ba90941c193b82bb22bc319e52347521ee99",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "受け取った割引コードを注文に適用するため",
+        "from": "ticket",
+        "quote": "注文に割引コードを 1 つ適用できる（POST /orders/{id}/discount）"
+      },
+      {
+        "kind": "written",
+        "text": "割引額を注文と一緒に保存するため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "08620bbd277424422d535274fc7a98e037583e4c",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、割引コードを注文に渡す入れ物にするため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜ割引コードを DiscountCommand に包むかは、どこにも書いていません"
+      }
+    ],
+    "ask": "割引コードを DiscountCommand に包んで渡す理由を教えていただけますか。"
+  },
+  {
+    "hunkId": "6f8c1dd88a901bd7c59c469f1a09023246aff25a",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、割引コードを注文に渡す入れ物にするため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜ割引コードを DiscountCommand に包むかは、どこにも書いていません"
+      }
+    ],
+    "ask": "割引コードを DiscountCommand に包んで渡す理由を教えていただけますか。"
+  },
+  {
+    "hunkId": "98dcd7c9d8d6e0ed59854b2fff454f5bf805bae7",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "注文が割引額を自分で持ち、計算をドメインに閉じるため",
+        "from": "pr-body",
+        "quote": "`Order` が割引額を自分で持ち、計算をドメインに閉じる。"
+      },
+      {
+        "kind": "written",
+        "text": "割引額の計算を applyDiscount に集め、値を読む処理と分けるため",
+        "from": "commit",
+        "quote": "割引額の計算は applyDiscount に集め、値を読む処理と分ける。",
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  {
+    "hunkId": "65f0737fe57031bdbcb137f75ab7ae4bdc7f026b",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "割引額を注文と一緒に保存するため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "3b823c2027bd0957f11251555393d73cee9318ed",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "注文と一緒に保存した割引額を読み戻すため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "47dc9545806ff578b57ab0793821f2cc2c1b3a49",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、割引コードの無い注文で前からの販促の割引を使い続けるため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜ割引額が 0 のときに legacyPromo を使うかは、どこにも書いていません"
+      }
+    ],
+    "ask": "割引額が 0 のときに legacyPromo を使う理由を教えていただけますか。"
+  },
+  {
+    "hunkId": "40e1361cdc0e10bdf58a3323c633e282a8902036",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "既存の行を読み続けられるように、discount 列の初期値を 0 にするため",
+        "from": "commit",
+        "quote": "既存の行を読み続けられるように、discount 列の初期値は 0 にする。",
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  {
+    "hunkId": "d81273406425493877cce76b6a078c2f3b98944f",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、execute に割引コードの引数が増えたのに合わせるため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜこのテストの呼び出しを変えたかは、どこにも書いていません"
+      }
+    ],
+    "ask": "このテストで割引コードに SPRING10 を渡している理由を教えていただけますか。"
+  },
+  {
+    "hunkId": "b89e25202d679c348f253ed8b3ab49f2833eedb5",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "割引の適用後に注文を保存することを確かめるため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "a22e9a886a2fefed19df83983b21f8e1b09098ab",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "小計にコードの率を掛けた額を割り引くことを確かめるため",
+        "from": "ticket",
+        "quote": "割引額は小計にコードの率を掛けた額。SPRING10 は 10%、WELCOME5 は 5%"
+      }
+    ]
+  },
+  {
+    "hunkId": "3c10228566fa653f9ff458cace7a9fea95c16ea9",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "知らないコードでは小計のままになることを確かめるため",
+        "from": "ticket",
+        "quote": "知らないコードは割引しない（小計のまま）"
+      }
+    ]
+  },
+  {
+    "hunkId": "f72c2d9dc72d2f6f9fe034059aa16caddc1aa839",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "割引額を注文と一緒に保存できることを確かめるため",
+        "from": "ticket",
+        "quote": "割引額は注文と一緒に保存し、注文の応答に含める"
+      }
+    ]
+  },
+  {
+    "hunkId": "7826f5464b504df32d03817b1421873bc12479bd",
+    "notes": [
+      {
+        "kind": "written",
+        "text": "既にある注文を割引額 0 として読めることを確かめるため",
+        "from": "ticket",
+        "quote": "既にある注文は割引額 0 として読める"
+      }
+    ]
+  },
+  {
+    "hunkId": "99dbfe194e279199e1ec6bf98cd69f1bb25cb3c3",
+    "notes": [
+      {
+        "kind": "guess",
+        "text": "たぶん、割引額付きの注文をテストで作りやすくするため"
+      },
+      {
+        "kind": "none",
+        "text": "なぜこの補助の関数を足したかは、どこにも書いていません"
+      }
+    ],
+    "ask": "orderWithDiscount を足した理由を教えていただけますか。"
+  }
+]

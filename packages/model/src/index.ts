@@ -659,6 +659,29 @@ export interface DefFile {
   part?: true;
 }
 
+/** 差分の範囲にあるコミットの説明。マージを除き、古い順に並ぶ */
+export interface CommitNote {
+  sha: string;
+  title: string;
+  body: string;
+}
+
+/** 作者が意図を書いた場所 */
+export type IntentSource = 'pr-body' | 'ticket' | 'parent' | 'commit';
+
+/** 差分の意図。written は原文の引用を検証済み。guess と none の文は LLM 由来（provenance: llm） */
+export type IntentNote =
+  | { kind: 'written'; text: string; from: IntentSource; quote: string; commit?: string }
+  | { kind: 'guess'; text: string }
+  | { kind: 'none'; text: string };
+
+/** 差分ごとの意図。追従メンバーは代表の意図を使う。ask は意図が書かれていないときの作者への質問の下書き */
+export interface HunkIntent {
+  hunkId: string;
+  notes: IntentNote[];
+  ask?: string;
+}
+
 /** パイプラインの成果物。JSON 1ファイル。headSha をキーにキャッシュ */
 export interface Analysis {
   /**
@@ -683,6 +706,10 @@ export interface Analysis {
   specs: Spec[];
   /** チケットから要求が得られたときだけ、要求・追従・その他の章を持つ */
   chapters?: Chapter[];
+  /** 差分ごとの意図（10.9）。空のときと古い解析には無い */
+  intents?: HunkIntent[];
+  /** 差分の範囲のコミットの説明。空なら省く */
+  commits?: CommitNote[];
   claims: Claim[];
   summary: Summary;
   /** 説明タブの背景（3.1）。無い = チケットの「なぜ」も 2 回目の LLM の前からあるもの・言葉も無い（LLM が動かなかった・古い解析など） */
@@ -695,6 +722,8 @@ export interface Analysis {
   llmText?: LlmRun;
   /** 要求の抜き出し（10.8）の記録。欄が無い = 走らせていない（チケットが無い・取れなかった、1 回目が ok でない、古い解析）。failed のとき specs は空 */
   llmSpecs?: LlmRun;
+  /** 意図を書く呼び出し（10.9）の記録。1 回目が ok でないときと古い解析には無い。失敗しても解析を続ける */
+  llmIntents?: LlmRun;
   /** LSP（9.1 / 9.5）の記録。欄が無い = 動かしていない（analyze に --no-lsp を付けた） */
   lsp?: LspRun;
   /** 構成の推定（10.6）の記録。層を推定した構成から付けたか。欄が無い = ondina.config.yaml の layers を使った解析か、古い解析 */

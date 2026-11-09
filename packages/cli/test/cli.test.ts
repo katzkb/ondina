@@ -53,7 +53,7 @@ describe('ondina analyze', () => {
     expect(await run(['analyze', '--base', 'main', '--head', 'feature/discount', '--body', 'body.md'], o2)).toBe(0);
     expect(o2.err.join('')).toMatch(/ondina analyze: AI が変更を目的ごとに分けています\nondina analyze: AI が案内文を書いています\n/);
     expect(o2.err.join('')).toMatch(/ondina analyze: LLM: node .*fake-llm\.mjs/);
-    expect(o2.err.join('')).toMatch(/ondina analyze: How 1、未帰属 0、絡み 0\nondina analyze: LLM（案内文）: node .*fake-llm\.mjs\nondina analyze: 案内文: 変わること 1 \/ 1、この場所 (\d+) \/ \1、確かめること 1（場所 1）\nondina analyze: 入口の説明: 要点 あり、例 なし、図 1 本（箱 1）\nondina analyze: 前からあるもの 1 から候補にない名前を除外しました: x\.Nope\nondina analyze: 背景: 前からあるもの 1 行（候補 \d+）、言葉 1 個\nondina analyze: 流れの題: 0 \/ 1 本\n$/);
+    expect(o2.err.join('')).toMatch(/ondina analyze: How 1、未帰属 0、絡み 0\nondina analyze: LLM（案内文）: node .*fake-llm\.mjs\nondina analyze: 案内文: 変わること 1 \/ 1、この場所 (\d+) \/ \1、確かめること 1（場所 1）\nondina analyze: 入口の説明: 要点 あり、例 なし、図 1 本（箱 1）\nondina analyze: 前からあるもの 1 から候補にない名前を除外しました: x\.Nope\nondina analyze: 背景: 前からあるもの 1 行（候補 \d+）、言葉 1 個\nondina analyze: 流れの題: 0 \/ 1 本\nondina analyze: LLM（差分ごとの意図）: node .*fake-llm\.mjs\nondina analyze: 意図: 差分 1 件（書いてある 1 件、推定 0 件、書いていない 0 件）\n$/);
   });
 
   it('--no-llm / --relabel / --body <file> を受ける。--body は PR 番号と同時に指定できない', () => {
