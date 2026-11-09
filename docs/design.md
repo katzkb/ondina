@@ -1498,7 +1498,8 @@ Separate the author's stated reasons from guesses for each hunk. This change add
 - End with `意図: 差分 N 件（書いてある K 件、推定 G 件、書いていない M 件）`. Count each hunk by its strongest note: written > guess > none. The program counts; the LLM does not
 - **Execution and caching**: after the first call succeeds, run alongside narration and spec extraction. Do not add to the second-call input. Pass prior intents in `previous` only for the same change with matching ticket and parent identities; ticketless runs may also carry prior intents. Hash the full prompt without `previous` for the cache key. Identical sources and diffs reuse the same record even when previous wording changes. Store raw output in `llm/<key>.intent.json`
 - On failure, report `意図を書けませんでした: reason` and record the reason in `Analysis.llmIntents`. Continue analysis and narration. Omit empty `Analysis.intents`. If the first call does not succeed, skip intent and omit its run record
-- **Fixture**: keep the commit message in one place, `discount-commit-message.txt`. Input golden: `expected/llm-intent-input.json`; verified output: `expected/intents.json`. `llm/intent-output.json` is a temporary hand-written recording. No real LLM was run. Re-record using `record-llm-intent.mjs`
+- **Fixture**: keep the commit message in one place, `discount-commit-message.txt`. Input golden: `expected/llm-intent-input.json`; verified output: `expected/intents.json`. `llm/intent-output.json` is real LLM output recorded with `record-llm-intent.mjs`
+- **Measured** (2026-11-09, `claude -p --model opus`, 18 KB prompt): 60 seconds. 27 diffs. 14 written, 13 guessed (each with a "not written" note). It runs alongside the second call and requirement extraction, so analyze waits for the longest call
 
 ---
 

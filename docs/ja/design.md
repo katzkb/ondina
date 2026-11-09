@@ -1498,7 +1498,8 @@ lead があれば答えを採る（need が一緒にあっても）。lead が�
 - 最後に「意図: 差分 N 件（書いてある K 件、推定 G 件、書いていない M 件）」と出す。差分ごとの最も強いメモ（written > guess > none）で数える。件数は LLM に書かせない
 - **実行と保存**: 1 回目が成功した後、案内文と要求の抜き出しと同時に呼ぶ。2 回目の入力は増やさない。`previous` は同じ変更の前回の意図。同じチケットと親の番号のときだけ渡す。チケットなしどうしも引き継ぐ。保存の鍵は `previous` を除いた全入力のプロンプトの sha1。出典や差分が同じなら前回の文が変わっても同じ記録を使う。生出力は `llm/<鍵>.intent.json`
 - 失敗したら「意図を書けませんでした: 理由」と知らせる。`Analysis.llmIntents` に理由を残す。解析と案内文は続ける。意図が空なら `Analysis.intents` を省く。1 回目が成功しなければ呼ばず、実行記録も省く
-- **fixture**: コミット本文は `discount-commit-message.txt` に 1 か所だけ置く。入力は `expected/llm-intent-input.json`、検証後は `expected/intents.json`。`llm/intent-output.json` は手書きの仮記録。実際の LLM は起動していない。`record-llm-intent.mjs` で記録し直す
+- **fixture**: コミット本文は `discount-commit-message.txt` に 1 か所だけ置く。入力は `expected/llm-intent-input.json`、検証後は `expected/intents.json`。`llm/intent-output.json` は `record-llm-intent.mjs` で記録した実際の LLM の出力
+- **実測**（2026-11-09、`claude -p --model opus`、プロンプト 18 KB）: 60 秒。差分 27 件。書いてある 14 件、推定 13 件（どれも「書いていない」を添える）。2 回目・要求の抜き出しと同時に走るので、analyze はいちばん長い呼び出しを待つ
 
 ---
 
