@@ -17,6 +17,7 @@ import { KeymapHelp } from './components/KeymapHelp.js';
 import { Palette } from './components/Palette.js';
 import { SettingsModal } from './components/SettingsModal.js';
 import { TopBar } from './components/TopBar.js';
+import { RequirementCourseView } from './components/RequirementCourseView.js';
 import { CourseView } from './components/CourseView.js';
 import { PaneHandle } from './components/PaneHandle.js';
 import { PrListView } from './components/PrListView.js';
@@ -408,7 +409,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
 
   const bindings = useMemo(() => bindingsOf(s.ui.keymap), [s.ui.keymap]);
   // 名前から定義へ（3.6）: コードを出す画面（差分一覧・目的ごと・コース）で ⌘ を押している間、移れる名前に下線
-  useHeldModifier((s.view === 'diff' || s.view === 'hows' || s.view === 'course') && s.analysis?.defs !== undefined);
+  useHeldModifier((s.view === 'diff' || s.view === 'hows' || s.view === 'course' || s.view === 'req') && s.analysis?.defs !== undefined);
   const defBack = s.analysis?.defs ? { defBack: s.defBack.length } : {};
   const unread = s.ask.unread.length > 0;
   const askStatus = useMemo(() => ({ open: s.ask.open, pending: s.ask.pending !== null, unread, dispatch }), [s.ask.open, s.ask.pending, unread, dispatch]);
@@ -418,7 +419,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
     <KeysContext.Provider value={bindings}>
     {/* コースの丸の色（並び順に 7 色）。番号ごとの --c<番号> は解析のコースで決まる */}
     <div className={`app${s.ask.open ? ' asking' : ''}${s.view === 'prs' ? ' prs' : ''}`} style={s.analysis ? courseColorVars(s.analysis.hows.map((w) => w.id)) : undefined}>
-      <TopBar analyses={s.analyses} current={s.current} meter={m} view={s.view} course={s.course} loaded={s.analysis !== null} jobs={s.reanalyze.jobs} reviews={s.reviews} dispatch={dispatch} />
+      <TopBar analyses={s.analyses} current={s.current} meter={m} view={s.view} course={s.course} requirement={s.analysis?.chapters !== undefined} loaded={s.analysis !== null} jobs={s.reanalyze.jobs} reviews={s.reviews} dispatch={dispatch} />
       {/* PR 一覧は開いている解析を出さないので、その解析の知らせも出さない（解析の状態はカードの中） */}
       {s.view !== 'prs' && <ReanalyzeStrip strip={stripOf(s)} dispatch={dispatch} />}
       <main className="stage">
@@ -442,6 +443,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
             dispatch={dispatch}
           />
         )}
+        {s.view === 'req' && s.analysis && s.review && <RequirementCourseView analysis={s.analysis} review={s.review} at={s.requirement} selectedHunk={s.selectedHunk} memo={s.memo} mode={diffMode.c} focusLine={s.focusLine} dispatch={dispatch} />}
         {s.view === 'course' && s.analysis && s.review && (
           <CourseView analysis={s.analysis} review={s.review} diffMode={diffMode.c} course={s.course} briefMap={s.briefMap} speed={s.ui.mapSpeed ?? 1} skipImports={s.ui.autoCheckImports === true} courseMap={s.courseMap} fullFile={s.fullFile} fold={s.fold} folded={s.courseFolded} panes={s.ui.panes} peek={s.peek} zoom={s.mapZoom} repoName={s.current?.repoName ?? null} memo={s.memo} draftText={s.draftText} focusLine={s.focusLine} {...defBack} treeShut={s.treeShut.course} ask={s.ask} dispatch={dispatch} />
         )}

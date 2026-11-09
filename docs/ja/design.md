@@ -197,6 +197,9 @@ hunk 一覧の行:
 
 ### 3.3 コース
 
+**要求から読むコース（2026-11-09）**: `Analysis.chapters` があれば、コースの入口は別画面の `RequirementCourseView`（`/req/start` / `/req/<0 からの章番号>` / `/req/end`）を開く。無い解析は従来の How コース。左は章、中央は `githubDiff` 順の全ファイル、右は Viewed 付きの Files changed。ファイル名を先に出し、その下にディレクトリを薄く出す。全パスは title に残す。GitHub の情報が無い local 解析では従来のファイル順を使い、ほかの local のメモと同じく本人が選んだ hunk 内の行に書ける。定義への移動は既存の引き出しを使う。この章の hunk はファイル内の行順で開き、ほかの章は畳む。移動は `chapter.hunkIds` の読む順。複数の要求が同じ hunk を含むときは章チップを複数出し、閲覧状態を共有する。章に入ると閲覧済みかによらず `chapter.hunkIds[0]` を現在地にし、見出しへスクロールする。現在地は枠と「いまここ」。書いてある意図は引用と出典、推定は点線と AI、意図が無い場所には何も出さない。追従メンバーは一行の案内で、質問の下書きはサンプルの意図から取る。「わかった」と保存した「聞く」は `ReviewState.viewed` に足し、取り消しとファイル単位の解除も既存の GitHub Viewed 同期を通る。「わかった」と「聞く」の保存後は、済んだ場所の次から読む順で未確認の hunk へ移る。後ろが済んでいれば先に飛ばした未確認の場所へ戻る。全部済んだらその場に残り、完了の一文と次の章へのボタンを出す（→ でも移れる）。意見の保存では移らない。質問・意見は `label` 付きのレビュアーの下書き。行は既存の差分の「+」とドラッグで、その hunk 内の GitHub にコメントできる行を本人が選ぶ。自動では選ばず、未選択では保存できない。Enter は現在地の「わかった」、j/k・↓/↑ は場所、→/← は章を移る。はじめには要求と説明へのリンク、Approve の前には件数と締めへのリンク。空の要求は文と差分が見つからない旨だけで、操作ボタンは無い。絞り込み・地図・始めと終わりの本編は後続。Approve はゲートしない。
+
+
 目的: How を 1 本のコースとして案内する。地図を広げて見せるだけにしない。入ると案内が始まり、停留所ごとに なぜここか・何を変えたか・コードを見せ、一周したら総括する（2026-09-26。2026-09-29 のクリックできるデモが画面の正。`docs/prototype.html` より新しい）。**回る場所は差分だけ**（2026-10-11。差分が責任の単位。AI で効率よく読んでも、Approve する人は全部の差分に責任を持つ。差分のない関連ファイルは関連していると分かればよく、変更したファイルと同じ扱いにしない）。ランダムアサインで欠けているベースライン（差分のない呼び出し元・呼び出し先）は、停留所にせず「差分なしの関係」の 1 行と右からの引き出しで見せる（下）。
 
 実装: `packages/web/src/course.ts`（コースと停留所の情報。純粋関数）、`components/CourseView.tsx`（画面）、`components/StopColumn.tsx`（停留所の画面の右の列。2026-10-20）、`map/CourseMap.tsx`（地図）、`diff/fileRows.ts` / `FileView.tsx`（ファイル全体）。2026-09-30。
@@ -580,6 +583,7 @@ interface Claim { text: string; backed: boolean; reason?: string } // 作者説�
 interface Summary { problem: string; approach: string[] | string; untouched: string[] | string; beforeAfter: Array<{target: string; before: string; after: string}> }  // 2 回目の LLM（10.4）。approach は文（2026-10-10 まではリスト）、untouched はリスト。古い解析は文字列
 
 interface CommentDraft {
+  label?: 'ask' | 'imo';  // レビュアーの質問 / 意見。無ければ従来のメモ。画面用で GitHub には送らない。
   id: string; path: string; line: number; side: 'LEFT' | 'RIGHT';   // 範囲なら line / side は最後の行
   startLine?: number; startSide?: 'LEFT' | 'RIGHT';                // 範囲の始まり（GitHub の start_line / start_side）。1 行なら無い
   body: string; source: string;            // "reviewer"（自分のメモ。3.3。id は m1, m2, …）| "claude-code" | "coderabbit" | …

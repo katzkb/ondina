@@ -57,7 +57,7 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
 
   const nx = nextCourse(all, review);
   // 選んでいなければ次のコース。全部完了なら締めへ（コースが無くコース外だけのときはコース外。reducer の startHome と同じ）
-  const start = sel ? `${sel.id === OUTSIDE ? 'コース外' : `コース ${sel.id} `}に入る` : nx ? `コース ${nx.id} から始める` : all.some((c) => c.id !== OUTSIDE) ? '締めへ' : all.length > 0 ? 'コース外から始める' : null;
+  const start = analysis.chapters ? 'コース 1 から始める' : sel ? `${sel.id === OUTSIDE ? 'コース外' : `コース ${sel.id} `}に入る` : nx ? `コース ${nx.id} から始める` : all.some((c) => c.id !== OUTSIDE) ? '締めへ' : all.length > 0 ? 'コース外から始める' : null;
   const completed = new Set(review.course?.completed ?? []);
 
   const onNode = (id: string) => {

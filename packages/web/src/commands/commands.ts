@@ -87,6 +87,13 @@ export type Command =
   /** How 分解の画面へ移り、束を開いてその hunk を選ぶ（地図の束の箱から。地図の中で開くのは後） */
   | { id: 'group.reveal'; hunkId: string }
   /** コース（3.3）: コースに入る。at を省くと読む前の案内（コース外は最初の未確認の停留所。2026-10-22）、at を渡すとその停留所 */
+  | { id: 'req.go'; chapter: import('../requirement.js').RequirementChapter }
+  | { id: 'req.nextChapter' | 'req.prevChapter' }
+  | { id: 'req.focus' | 'req.toggleHunk' | 'req.ok' | 'req.undo'; hunkId: string }
+  | { id: 'req.file' | 'req.file.unview'; path: string }
+  | { id: 'req.toggleFile'; path: string; open: boolean }
+  | { id: 'req.edit'; hunkId: string; label: 'ask' | 'imo' }
+  | { id: 'req.save'; body: string }
   | { id: 'course.enter'; courseId: number; at?: number }
   /** 問題なし · 次へ（今の停留所に問題なしを付けて次の停留所へ。最後なら総括へ）。トグルしない。読む前の案内では最初の未確認の停留所へ（付けない） */
   | { id: 'course.ok' }
