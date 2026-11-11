@@ -1,15 +1,18 @@
 // 要求コース。章・意図は Analysis から、操作はすべてコマンドを通す。
 import type { Analysis, CommentDraft, DiffMode, Hunk, IntentNote, ReviewState } from '@ondina/model';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Command } from '../commands/commands.js';
 import { composingKey } from '../commands/keymap.js';
 import { DefLinks } from '../diff/DefLinks.js';
 import { DiffList } from '../diff/DiffList.js';
 import { hunkAt } from '../files.js';
+import type { ElkLike } from '../map/layout.js';
 import { pickRange } from '../memo.js';
 import { chapterLabel, chapterText, intentOf, requirementFiles, requirementPick, type RequirementChapter, type RequirementUi } from '../requirement.js';
+import { boxChapters, chapterMap, startMap, type ChapterMap, type NoMap } from '../requirementMap.js';
 import type { FocusLine, MemoUi } from '../state/reducer.js';
 import { ProjectQ, WhyQ } from './ExplainStages.js';
+import { FlowMap, type ReqMapProps } from './FlowMap.js';
 import { Lines } from './Lines.js';
 import { Key } from './Key.js';
 import { MemoEditor, MemoSaved } from './MemoBox.js';
@@ -27,12 +30,48 @@ export interface RequirementCourseViewProps {
   memo: MemoUi;
   mode: DiffMode;
   focusLine?: FocusLine | null;
+  /** 地図の再生の速さ・倍率（無ければ 1） */
+  speed?: number;
+  zoom?: number;
+  elk?: () => ElkLike;
   dispatch: (c: Command) => void;
+}
+
+const CHAPTER_LEGEND = '濃い箱と濃い線が、この章の差分です。薄い所は、この章の差分ではありません。再生は濃い線だけで止まり、濃い箱を押すとその差分へ移ります。';
+const START_LEGEND = '箱の下のチップは、その箱に差分がある要求です。押すとその章へ移ります。再生は全部の呼び出しを順に流します。';
+
+/** 章の地図（はじめには全体の地図）。出さない章は理由の 1 文 */
+function RequirementMap({ analysis, at, plan, speed, zoom, elk, dispatch }: { analysis: Analysis; at: RequirementUi; plan: ChapterMap | NoMap; speed: number; zoom: number; elk?: () => ElkLike; dispatch: (c: Command) => void }) {
+  const chips = useMemo(() => (plan.kind === 'map' && plan.calls === null ? boxChapters(analysis, plan.facts) : null), [analysis, plan]);
+  if (plan.kind === 'none') return <p className="req-nomap">{plan.reason}</p>;
+  const req: ReqMapProps = chips
+    ? {
+        dark: null,
+        boxCmd: new Map([...chips].map(([box, list]) => [box, { id: 'req.go', chapter: list[0]! }])),
+        chips: new Map([...chips].map(([box, list]) => [box, list.map((chapter) => ({ label: chapterLabel(analysis, chapter), chapter }))])),
+        legend: START_LEGEND,
+      }
+    : {
+        dark: { calls: plan.calls ?? new Set(), boxes: new Set(plan.boxes?.keys()) },
+        boxCmd: new Map([...(plan.boxes ?? [])].map(([box, hunkId]) => [box, { id: 'req.focus', hunkId }])),
+        legend: CHAPTER_LEGEND,
+      };
+  return (
+    <>
+      <FlowMap analysis={analysis} flows={plan.flows} stage={2} flowId={at.map.flow} step={at.map.step} play={at.map.play} speed={speed} zoom={zoom} course={null} req={req} dispatch={dispatch} {...(elk ? { elk } : {})} />
+      {plan.outside.length > 0 && <p className="req-outside">{`地図の外: ${plan.outside.join('、')}`}</p>}
+    </>
+  );
 }
 
 export function RequirementCourseView(props: RequirementCourseViewProps) {
   const { analysis, review, at, selectedHunk, dispatch } = props;
   const chapters = analysis.chapters ?? [];
+  const mapPlan = useMemo(
+    () => (at.chapter === 'end' ? null : at.chapter === 'start' ? startMap(analysis, at.map.flow) : chapterMap(analysis, at.chapter, at.map.flow)),
+    [analysis, at.chapter, at.map.flow],
+  );
+  const mapProps = { analysis, at, speed: props.speed ?? 1, zoom: props.zoom ?? 1, dispatch, ...(props.elk ? { elk: props.elk } : {}) };
   const chapter = typeof at.chapter === 'number' ? chapters[at.chapter] : undefined;
   const specs = chapters.filter((c) => c.kind === 'spec');
   const missing = chapters.flatMap((c, i) => c.kind === 'spec' && c.hunkIds.length === 0 ? [i] : []);
@@ -49,7 +88,15 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
     const hunks = hunksOf(path);
     return hunks.length > 0 && hunks.every((h) => viewed.has(h.id));
   };
+  // 地図のある章に入ったときは、地図を先に見せる（欄の一番上）。差分を選び直したときは、その差分の見出しへ
+  const entered = useRef<RequirementChapter | null>(null);
   useEffect(() => {
+    const entering = entered.current !== at.chapter;
+    entered.current = at.chapter;
+    if (entering && mapPlan?.kind === 'map') {
+      if (center.current) center.current.scrollTop = 0;
+      return;
+    }
     center.current?.querySelector('.focus > .req-hunk-head')?.scrollIntoView?.({ block: 'start' });
   }, [selectedHunk, at.chapter, at.focusN]);
   useEffect(() => {
@@ -91,9 +138,11 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
               <button className="btn sm" type="button" onClick={() => dispatch({ id: 'hunk.next' })}>次の場所 <Key action="hunk.next" /></button>
               <span className="seg"><button type="button" className={props.mode === 'sbs' ? 'on' : ''} onClick={() => dispatch({ id: 'diff.mode.sbs' })}>左右</button><button type="button" className={props.mode === 'uni' ? 'on' : ''} onClick={() => dispatch({ id: 'diff.mode.unified' })}>統合</button></span>
               {analysis.defs && <button className="btn sm" type="button" onClick={() => dispatch({ id: 'def.back' })}>定義から戻る <Key action="def.back" /></button>}
+              {mapPlan?.kind === 'map' && <button className={`btn sm${at.pin ? ' on' : ''}`} type="button" aria-pressed={at.pin} onClick={() => dispatch({ id: 'req.pin' })}>地図を上に留める</button>}
             </>}
           </div>
         </div>
+        {chapter && mapPlan && <div className={`req-map${at.pin ? ' pin' : ''}`} aria-label="この章の地図"><RequirementMap {...mapProps} plan={mapPlan} /></div>}
         {at.chapter === 'start' && <>
           {analysis.background?.project !== undefined && <div className="box"><div className="bd ex-qa"><ProjectQ project={analysis.background.project} /></div></div>}
           <div className={analysis.summary.headline !== undefined ? 'box ai' : 'box'}>
@@ -104,6 +153,7 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
             <h3>この PR で変わること<span className="chip ai">AI</span></h3>
             <div className="bd"><Lines text={analysis.summary.example.text} /></div>
           </div>}
+          {mapPlan?.kind === 'map' && <div className="box req-map" aria-label="全体の地図"><h3>処理の流れと要求<span className="chip">自動</span></h3><div className="bd"><RequirementMap {...mapProps} plan={mapPlan} /></div></div>}
           <div className="box">
             <h3>要求と差分の対応<span className="chip">自動</span></h3>
             <div className="bd">

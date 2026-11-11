@@ -4,6 +4,13 @@ import { App } from '../src/App.js';
 import { fakeApi } from './fakeApi.js';
 import { requirementAnalysis } from './requirementFixture.js';
 
+// jsdom に Web Worker が無いので、地図の配置は elkjs を同じスレッドで走らせる
+vi.mock('../src/map/elk.js', async () => {
+  const ELK = (await import('elkjs/lib/elk.bundled.js')).default;
+  const elk = new ELK();
+  return { workerElk: () => elk };
+});
+
 describe('requirement course in App', () => {
   it('opens from top bar and explain Enter, writes chapter URL, restores a history entry', async () => {
     render(<App api={fakeApi(requirementAnalysis()).api} />);
