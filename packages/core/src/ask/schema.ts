@@ -37,6 +37,7 @@ export const ASK_ANSWER_SCHEMA = {
             properties: { url: text, title: text },
           },
           known: { const: true },
+          guess: { const: true },
         },
       },
     },
@@ -101,6 +102,7 @@ export function parseAskOutput(stdout: string): { output: AskOutput } | { need: 
         ...(isObj(c) ? { cite: { path: str(c['path']), side: str(c['side']), line: num(c['line']), ...(end === null ? {} : { endLine: end }) } } : {}),
         ...(isObj(w) ? { web: { url: str(w['url']).trim(), title: str(w['title']) } } : {}),
         ...(it['known'] === true ? { known: true as const } : {}),
+        ...(it['guess'] === true ? { guess: true as const } : {}),
       },
     ];
   });

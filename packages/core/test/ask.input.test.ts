@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Analysis, AskEntry, Background, Hunk, Ticket } from '@ondina/model';
+import type { Analysis, AskEntry, Background, CommitNote, Hunk, HunkIntent, Ticket } from '@ondina/model';
 import { ASK_TEXT_LIMIT, buildAskInput, excerptLines, fileLines, hunkLines } from '../src/ask/input.js';
 import { FIXTURE_ROOT } from './fixture.js';
 import { fixtureAnalysis } from './fixture-analysis.js';
@@ -282,5 +282,59 @@ describe('buildAskInput（fixture のゴールデン）', () => {
   // コードの外の問い（2026-10-15。材料だけでは答えられず、ネットで調べる問い）
   it('コース 5 の 2 か所目 ApplyDiscountUseCase.execute: ?: って何？', async () => {
     await expect(json(buildAskInput(analysis, { kind: 'symbol', symbolId: EXECUTE, courseId: 5 }, '?: って何？'))).toMatchFileSnapshot(golden('web'));
+  });
+});
+
+// 2026-11-11: 意図とコミットの説明を渡さなかったので、「なぜ」の答えが書いていないで終わった
+describe('差分の意図とコミットの説明', () => {
+  const group = analysis.hunks.find((h) => h.group)!.group!;
+  const member = analysis.hunks.find((h) => h.group && h.id !== group.representative && !h.group.deviations.includes(h.id))!;
+  const written = { kind: 'written' as const, text: '倉庫ごとの値にする', from: 'commit' as const, quote: '倉庫ごとの値だと分かるようにする。', commit: 'abcdef1234567890' };
+  const intents: HunkIntent[] = [
+    { hunkId: ORDER, notes: [written, { kind: 'guess', text: 'たぶん割引のため' }], ask: '割引は誰が決めますか' },
+    { hunkId: group.representative, notes: [{ kind: 'none', text: '書いていない' }] },
+  ];
+  const withIntents = (extra: Partial<Analysis> = {}): Analysis => ({ ...analysis, intents, ...extra });
+
+  it('差分 1 つ: その差分の意図（commit は 7 字）。意図の無い差分には欄が無い', () => {
+    const { place } = buildAskInput(withIntents(), { kind: 'hunk', hunkId: ORDER }, 'Q');
+    if (place.kind !== 'code') throw new Error(place.kind);
+    expect(place.hunks[0]!.intent).toEqual({ notes: [{ kind: 'written', from: 'commit', quote: written.quote, text: written.text, commit: 'abcdef1' }, { kind: 'guess', text: 'たぶん割引のため' }], ask: '割引は誰が決めますか' });
+    const other = analysis.hunks.find((h) => !h.group && h.id !== ORDER)!;
+    const o = buildAskInput(withIntents(), { kind: 'hunk', hunkId: other.id }, 'Q').place;
+    if (o.kind !== 'code') throw new Error(o.kind);
+    expect(o.hunks[0]).not.toHaveProperty('intent');
+  });
+
+  it('追従のメンバーは代表の意図を使う', () => {
+    const { place } = buildAskInput(withIntents(), { kind: 'hunk', hunkId: member.id }, 'Q');
+    if (place.kind !== 'code') throw new Error(place.kind);
+    expect(place.hunks[0]!.intent).toEqual({ notes: [{ kind: 'none', text: '書いていない' }] });
+  });
+
+  it('PR 全体とコースの停留所にも付く', () => {
+    const pr = buildAskInput(withIntents(), { kind: 'pr' }, 'Q').place;
+    if (pr.kind !== 'pr') throw new Error(pr.kind);
+    expect(pr.hunks.find((h) => h.symbol === 'com.example.order.domain.Order')!.intent?.notes).toHaveLength(2);
+    const course = buildAskInput(withIntents(), { kind: 'course', courseId: 3 }, 'Q').place;
+    if (course.kind !== 'course') throw new Error(course.kind);
+    expect(course.stops.filter((s) => s.intent !== undefined).length).toBeGreaterThan(0);
+    expect(course.stops.find((s) => s.symbol === 'com.example.order.domain.Order')!.intent?.ask).toBe('割引は誰が決めますか');
+  });
+
+  it('意図が無い解析には欄が無い', () => {
+    const input = buildAskInput(analysis, { kind: 'pr' }, 'Q');
+    expect(input).not.toHaveProperty('commits');
+    if (input.place.kind !== 'pr') throw new Error(input.place.kind);
+    expect(input.place.hunks.some((h) => 'intent' in h)).toBe(false);
+  });
+
+  it('コミットの説明: sha は 7 字、古い順のまま 30 件まで、body は 1000 字で切って末尾に ⋯', () => {
+    const commits: CommitNote[] = Array.from({ length: 32 }, (_, i) => ({ sha: `${String(i).padStart(2, '0')}abcdef${'0'.repeat(30)}`, title: `t${i}`, body: i === 0 ? 'あ'.repeat(1010) : `b${i}` }));
+    const input = buildAskInput({ ...analysis, commits }, { kind: 'pr' }, 'Q');
+    expect(input.commits).toHaveLength(30);
+    expect(input.commits![0]).toEqual({ sha: '00abcde', title: 't0', body: `${'あ'.repeat(1000)}⋯` });
+    expect(input.commits![29]).toEqual({ sha: '29abcde', title: 't29', body: 'b29' });
+    expect(buildAskInput({ ...analysis, commits: [] }, { kind: 'pr' }, 'Q')).not.toHaveProperty('commits');
   });
 });

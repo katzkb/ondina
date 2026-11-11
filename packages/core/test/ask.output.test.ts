@@ -28,6 +28,12 @@ describe('renderAskPrompt', () => {
     for (const s of ['"need"', '"files"', '"search"', 'reads', 'pr.body', 'pr.ticket', 'background', 'PR の本文に', '頼んで読んだあとも見つからないときだけ']) expect(p, s).toContain(s);
   });
 
+  // 2026-11-11: 意図とコミットの説明を渡し、書いていない「なぜ」は推定と示して答える
+  it('意図とコミットの読み方、「なぜ」の推定（guess）の書き方が本文に入る', () => {
+    for (const s of ['commits', 'intent', 'written', 'guess', '"guess": true', 'コミット', '作者は書いていない']) expect(p, s).toContain(s);
+    expect(p).not.toContain('どこにも書いていないときだけ、書いていないと書き');
+  });
+
   it('最後の回は、もう頼めないと書き、出力の形から need を外す', () => {
     const schemaOf = (prompt: string) => prompt.slice(prompt.indexOf('出力の形（JSON Schema）:'), prompt.lastIndexOf('入力:\n'));
     const last = renderAskPrompt(input, { last: true });
@@ -200,6 +206,20 @@ describe('verifyAskAnswer', () => {
       { text: 'b', known: true },
       { text: 'c', known: true },
     ]);
+  });
+
+  it('guess: true を読み、検証でも残す。cite は付けてよい。guess 以外の値は落とす', () => {
+    const parsed = parseAskOutput('{"lead":"x","items":[{"text":"a","guess":true},{"text":"b","guess":"yes"},{"text":"c","guess":true,"cite":{"path":"p","side":"head","line":1}}]}');
+    if (!('output' in parsed)) throw new Error('output');
+    expect(parsed.output.items.map((i) => i.guess)).toEqual([true, undefined, true]);
+    const cite = { path: ORDER_KT, side: 'head', line: 13 };
+    const r = verifyAskAnswer(out([{ text: 'a', guess: true }, { text: 'b', cite, guess: true }, { text: 'c' }]), input);
+    expect(r.items).toEqual([{ text: 'a', guess: true }, { text: 'b', cite, guess: true }, { text: 'c' }]);
+  });
+
+  it('guess は web・known と一緒なら guess を残して web・known を外す', () => {
+    const r = verifyAskAnswer(out([{ text: 'a', guess: true, known: true }, { text: 'b', guess: true, web: { url: 'https://example.com/', title: 't' } }]), input);
+    expect(r.items).toEqual([{ text: 'a', guess: true }, { text: 'b', guess: true }]);
   });
 
   it('known は、行の場所もページも無い事実にだけ付ける', () => {

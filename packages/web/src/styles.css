@@ -864,6 +864,8 @@ kbd{font:500 10.5px var(--mono);padding:0 4px;margin-left:4px;border:1px solid c
 /* ネットで調べた事実（2026-10-15。見本を比べて脚注にした）: 末尾に番号、答えの下に「調べたページ」。行もページも無い事実は「出典なし」 */
 .askd .aa .fn{margin-left:2px;font:10.5px var(--mono);color:var(--teal);vertical-align:super;text-decoration:none}
 .askd .aa .fn:hover{text-decoration:underline}
+.askd .aa .guess{text-decoration:underline dotted;text-decoration-color:var(--overlay1);text-underline-offset:3px}
+.askd .aa .chip.ai{margin-left:6px}
 .askd .aa .chip.nosrc{margin-left:6px;background:none;border:1px dashed var(--line-2);color:var(--muted)}
 .askd .aa .refs{margin-top:6px;padding-top:6px;border-top:1px dashed var(--accent-edge);display:flex;flex-direction:column;gap:2px;font-size:12px}
 .askd .aa .refs .lbl{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted)}

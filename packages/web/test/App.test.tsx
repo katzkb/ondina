@@ -2963,6 +2963,25 @@ describe('App（案内人に聞く。3.10）', () => {
     expect(within(bubble).getByRole('button', { name: 'Order.kt 13' })).toBeInTheDocument();
   });
 
+  it('推定の項目（guess）に「推定」のチップを付ける。書いてある事実には付けない', async () => {
+    const saved = askAnswer({ key: 'pr', place: { kind: 'pr' }, question: 'なぜ？' });
+    saved.answer = {
+      lead: 'たぶん割引のため。',
+      items: [
+        { text: 'コミットの説明に倉庫ごとの値とある' },
+        { text: '名前から割引の持ち方を変えたと読める', guess: true, cite: { path: ORDER_KT, side: 'head', line: 13 } },
+      ],
+    };
+    await renderHome(fakeApi(undefined, { askLog: [saved] }));
+    await press(/^聞く/);
+    const bubble = (await within(drawer()).findByText('たぶん割引のため。')).closest('.aa') as HTMLElement;
+    const chips = within(bubble).getAllByText('推定');
+    expect(chips).toHaveLength(1);
+    expect(chips[0]).toHaveAttribute('title', expect.stringContaining('作者が書いていないことを'));
+    expect(chips[0]!.closest('li')).toHaveTextContent('名前から割引の持ち方を変えたと読める');
+    expect(within(bubble).getByRole('button', { name: 'Order.kt 13' })).toBeInTheDocument();
+  });
+
   it('会話が空のときの文: コードの外のことも聞ける', async () => {
     await renderHome();
     await press(/^聞く/);
