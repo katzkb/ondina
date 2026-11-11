@@ -95,7 +95,19 @@ export const NARRATION_OUTPUT_SCHEMA = {
     },
     behaviors: {
       type: 'array',
-      items: { type: 'object', additionalProperties: false, required: ['id', 'title', 'before', 'change', 'after'], properties: { id: text, title: text, before: text, change: text, after: text } },
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'title', 'before', 'change', 'after', 'steps'],
+        properties: {
+          id: text,
+          title: text,
+          before: text,
+          change: text,
+          after: text,
+          steps: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['title', 'calls'], properties: { title: text, calls: { type: 'array', items: text } } } },
+        },
+      },
     },
   },
 } as const;
@@ -215,7 +227,19 @@ function behaviors(v: unknown): NarrationOutput['behaviors'] {
   return v.map((b, i) => {
     if (!isObj(b)) bad(`behaviors[${i}] がオブジェクトではありません`);
     if (typeof b['id'] !== 'string') bad(`behaviors[${i}].id が文字列ではありません`);
-    return { id: b['id'], title: str(b['title']), before: str(b['before']), change: str(b['change']), after: str(b['after']) };
+    return { id: b['id'], title: str(b['title']), before: str(b['before']), change: str(b['change']), after: str(b['after']), steps: steps(b['steps'], `behaviors[${i}].steps`) };
+  });
+}
+
+/** 筋書き（2026-11-12）。古い記録には無い（空配列） */
+function steps(v: unknown, where: string): Array<{ title: string; calls: string[] }> {
+  if (v === undefined || v === null) return [];
+  if (!Array.isArray(v)) bad(`${where} が配列ではありません`);
+  return v.map((s, j) => {
+    if (!isObj(s)) bad(`${where}[${j}] がオブジェクトではありません`);
+    const calls = s['calls'];
+    if (calls !== undefined && calls !== null && (!Array.isArray(calls) || calls.some((c) => typeof c !== 'string'))) bad(`${where}[${j}].calls が文字列の配列ではありません`);
+    return { title: str(s['title']), calls: (calls ?? []) as string[] };
   });
 }
 

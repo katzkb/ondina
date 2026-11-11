@@ -4,9 +4,11 @@
 //   2. 題は前後の空白と末尾の句点を落とす。空なら題を付けない（始まりの短い名前のまま。titleProvenance は ast）
 //   3. 並びは LLM の出力の順（見せる順）。LLM が書かなかった動きは、プログラムの順のまま後ろに付ける
 //   4. 呼び出しの列は変えない。題と並びだけ
+//   6. 筋書き（2026-11-12）。出力の steps があるときだけ、storyOf の規則で検査して CallFlow.story を付ける
 //   5. 流れの段の文（2026-11-05）: 前後の空白を落とし、空なら欄を付けない。① はその流れに変わる前の入口があるときだけ、③ はマージ後の入口があるときだけ、
 //      ② は入口か呼び出しのどれかが変わっているときだけ残す（それ以外は捨てて知らせる）。題を使わなかった同じ id の 2 回目の文も使わない
-import type { Behavior, CallFlow, FlowCall } from '../model.js';
+import { flowCallsInOrder } from '../flow/build.js';
+import type { Behavior, CallFlow, FlowCall, FlowStoryStep } from '../model.js';
 import type { NarrationOutput } from '../narration/types.js';
 
 type Titled = { id: string; title: string; titleProvenance: Behavior['titleProvenance'] };
@@ -25,13 +27,85 @@ export function applyFlowTitles(flows: readonly CallFlow[], output: NarrationOut
     const o = first.get(f.id);
     if (o === undefined) return f;
     const stages = stageTexts(f, o, info);
-    return stages === undefined ? f : { ...f, stages };
+    const story = storyOf(f, o.steps, info);
+    return { ...f, ...(stages === undefined ? {} : { stages }), ...(story === undefined ? {} : { story }) };
   });
   const r = applyTitles(staged, output, '流れ');
   info.push(...r.info);
   const n = (k: keyof NonNullable<CallFlow['stages']>) => r.items.filter((f) => f.stages?.[k] !== undefined).length;
   if (r.items.some((f) => f.stages !== undefined)) info.push(`流れの段の文: ① ${n('before')}・② ${n('change')}・③ ${n('after')} / ${r.items.length} 本`);
   return { flows: r.items, info };
+}
+
+/** 筋書きのステップの上限（規則 2）。これを超えたステップは捨てる */
+export const MAX_STORY_STEPS = 7;
+
+/**
+ * 規則 6（筋書き。2026-11-12）。全部プログラム。LLM の steps が 1 つ以上あるときだけ動く。
+ *   1. 知らない id は捨てる  2. MAX_STORY_STEPS 個を超えたステップは捨てる（中の呼び出しは「入らなかった」扱い）
+ *   3. 見出しが空のステップは捨てる  4. 同じ呼び出しの 2 回目は捨てる
+ *   5. 呼ぶ側（木の親）が前のステップか同じステップに無い呼び出しは外す。根は親なし
+ *   6. 呼び出しが 0 個になったステップは捨てる。ステップの中は木の深さ優先の順に並べ直す
+ *   7. LLM のステップが残らなければ story を付けない
+ *   8. 残ったら、same 以外でどのステップにも入らなかった呼び出しを最後の 1 ステップ（ast）に足す
+ *   9. 最後に info に 1 行
+ * id は入力と同じ順（flowCallsInOrder）で "c1" から付ける
+ */
+function storyOf(f: CallFlow, steps: NarrationOutput['behaviors'][number]['steps'], info: string[]): FlowStoryStep[] | undefined {
+  if (steps.length === 0) return undefined;
+  const order = flowCallsInOrder(f.root);
+  const byId = new Map(order.map((c, i) => [`c${i + 1}`, i]));
+  const parentOf = new Map<number, number>();
+  const walk = (c: FlowCall, at: number): void => {
+    for (const k of c.kids) {
+      const ki = order.indexOf(k);
+      parentOf.set(ki, at);
+      walk(k, ki);
+    }
+  };
+  walk(f.root, 0);
+  const placed = new Set<number>();
+  const story: FlowStoryStep[] = [];
+  const tag = `流れ ${f.id} の筋書き`;
+  steps.forEach((s, n) => {
+    if (n >= MAX_STORY_STEPS) {
+      info.push(`${tag}の ${n + 1} 個目のステップを除外しました（${MAX_STORY_STEPS} 個まで）`);
+      return;
+    }
+    const title = s.title.trim().replace(/。$/, '').trim();
+    if (title === '') {
+      info.push(`${tag}の ${n + 1} 個目のステップを除外しました（見出しが空です）`);
+      return;
+    }
+    const mine = new Set<number>();
+    for (const id of s.calls) {
+      const i = byId.get(id);
+      if (i === undefined) info.push(`${tag}の ${n + 1} 個目のステップから不明な呼び出しを除外しました: ${id}`);
+      else if (placed.has(i) || mine.has(i)) info.push(`${tag}の ${n + 1} 個目のステップから重なった呼び出しを除外しました: ${id}`);
+      else mine.add(i);
+    }
+    const kept: number[] = [];
+    for (const i of [...mine].sort((a, b) => a - b)) {
+      const p = parentOf.get(i);
+      if (p !== undefined && !placed.has(p) && !kept.includes(p)) info.push(`${tag}の ${n + 1} 個目のステップから呼ぶ側より先の呼び出しを除外しました: c${i + 1}`);
+      else kept.push(i);
+    }
+    if (kept.length === 0) {
+      info.push(`${tag}の ${n + 1} 個目のステップを除外しました（通る呼び出しがありません）`);
+      return;
+    }
+    for (const i of kept) placed.add(i);
+    story.push({ title, titleProvenance: 'llm', calls: kept.map((i) => order[i]!.key) });
+  });
+  if (story.length === 0) {
+    info.push(`${tag}を除外しました（使えるステップがありません）`);
+    return undefined;
+  }
+  const llm = story.length;
+  const rest = order.flatMap((c, i) => (c.status !== 'same' && !placed.has(i) ? [c.key] : []));
+  if (rest.length > 0) story.push({ title: `まとめに入らなかった呼び出し ${rest.length} 個`, titleProvenance: 'ast', calls: rest });
+  info.push(`${tag}: ステップ ${story.length}（AI ${llm}・まとめに入らなかった呼び出し ${rest.length} 個）`);
+  return story;
 }
 
 const STAGE_TEXT = { before: '① 背景の文', change: '② この PR の文', after: '③ マージ後の文' } as const;

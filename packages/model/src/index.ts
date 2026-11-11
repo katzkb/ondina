@@ -767,6 +767,20 @@ export interface CallFlow {
    * before = ① 背景、change = ② この PR、after = ③ マージ後。欄が無い = LLM が書かなかった・その段に流れが無い
    */
   stages?: { before?: string; change?: string; after?: string };
+  /**
+   * 筋書き（2026-11-12）。地図のステップ送りの単位。2 回目の LLM が書いた見出しと通る呼び出しを、プログラムが呼び出しの木で検査したもの。
+   * 欄が無い = LLM が書かなかった・検査で全部落ちた・古い解析。画面は今までどおり 1 呼び出しずつ
+   */
+  story?: FlowStoryStep[];
+}
+
+/** 筋書きのステップ 1 つ（2026-11-12）。どの呼び出しを通るかは検査を通ったもの（事実）。見出しは LLM（推定）か、プログラム（まとめに入らなかった呼び出し） */
+export interface FlowStoryStep {
+  title: string;
+  /** llm = 2 回目の LLM が書いた見出し（画面は点線と AI の札）。ast = プログラムが付けた見出し */
+  titleProvenance: Provenance;
+  /** 通る呼び出しの FlowCall.key。呼ぶ順（木の深さ優先の順） */
+  calls: string[];
 }
 
 /**

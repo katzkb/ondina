@@ -1317,12 +1317,12 @@ describe('App（コース。3.3）', () => {
     expect([...brief.querySelectorAll('.rnode b')].map((x) => x.textContent!.split('.').pop())).toEqual(['execute', 'find', 'Order', 'save', 'kt', '`throws when order is missing`', '`saves the order after applying`']);
     expect([...brief.querySelectorAll('.redge .ty')].map((x) => x.textContent).slice(0, 3)).toEqual(['OrderId', 'DiscountCommand', 'Order']);
     expect(brief.querySelectorAll('.bcheck')).toHaveLength(4);
-    expect(brief.querySelector('.bcheck:nth-child(2) .w')!.textContent).toBe('execute 16 行テスト 19 行');
+    expect(brief.querySelector('.bcheck:nth-child(2) .w')!.textContent).toBe('execute 17 行Order 8 行');
     expect(within(brief).getByText('コース 6 の OrderController.apply が、18 行で execute、19 行で save を呼びます。')).toBeInTheDocument();
     expect(within(brief).getByText('読む 7 か所のうち 3 か所は、ほかのコースの差分です。')).toBeInTheDocument();
-    // 2 つ目（execute 16 行・テスト 19 行）を押すと、読む順の execute と 1 つ目のテストが光る
+    // 2 つ目（execute 17 行・Order 8 行）を押すと、読む順の execute と Order が光る
     fireEvent.click(brief.querySelectorAll('.bcheck')[1]!);
-    expect([...brief.querySelectorAll('.rnode')].map((x) => x.classList.contains('hl'))).toEqual([true, false, false, false, false, true, false]);
+    expect([...brief.querySelectorAll('.rnode')].map((x) => x.classList.contains('hl'))).toEqual([true, false, true, false, false, false, false]);
     expect(within(container.querySelector('.cbar') as HTMLElement).getByText(/確かめること/).textContent).toContain('0 / 4');
   });
 
@@ -1332,11 +1332,11 @@ describe('App（コース。3.3）', () => {
     const col = container.querySelector('.rcol') as HTMLElement;
     expect(col.querySelectorAll('.sck.here')).toHaveLength(4);
     expect(col.querySelector('.schecks h3')!.textContent).toContain('ここに 4 つ');
-    // execute の 15〜18 行に 1〜4 の番号（1 行に 1 つずつ）
-    expect([...container.querySelectorAll('.fv-body .ln.ck')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['115', '216', '317', '418']);
+    // execute の 15〜18 行に 1〜4 の番号（1 行に 1 つずつ。行の順に 1・4・2・3）
+    expect([...container.querySelectorAll('.fv-body .ln.ck')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['115', '416', '217', '318']);
     expect(container.querySelectorAll('.fv-body .ln.ck.on')).toHaveLength(4);
     fireEvent.click(col.querySelectorAll('.sck.here')[1]!);
-    expect([...container.querySelectorAll('.fv-body .ln.ck.on')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['216']);
+    expect([...container.querySelectorAll('.fv-body .ln.ck.on')].map((x) => x.textContent!.replace(/\+/, ''))).toEqual(['217']);
     // 次の停留所（find）では、ここに根拠のない文は薄い 1 行
     await key('Enter');
     expect(container.querySelectorAll('.rcol .sck.away')).toHaveLength(4);
