@@ -3,6 +3,7 @@ import type { ReviewState, ThemeSettings, UiSettings } from '@ondina/model';
 import { describe, expect, it } from 'vitest';
 import { canSend, diffModeOf, initialState, reduce, themeOf, type AppState } from '../src/state/reducer.js';
 import { courseFlows } from '../src/map/flowmap/steps.js';
+import { paneStyle } from '../src/panes.js';
 import { emptyReview, fixtureAnalysis } from './fixture.js';
 
 const ORDER = 'src/main/kotlin/com/example/order/domain/Order.kt';
@@ -673,6 +674,20 @@ describe('列の幅（ui.json の panes。2026-10-20）', () => {
     const r = reduce(s0, { id: 'ui.pane', pane: 'stopTree', px: 312.6 });
     expect(r.state.ui).toEqual({ llmCommand: 'codex exec -', panes: { diffTree: 400, stopTree: 313 } });
     expect(r.effects).toEqual([{ type: 'saveUi' }]);
+  });
+
+  it('要求コースの列（reqNav / reqFiles）の幅も同じ ui.pane で保存し、null で戻す', () => {
+    const s0 = { ...initialState(), ui: { llmCommand: 'codex exec -' } };
+    const r = reduce(s0, { id: 'ui.pane', pane: 'reqNav', px: 260.4 });
+    expect(r.state.ui).toEqual({ llmCommand: 'codex exec -', panes: { reqNav: 260 } });
+    expect(r.effects).toEqual([{ type: 'saveUi' }]);
+    const r2 = reduce(r.state, { id: 'ui.pane', pane: 'reqFiles', px: 300 });
+    expect(r2.state.ui).toEqual({ llmCommand: 'codex exec -', panes: { reqNav: 260, reqFiles: 300 } });
+    expect(reduce(r2.state, { id: 'ui.pane', pane: 'reqNav', px: null }).state.ui).toEqual({ llmCommand: 'codex exec -', panes: { reqFiles: 300 } });
+  });
+
+  it('paneStyle は要求コースの列の保存した幅を CSS 変数に入れ、保存していない列は入れない', () => {
+    expect(paneStyle({ reqNav: 260 }, ['reqNav', 'reqFiles'])).toEqual({ '--req-nav-w': 'clamp(180px, 260px, 35vw)' });
   });
 
   it('px が null の ui.pane はその列を既定の幅に戻し（panes から消す）、全部戻ったら panes ごと消す', () => {

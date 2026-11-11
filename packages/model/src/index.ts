@@ -1027,8 +1027,8 @@ export interface AnalysisSummary {
 /** 差分の見せ方。sbs = 左右、uni = 統合 */
 export type DiffMode = 'sbs' | 'uni';
 
-/** 幅を変えられる横の列。stopTree / stopGuide = コースの停留所の画面の左のツリー / 右の水先案内、diffTree = 差分一覧のファイル列 */
-export type PaneId = 'stopTree' | 'stopGuide' | 'diffTree';
+/** 幅を変えられる横の列。stopTree / stopGuide = コースの停留所の画面の左のツリー / 右の水先案内、diffTree = 差分一覧のファイル列、reqNav / reqFiles = 要求コースの左の章 / 右のファイル列 */
+export type PaneId = 'stopTree' | 'stopGuide' | 'diffTree' | 'reqNav' | 'reqFiles';
 
 export type WorkspaceApp = 'herdr-app' | 'herdr' | 'orca';
 export type WorkspaceMaker = 'gct' | 'app';

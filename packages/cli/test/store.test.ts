@@ -263,7 +263,7 @@ describe('isUiSettings', () => {
   });
 
   it('列の幅（列の名前 → px）を受ける', () => {
-    expect(isUiSettings({ panes: { stopTree: 280, stopGuide: 420.5, diffTree: 360 } })).toBe(true);
+    expect(isUiSettings({ panes: { stopTree: 280, stopGuide: 420.5, diffTree: 360, reqNav: 240, reqFiles: 250 } })).toBe(true);
     expect(isUiSettings({ panes: {} })).toBe(true);
   });
 

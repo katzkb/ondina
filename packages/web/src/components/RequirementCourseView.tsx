@@ -1,5 +1,5 @@
 // 要求コース。章・意図は Analysis から、操作はすべてコマンドを通す。
-import type { Analysis, AnalysisSummary, CommentDraft, DiffMode, Hunk, IntentNote, ReviewState } from '@ondina/model';
+import type { Analysis, AnalysisSummary, CommentDraft, DiffMode, Hunk, IntentNote, ReviewState, UiSettings } from '@ondina/model';
 import { useEffect, useMemo, useRef } from 'react';
 import type { Command } from '../commands/commands.js';
 import { composingKey } from '../commands/keymap.js';
@@ -8,6 +8,7 @@ import { DiffList } from '../diff/DiffList.js';
 import { hunkAt } from '../files.js';
 import type { ElkLike } from '../map/layout.js';
 import { pickRange } from '../memo.js';
+import { paneStyle } from '../panes.js';
 import { chapterLabel, chapterText, intentOf, requirementFiles, requirementPick, type RequirementChapter, type RequirementUi } from '../requirement.js';
 import { boxChapters, chapterMap, startMap, type ChapterMap, type NoMap } from '../requirementMap.js';
 import type { FocusLine, MemoUi, SendStatus } from '../state/reducer.js';
@@ -19,6 +20,7 @@ import { FlowMap, type ReqMapProps } from './FlowMap.js';
 import { Lines } from './Lines.js';
 import { Key } from './Key.js';
 import { MemoEditor, MemoSaved } from './MemoBox.js';
+import { PaneHandle } from './PaneHandle.js';
 
 // eslint-disable-next-line ondina/wording-endings -- 承認済みの見本で決めた短い状態ラベル
 const MISSING_LABEL = '差分が見つからない';
@@ -37,6 +39,8 @@ export interface RequirementCourseViewProps {
   speed?: number;
   zoom?: number;
   elk?: () => ElkLike;
+  /** 列の幅（ui.json の panes）。左の章と右のファイル列 */
+  panes?: UiSettings['panes'];
   /** 最後のページ（締めにあった部品）用。無ければ送れない・承認の PR ページなしの形 */
   current?: AnalysisSummary | null;
   packagePrefix?: string | undefined;
@@ -131,7 +135,9 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
     </button>
   );
   return (
-    <section className="view req-course" aria-label="要求コース">
+    <section className="view req-course" aria-label="要求コース" style={paneStyle(props.panes, ['reqNav', 'reqFiles'])}>
+      <PaneHandle pane="reqNav" dispatch={dispatch} />
+      <PaneHandle pane="reqFiles" dispatch={dispatch} />
       <nav className="req-nav" aria-label="章" style={{ viewTransitionName: 'req-nav' }}>
         <h2>読む順番</h2>
         {nav('start', 'はじめに')}

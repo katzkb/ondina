@@ -20,6 +20,8 @@ export const PANES: Record<PaneId, Pane> = {
   stopTree: { name: 'ファイルの列', cssVar: '--lt-w', side: 'left', min: 240, maxVw: 30 },
   stopGuide: { name: '水先案内の列', cssVar: '--say-w', side: 'right', min: 280, maxVw: 35 },
   diffTree: { name: 'ファイルの列', cssVar: '--tree-w', side: 'left', min: 220, maxVw: 50 },
+  reqNav: { name: '章の列', cssVar: '--req-nav-w', side: 'left', min: 180, maxVw: 35 },
+  reqFiles: { name: 'ファイルの列', cssVar: '--req-files-w', side: 'right', min: 180, maxVw: 35 },
 };
 
 /** 保存した幅を描く値（CSS 変数の中身） */

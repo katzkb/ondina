@@ -1224,6 +1224,11 @@ button.loc{cursor:pointer}
 .req-course .focus>.req-hunk-head .req-number{background:var(--panel);color:var(--accent);font-weight:700;flex:none}
 .req-complete{position:absolute;z-index:4;left:calc(var(--req-nav-w) + 16px);right:calc(var(--req-files-w) + 16px);bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 14px;border:1px solid var(--ok);border-radius:6px;background:var(--panel);box-shadow:0 2px 12px color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink)}
 .req-code{overflow-x:auto}.req-course .dembedded .dbody{position:static}.req-course .erow{min-width:0}.req-course .dembedded{overflow:visible}
+/* 要求コースの差分は折り返さない（2026-11-12。折り返した行は読みにくいとの声）。全体の規則（.diff.sbs .cd の pre-wrap）は他の画面のためにそのまま残し、ここだけ打ち消す。
+   行ごとに小さなグリッドなので、dbody を一番長い行の幅にし（max-content）、各行がそれに合わせて伸びると、fr の列は左右とも同じ幅になって列が揃う。はみ出した分は .req-code が横にスクロールする。
+   メモの箱は max-width があるので、行が伸びても左端のまま読める */
+.req-course .dbody{width:max-content;min-width:100%}
+.req-course .diff .cd,.req-course .diff.sbs .cd{white-space:pre;word-break:normal;overflow:visible;text-overflow:clip}
 .req-guide{margin:8px 12px 14px 44px;border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--panel)}
 .req-guide-title{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px}.req-guide-title b{color:var(--ok)}
 .req-guide .intent{border:1px solid var(--line);border-radius:5px;padding:8px 10px;margin:8px 0}.req-guide .intent.guess{border-style:dotted;border-width:2px}.req-guide .intent.none{background:var(--panel-2)}
@@ -1255,7 +1260,9 @@ button.req-row{cursor:pointer}button.req-row:hover{background:var(--accent-soft)
 @media(max-width:900px){.req-card{grid-template-columns:minmax(0,1fr)}}
 .req-course button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:1180px){.req-course{--req-nav-w:190px;--req-files-w:190px}.req-center{padding:12px}.req-guide{margin-left:20px}}
-@media(max-width:800px){.req-course{--req-nav-w:150px;--req-files-w:0px;grid-template-columns:150px minmax(0,1fr)}.req-files{display:none}.req-guide{margin-left:8px}}
+@media(max-width:800px){.req-course{--req-nav-w:150px;--req-files-w:0px;grid-template-columns:150px minmax(0,1fr)}.req-files{display:none}
+/* この幅では列が 150px 固定なので境目は出さない。保存した幅（style の CSS 変数）で下の「次の章へ」がずれないよう位置も固定する */
+.req-course>.ph{display:none}.req-complete{left:166px;right:16px}.req-guide{margin-left:8px}}
 /* 要求コースの地図（要求ごとの地図）。② この PR だけの小さい形: 段ボタン・下のコード欄・横の欄なし。濃い箱・濃い線がその章の差分 */
 .fmap.compact{padding:0;gap:6px}
 .fmap.compact .fm-scroll{max-height:none;overflow:hidden}
