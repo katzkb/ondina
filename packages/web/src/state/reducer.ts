@@ -14,13 +14,14 @@ import { howRows, navigable } from '../hows.js';
 import { calleeDest, type PaletteTarget } from '../palette.js';
 import { mapNodeOf } from '../map/graph.js';
 import { snapSpeed } from '../map/flowmap/layout.js';
-import { carryStep, courseFlows, curStep, flowSteps, nextStop, pickFlow, stopsOf, type FlowStep, type Stage } from '../map/flowmap/steps.js';
+import { carryStep, courseFlows, curStep, flowSteps, nextStop, pickFlow, stopsOf, type FlowStep, type Scope, type Stage } from '../map/flowmap/steps.js';
 import { openRel, relAt, relMove, relVisible, type RelView } from '../rel.js';
 import { ideaUrl } from '../ide.js';
 import { isMemo, memoPlace, memoStop, mergeDraft, newMemo, onGithubDiff, pickFor, pickRange, spanLabel, stopShows, type MemoPick, type PickScreen } from '../memo.js';
 import { DEFAULT_PR_FILTER, reviewActive, type DetailTab, type PrFilter } from '../prs.js';
 import { enqueue, finished, isActive, jobOf, mergeJobs, NO_REANALYZE, type ReanalyzeUi } from '../reanalyze.js';
 import { NO_REQUIREMENT, type RequirementUi } from '../requirement.js';
+import { chapterMap, startMap } from '../requirementMap.js';
 import { requirementCommand, requirementGo } from './requirement.js';
 import type { Page } from '../route.js';
 import { DEFAULT_THEME, parseTheme } from '../theme.js';
@@ -854,6 +855,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
     case 'home.stage': {
       // 地図（入口の地図タブ・読む前の案内）では地図の段を順に（① → ② → ③ → ①）。流れの無い古い解析の地図では説明タブへ
       const fm = loaded(state) ? flowNav(state) : null;
+      if (fm?.at === 'req') return none(state);
       if (fm !== null) return none(toMapStage(state as Loaded, ((fm.nav.stage % 3) + 1) as Stage));
       if (state.view !== 'home') return none(state);
       return none({ ...state, home: { ...state.home, tab: 'text', stage: command.stage ?? (state.home.stage === 1 ? 2 : 1) } });
@@ -910,10 +912,16 @@ function reduceAll(state: AppState, command: Command): Reduced {
       return { state: { ...state, ui: { ...state.ui, mapSpeed: snapSpeed(command.speed) } }, effects: [{ type: 'saveUi' }] };
     case 'map.stage': {
       const fm = loaded(state) ? flowNav(state) : null;
-      if (fm === null) return none(state);
+      if (fm === null || fm.at === 'req') return none(state);
       return none(toMapStage(state as Loaded, command.stage ?? (((fm.nav.stage % 3) + 1) as Stage)));
     }
     case 'map.flow':
+      if (state.view === 'req' && state.analysis?.chapters) {
+        const r = state.requirement;
+        const plan = r.chapter === 'start' ? startMap(state.analysis, null) : r.chapter === 'end' ? null : chapterMap(state.analysis, r.chapter, null);
+        if (plan?.kind !== 'map' || !plan.flows.some((f) => f.id === command.flowId)) return none(state);
+        return none({ ...state, requirement: { ...r, map: { flow: command.flowId, step: 0, play: false } } });
+      }
       if (state.view === 'course' && state.course?.screen === 'brief' && state.analysis) {
         // 読む前の案内では、そのコースが通る流れだけ
         if (!courseFlows(state.analysis, state.course.id).some((f) => f.id === command.flowId)) return none(state);
@@ -1150,28 +1158,41 @@ function courseCommand(state: Loaded, command: Command): Reduced | null {
 }
 
 /** 入口で進む: 選んだコース、無ければ未完了の最初のコースに入る。全部完了なら締めへ（コースが無くコース外だけなら、コース外に入る） */
-/** 流れの地図の居場所: 入口の地図タブか、読む前の案内（覗いていない間。そのコースが通る流れがあるときだけ） */
-type MapWhere = 'home' | 'brief';
+/** 流れの地図の居場所: 入口の地図タブ、読む前の案内（覗いていない間。そのコースが通る流れがあるときだけ）、要求コースの章（地図が出る章だけ） */
+type MapWhere = 'home' | 'brief' | 'req';
 
 /** 今出ている流れの地図の状態・ステップ・止まるステップ。地図が出ていなければ null */
 function flowNav(state: Loaded): { at: MapWhere; nav: BriefMap; steps: FlowStep[]; stops: number[] } | null {
   let at: MapWhere;
   let nav: BriefMap;
-  let sel: number | null;
+  let sel: Scope | null;
   let flows: CallFlow[];
+  let course: number | null;
   if (state.view === 'home' && state.home.tab === 'map') {
     const h = state.home;
     at = 'home';
     nav = { stage: h.mapStage, flow: h.flow, step: h.step, play: h.play };
-    sel = h.sel;
+    course = sel = h.sel;
     flows = state.analysis.flows ?? [];
   } else if (state.view === 'course' && state.course?.screen === 'brief' && state.peek === null) {
     at = 'brief';
     nav = state.briefMap;
-    sel = state.course.id;
+    course = sel = state.course.id;
     flows = courseFlows(state.analysis, sel);
+  } else if (state.view === 'req' && state.analysis.chapters !== undefined) {
+    // 要求コース: 段は ② だけ。章の差分を通る線（無ければ全部）で止まる
+    const r = state.requirement;
+    const ch = r.chapter;
+    if (ch === 'end') return null;
+    const plan = ch === 'start' ? startMap(state.analysis, r.map.flow) : chapterMap(state.analysis, ch, r.map.flow);
+    if (plan.kind === 'none') return null;
+    at = 'req';
+    nav = { stage: 2, flow: r.map.flow, step: r.map.step, play: r.map.play };
+    sel = plan.calls;
+    course = null;
+    flows = plan.flows;
   } else return null;
-  const f = pickFlow({ flows }, nav.flow, sel);
+  const f = pickFlow({ flows }, nav.flow, course);
   if (!f) return null;
   const steps = flowSteps(f, nav.stage);
   return { at, nav, steps, stops: stopsOf(steps, nav.stage, sel) };
@@ -1180,6 +1201,7 @@ function flowNav(state: Loaded): { at: MapWhere; nav: BriefMap; steps: FlowStep[
 /** 地図の状態を書き戻す */
 function withNav(state: Loaded, at: MapWhere, nav: BriefMap): Loaded {
   if (at === 'brief') return { ...state, briefMap: nav };
+  if (at === 'req') return { ...state, requirement: { ...state.requirement, map: { flow: nav.flow, step: nav.step, play: nav.play } } };
   return { ...state, home: { ...state.home, mapStage: nav.stage, flow: nav.flow, step: nav.step, play: nav.play } };
 }
 
@@ -1682,6 +1704,9 @@ function reduceLoaded(state: Loaded, command: Command): Reduced {
       if (off) return none({ ...state, home: { ...state.home, sel: null, play: false } });
       return none({ ...state, home: { ...state.home, sel: command.courseId, flow: null, ...(state.analysis.flows?.length ? { mapStage: 2 } : {}), step: 0, play: false } });
     }
+    case 'map.prev':
+    case 'map.next':
+      return none(stepBy(state, command.id === 'map.prev' ? -1 : 1));
     case 'map.step': {
       const fm = flowNav(state);
       return fm === null ? none(state) : none(withNav(state, fm.at, { ...fm.nav, step: curStep(fm.stops, command.to), play: false }));

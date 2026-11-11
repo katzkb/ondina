@@ -1,6 +1,6 @@
 import { useReducer } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RequirementCourseView } from '../src/components/RequirementCourseView.js';
 import { initialState, reduce } from '../src/state/reducer.js';
 import { emptyReview } from './fixture.js';
@@ -8,6 +8,13 @@ import { requirementAnalysis, requirementBookends } from './requirementFixture.j
 import type { Command } from '../src/commands/commands.js';
 import { NO_REQUIREMENT } from '../src/requirement.js';
 import type { Analysis, CommentDraft, ReviewState } from '@ondina/model';
+
+// jsdom に Web Worker が無いので、地図の配置は elkjs を同じスレッドで走らせる
+vi.mock('../src/map/elk.js', async () => {
+  const ELK = (await import('elkjs/lib/elk.bundled.js')).default;
+  const elk = new ELK();
+  return { workerElk: () => elk };
+});
 
 function Harness({ analysis = requirementAnalysis(), chapter = 0, review = emptyReview() }: { analysis?: Analysis; chapter?: number | 'start' | 'end'; review?: ReviewState }) {
   const loaded = reduce(initialState(), { id: 'data.loaded', analysis, review, summary: { key: 'local', headSha: analysis.pr.headSha, pr: analysis.pr, mtime: 1, repoName: 'order-service' } }).state;
@@ -109,6 +116,7 @@ it('scrolls the #1 header on chapter entry, repeat entry, and the next hunk afte
   };
   try {
     const a = requirementAnalysis();
+    delete a.flows; // 地図の無い章: 入ったら最初の差分の見出しへ送る
     const { container } = render(<Harness analysis={a} />);
     expect(calls.at(-1)).toEqual({ id: a.chapters![0]!.hunkIds[0], badge: '1', options: { block: 'start' } });
     fireEvent.click(within(screen.getByRole('navigation', { name: '章' })).getByRole('button', { name: /^要求 1/ }));
@@ -185,7 +193,9 @@ it('does not scroll on narrowing, but scrolls the focused card after moving', ()
   const calls: HTMLElement[] = [];
   HTMLElement.prototype.scrollIntoView = function() { calls.push(this); };
   try {
-    render(<Harness />);
+    const a = requirementAnalysis();
+    delete a.flows; // 地図の無い章
+    render(<Harness analysis={a} />);
     expect(calls).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: /^この要求の差分だけにする/ }));
     expect(calls).toHaveLength(1);
@@ -235,7 +245,7 @@ describe('requirement start page', () => {
   it('orders project, ticket reason, example and computed correspondence, marking AI text', () => {
     const { center, box } = bookendView('start');
     expect(center.getAllByRole('heading').map((h) => h.textContent)).toEqual([
-      'はじめに', 'どんな案件の一部？', 'このチケットの理由AI', 'この PR で変わることAI', '要求と差分の対応自動',
+      'はじめに', 'どんな案件の一部？', 'このチケットの理由AI', 'この PR で変わることAI', '処理の流れと要求自動', '要求と差分の対応自動',
     ]);
     expect(box('このチケットの理由AI')).toHaveClass('ai');
     expect(box('このチケットの理由AI')).toHaveTextContent('割引の持ち方を変える。');

@@ -11,7 +11,7 @@ export function requirementGo(state: Loaded, chapter: RequirementChapter): Reduc
   if (!chapters || (typeof chapter === 'number' && (!Number.isInteger(chapter) || !chapters[chapter]))) return none(state);
   const id = typeof chapter === 'number' ? chapters[chapter]!.hunkIds[0] ?? null : null;
   const hunk = state.analysis.hunks.find((h) => h.id === id);
-  return none({ ...state, view: 'req', requirement: { ...NO_REQUIREMENT, chapter, narrow: state.requirement.narrow, focusN: state.requirement.focusN + 1 }, course: null, courseMap: null, selectedHunk: id, selectedFile: hunk?.path ?? null, memo: NO_MEMO, peek: null });
+  return none({ ...state, view: 'req', requirement: { ...NO_REQUIREMENT, chapter, narrow: state.requirement.narrow, pin: state.requirement.pin, focusN: state.requirement.focusN + 1 }, course: null, courseMap: null, selectedHunk: id, selectedFile: hunk?.path ?? null, memo: NO_MEMO, peek: null });
 }
 
 /** 済んだ場所の次から読む順に探す。先に飛ばした未確認の場所があれば先頭へ戻り、全部済みならその場に残る。 */
@@ -54,6 +54,8 @@ export function requirementCommand(state: Loaded, command: Command): Reduced | n
     case 'req.narrow':
     case 'file.full':
       return state.view === 'req' && chapter && chapter.hunkIds.length > 0 ? none({ ...state, requirement: { ...req, narrow: !req.narrow } }) : none(state);
+    case 'req.pin':
+      return state.view === 'req' ? none({ ...state, requirement: { ...req, pin: !req.pin } }) : none(state);
     case 'req.nextChapter':
     case 'course.forward': return moveChapter(1);
     case 'req.prevChapter':

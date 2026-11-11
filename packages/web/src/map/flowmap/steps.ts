@@ -38,14 +38,17 @@ export function flowSteps(flow: CallFlow, stage: Stage): FlowStep[] {
 /** 段をまたいで同じステップを指す鍵 */
 export const stepKey = (s: FlowStep) => `${s.call.key}|${s.dir}`;
 
-/** そのコースの変更のステップか（呼び出しとその戻り） */
-export const inCourse = (s: FlowStep, course: number) => s.call.courses.includes(course);
+/** 範囲: コースの番号、または色を付ける呼び出しの key の集合（要求コースの章） */
+export type Scope = number | ReadonlySet<string>;
+
+/** その範囲の変更のステップか（呼び出しとその戻り） */
+export const inCourse = (s: FlowStep, course: Scope) => (typeof course === 'number' ? s.call.courses.includes(course) : course.has(s.call.key));
 
 /** コースの範囲はこの PR の段だけで効く（見本: ① と ③ は流れそのもの） */
-export const scoped = (stage: Stage, course: number | null): course is number => stage === 2 && course !== null;
+export const scoped = (stage: Stage, course: Scope | null): course is Scope => stage === 2 && course !== null;
 
 /** 止まるステップの番号（1 から、昇順）。コースの範囲ならそのコースのステップだけ。範囲の中に 1 つも無ければ全部 */
-export function stopsOf(steps: readonly FlowStep[], stage: Stage, course: number | null): number[] {
+export function stopsOf(steps: readonly FlowStep[], stage: Stage, course: Scope | null): number[] {
   const all = steps.map((s) => s.i);
   if (!scoped(stage, course)) return all;
   const mine = steps.filter((s) => inCourse(s, course)).map((s) => s.i);

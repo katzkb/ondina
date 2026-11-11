@@ -91,6 +91,8 @@ export type Command =
   /** 要求コース: その hunk を含む最初の章へ移り、その hunk を現在地にする（最後のページのまだのファイル・聞くこと・意見の行から） */
   | { id: 'req.goHunk'; hunkId: string }
   | { id: 'req.nextChapter' | 'req.prevChapter' | 'req.narrow' }
+  /** 要求コース: 章の地図を真ん中の欄の上に留める / 外す（保存しない一時の表示） */
+  | { id: 'req.pin' }
   | { id: 'req.focus' | 'req.toggleHunk' | 'req.ok' | 'req.undo'; hunkId: string }
   | { id: 'req.file' | 'req.file.unview'; path: string }
   | { id: 'req.toggleFile'; path: string; open: boolean }
@@ -143,6 +145,8 @@ export type Command =
   | { id: 'map.flow'; flowId: string }
   /** 入口の地図の流れのステップへ（1 から）。再生は止める。コースの範囲ならそのコースのステップに寄せる */
   | { id: 'map.step'; to: number }
+  /** 地図の前・次のステップへ（再生帯の ◀ 前 / 次 ▶）。キーは付けない（← / → は画面ごとの動き。要求コースでは章の移動）。手で動かすので再生は止める */
+  | { id: 'map.prev' | 'map.next' }
   /** 流れの再生 ▶ / 止める。今のステップから流す。最後まで見ていれば最初から */
   | { id: 'map.play' }
   /** 再生中に次のステップへ（地図の時計が呼ぶ）。最後のステップで止まる */

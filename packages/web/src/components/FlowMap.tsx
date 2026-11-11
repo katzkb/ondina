@@ -14,8 +14,9 @@ import { callText, flowFacts, type Diffness, type FlowBox } from '../map/flowmap
 import { stepCode } from '../map/flowmap/code.js';
 import { along, flowLayout, midOf, moveMs, returnPath, snapSpeed, SPEED_MAX, SPEED_MIN, SPEED_SNAP, stepMs, type FlowLayout, type Pt } from '../map/flowmap/layout.js';
 import { outsideOf } from '../map/flowmap/outside.js';
-import { allCalls, curStep, flowSteps, inCourse, inStage, pickFlow, scoped, statusCounts, stopsOf, type FlowStep, type Stage } from '../map/flowmap/steps.js';
+import { allCalls, curStep, flowSteps, inCourse, inStage, pickFlow, scoped, statusCounts, stopsOf, type FlowStep, type Scope, type Stage } from '../map/flowmap/steps.js';
 import { clampZoom, wheelZoom } from '../map/zoom.js';
+import { fitScale, REQ_MAP_MAX_H } from '../requirementMap.js';
 import { sentences } from '../text.js';
 import { Key } from './Key.js';
 
@@ -32,8 +33,21 @@ export interface FlowMapProps {
   course: Course | null;
   /** 上にコースの名前を出すか（読む前の案内では見出しにあるので出さない） */
   courseTitle?: boolean;
+  /** 要求コースの小さい形（段の切り替え・下のコード欄・横の欄なし。段は ② だけ）。入口と読む前の案内には渡さない */
+  req?: ReqMapProps;
   dispatch: (c: Command) => void;
   elk?: () => ElkLike;
+}
+
+export interface ReqMapProps {
+  /** 濃くする呼び出しの key と箱の id。null = 全部を ② の色で（はじめに） */
+  dark: { calls: ReadonlySet<string>; boxes: ReadonlySet<string> } | null;
+  /** 押せる箱（箱の id → 押したときのコマンド） */
+  boxCmd: ReadonlyMap<string, Command>;
+  /** 箱に付けるチップ（箱の id → 要求の名前と章。押すとその章へ） */
+  chips?: ReadonlyMap<string, ReadonlyArray<{ label: string; chapter: number }>>;
+  /** 地図の下の凡例の 1 行 */
+  legend: string;
 }
 
 const STAGE_KEY = { 1: 'before', 2: 'change', 3: 'after' } as const;
@@ -56,9 +70,10 @@ const stopKeys = (e: KeyboardEvent) => {
 };
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoom, course, courseTitle = true, dispatch, elk = workerElk }: FlowMapProps) {
-  const sel = course?.id ?? null;
-  const flow = pickFlow({ flows: [...flows] }, flowId, sel)!;
+export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoom, course, courseTitle = true, req, dispatch, elk = workerElk }: FlowMapProps) {
+  const courseSel = course?.id ?? null;
+  const sel: Scope | null = req ? (req.dark?.calls ?? null) : courseSel;
+  const flow = pickFlow({ flows: [...flows] }, flowId, courseSel)!;
   const facts = useMemo(() => flowFacts(analysis, flow), [analysis, flow]);
   const [layout, setLayout] = useState<{ id: string; L: FlowLayout } | Error | null>(null);
   useEffect(() => {
@@ -141,6 +156,20 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
   }, [dispatch]);
 
   const L = layout && !(layout instanceof Error) && layout.id === flow.id ? layout.L : null;
+  // 要求コースの小さい形: 地図全体が窓に収まる倍率（つまむ拡大は効かせない）。窓の幅は測る（測れなければ高さだけで決める）
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [winW, setWinW] = useState(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!req || !el) return;
+    const read = () => setWinW(el.clientWidth);
+    read();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [req !== undefined]);
+  const shown = req && L ? fitScale(L.w, L.h, winW, REQ_MAP_MAX_H) : zoom;
   const counts = statusCounts(flow);
   const mine = scope ? steps.filter((s) => s.dir === 'call' && inCourse(s, sel!)) : [];
   // 段ごとの文（LLM）。コースの範囲の ② はコースの変更の数を出すので、流れ全体の文は出さない（見本どおり）
@@ -148,7 +177,7 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
   const said = say === undefined ? [] : sentences(say);
 
   return (
-    <div className="fmap" ref={rootRef} style={course ? ({ ['--cc' as string]: `var(--c${course.id})` } as CSSProperties) : undefined}>
+    <div className={req ? 'fmap compact' : 'fmap'} ref={rootRef} style={course ? ({ ['--cc' as string]: `var(--c${course.id})` } as CSSProperties) : undefined}>
       <div className="fm-top">
         {flows.length > 1 ? (
           <span className="fm-flows" role="group" aria-label="処理の流れ">
@@ -165,7 +194,7 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
             <b className={flow.titleProvenance === 'llm' ? 'guess' : ''}>{flow.title}</b>
           </span>
         )}
-        <span className="fm-stages" role="group" aria-label="段">
+        {!req && <span className="fm-stages" role="group" aria-label="段">
           {STAGES.map((s) => (
             <button key={s.n} type="button" aria-pressed={stage === s.n} onClick={() => dispatch({ id: 'map.stage', stage: s.n })} onKeyDown={stopKeys}>
               <em>{s.title}</em>
@@ -173,9 +202,10 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
             </button>
           ))}
           <Key action="home.stage" />
-        </span>
+        </span>}
       </div>
       <div className="fm-say">
+        {req && scope && mine.length === 0 && <p>この章の差分を通る呼び出しはありません。</p>}
         {course && courseTitle && (
           <p className="fm-ctitle">
             <span className={`cb cc${course.id}`} style={courseBg(course.id)}>
@@ -184,8 +214,8 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
             {`コース ${course.id}: ${course.title}`}
           </p>
         )}
-        {scope && <p>{mine.length > 0 ? `このコースの変更は、流れの中の ${mine.length} か所です。色の付いた線がこのコースの変更、灰色はほかのコースの変更です。` : 'このコースの変更は、この流れを通りません。'}</p>}
-        {course && !scope && <p className="muted">コースの範囲は ② この PR で出します。</p>}
+        {scope && !req && <p>{mine.length > 0 ? `このコースの変更は、流れの中の ${mine.length} か所です。色の付いた線がこのコースの変更、灰色はほかのコースの変更です。` : 'このコースの変更は、この流れを通りません。'}</p>}
+        {course && !req && !scope && <p className="muted">コースの範囲は ② この PR で出します。</p>}
         {said.length > 0 && (
           <div className="narr ai fm-narr">
             {said.map((t, k) => (
@@ -196,7 +226,7 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
             ))}
           </div>
         )}
-        {stage === 2 && !scope && (
+        {stage === 2 && !scope && !req && (
           <div className="fm-chips">
             <span className="fc add">{`足された呼び出し ${counts.added}`}</span>
             <span className="fc chg">{`変わった呼び出し ${counts.changed}`}</span>
@@ -207,30 +237,30 @@ export function FlowMap({ analysis, flows, stage, flowId, step, play, speed, zoo
         {steps.length === 0 && <p>{stage === 1 ? '変わる前には、この流れはありません（入口が新しく足されました）。' : 'マージ後には、この流れはありません（入口が消されました）。'}</p>}
       </div>
       <div className="fm-mapw">
-        <div className="fm-scroll">
+        <div className="fm-scroll" ref={scrollRef}>
           {layout instanceof Error ? (
             <div className="empty">{`地図を作れませんでした: ${layout.message}`}</div>
           ) : L === null ? (
             <div className="empty">地図を作っています…</div>
           ) : (
-            <div className="fm-stage" ref={stageRef} style={{ width: L.w * zoom, height: L.h * zoom }}>
-              <div className="fm-zoom" style={{ width: L.w, height: L.h, transform: `scale(${zoom})` }}>
-                <MapBody L={L} facts={facts} steps={steps} i={i} stage={stage} sel={sel} focus={focus} speed={speed} play={play} />
+            <div className="fm-stage" ref={stageRef} style={{ width: L.w * shown, height: L.h * shown }}>
+              <div className="fm-zoom" style={{ width: L.w, height: L.h, transform: `scale(${shown})` }}>
+                <MapBody L={L} facts={facts} steps={steps} i={i} stage={stage} sel={sel} focus={focus} speed={speed} play={play} {...(req ? { req } : {})} dispatch={dispatch} />
               </div>
             </div>
           )}
         </div>
-        {steps.length > 0 && <Player steps={steps} stops={stops} i={i} play={play} speed={speed} stage={stage} focus={focus} dispatch={dispatch} />}
+        {steps.length > 0 && <Player steps={steps} stops={stops} i={i} play={play} speed={speed} stage={stage} focus={focus} keys={!req} dispatch={dispatch} />}
         <div className="fm-legend">
-          {(stage === 2 ? '色は、緑が足された呼び出し、黄が変わった呼び出し、灰が変わる前と同じ呼び出し、赤がなくなった呼び出しです。' : '') +
+          {req ? req.legend : ((stage === 2 ? '色は、緑が足された呼び出し、黄が変わった呼び出し、灰が変わる前と同じ呼び出し、赤がなくなった呼び出しです。' : '') +
             (scope ? '薄い灰色はほかのコースの変更で、「次」では止まりません。' : '') +
-            '実線が呼び出し、点線が戻りです。玉が今のステップ、番号は呼ばれる順、上の点は呼び出し元です。薄い箱は、この段では呼ばれないクラスです。'}
+            '実線が呼び出し、点線が戻りです。玉が今のステップ、番号は呼ばれる順、上の点は呼び出し元です。薄い箱は、この段では呼ばれないクラスです。')}
         </div>
       </div>
-      <div className="fm-bottom">
+      {!req && <div className="fm-bottom">
         {cur ? <StepPane analysis={analysis} facts={facts} step={cur} stage={stage} focus={focus(cur)} dispatch={dispatch} /> : <div className="fm-pane" />}
         <SidePane analysis={analysis} flows={flows} flow={flow} facts={facts} steps={steps} stage={stage} course={course} scope={scope} dispatch={dispatch} />
-      </div>
+      </div>}
     </div>
   );
 }
@@ -241,10 +271,12 @@ interface MapBodyProps {
   steps: readonly FlowStep[];
   i: number;
   stage: Stage;
-  sel: number | null;
+  sel: Scope | null;
   focus: (s: FlowStep) => boolean;
   speed: number;
   play: boolean;
+  req?: ReqMapProps;
+  dispatch: (c: Command) => void;
 }
 
 /** その段のステップの線（根は上の点から、同じ箱の中の呼び出しは無し）。戻りは呼び出しの道を逆に */
@@ -254,13 +286,13 @@ function pathOf(L: FlowLayout, s: FlowStep): Pt[] | null {
   return s.dir === 'ret' ? returnPath(pts) : pts;
 }
 
-function MapBody({ L, facts, steps, i, stage, sel, focus, speed, play }: MapBodyProps) {
+function MapBody({ L, facts, steps, i, stage, sel, focus, speed, play, req, dispatch }: MapBodyProps) {
   const cur = steps[i - 1];
   const tone = (s: FlowStep): Tone => (stage !== 2 ? 'plain' : !focus(s) ? 'other' : TONE[s.call.status]);
   const scope = scoped(stage, sel);
   // 箱の上の印: 今のステップが着く箱（呼び出しなら呼ばれる側、戻りなら呼ぶ側）
   const hereBox = cur ? (cur.dir === 'call' ? facts.boxIdOf.get(cur.call.to) : cur.call.from === null ? null : facts.boxIdOf.get(cur.call.from)) : null;
-  const courseBox = new Set(scope ? steps.filter((s) => s.dir === 'call' && inCourse(s, sel!)).map((s) => facts.boxIdOf.get(s.call.to)) : []);
+  const courseBox: ReadonlySet<string | undefined> = req?.dark ? req.dark.boxes : new Set(scope ? steps.filter((s) => s.dir === 'call' && inCourse(s, sel!)).map((s) => facts.boxIdOf.get(s.call.to)) : []);
   const curPath = cur ? pathOf(L, cur) : null;
   const moveKey = `${stage}|${i}|${play ? 'p' : ''}`;
   const [arrived, setArrived] = useState<string | null>(null);
@@ -297,6 +329,7 @@ function MapBody({ L, facts, steps, i, stage, sel, focus, speed, play }: MapBody
   // 今のステップの箱が見える所まで地図を送る（段を替えたとき・コースを選んだときも）
   const bodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    if (req) return; // 小さい形は全体が見えている。呼ぶと真ん中の欄までスクロールする
     const el = bodyRef.current?.parentElement?.querySelector<HTMLElement>('.fm-box.cur');
     el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', ...(reducedMotion() ? {} : { behavior: 'smooth' }) });
   }, [hereBox, stage, i]);
@@ -311,8 +344,17 @@ function MapBody({ L, facts, steps, i, stage, sel, focus, speed, play }: MapBody
       {facts.boxes.map((b) => {
         const r = L.boxes.get(b.id);
         if (!r) return null;
-        return <BoxView key={b.id} b={b} r={r} stage={stage} here={hereBox === b.id} dim={scope && !courseBox.has(b.id)} />;
+        return <BoxView key={b.id} b={b} r={r} stage={stage} here={hereBox === b.id} dim={scope && !courseBox.has(b.id)} {...(req?.boxCmd.has(b.id) ? { onClick: () => dispatch(req.boxCmd.get(b.id)!) } : {})} />;
       })}
+      {req?.chips &&
+        facts.boxes.flatMap((b) => {
+          const r = L.boxes.get(b.id);
+          return (req.chips!.get(b.id) ?? []).map((c, k) => (
+            <button key={`${b.id}|${c.chapter}`} type="button" className="fm-chip" style={{ left: r ? r.x + 6 + k * 62 : 0, top: r ? r.y + r.h + 9 : 0 }} onClick={() => dispatch({ id: 'req.go', chapter: c.chapter })} onKeyDown={stopKeys}>
+              {c.label}
+            </button>
+          ));
+        })}
       <svg className="fm-svg" width={L.w} height={L.h} aria-hidden="true">
         <defs>
           {(['plain', 'same', 'chg', 'add', 'del', 'other'] as const).map((k) => (
@@ -334,13 +376,18 @@ function MapBody({ L, facts, steps, i, stage, sel, focus, speed, play }: MapBody
   );
 }
 
-function BoxView({ b, r, stage, here, dim }: { b: FlowBox; r: { x: number; y: number; w: number; h: number }; stage: Stage; here: boolean; dim: boolean }) {
+function BoxView({ b, r, stage, here, dim, onClick }: { b: FlowBox; r: { x: number; y: number; w: number; h: number }; stage: Stage; here: boolean; dim: boolean; onClick?: () => void }) {
   const ghost = stage === 1 && b.diff === 'added';
   const idle = !ghost && !b.used[stage];
   const tone = stage === 2 && !dim ? (b.diff === 'added' ? ' add' : b.diff === 'changed' ? ' chg' : '') : '';
   const tag = stage === 2 ? DIFF_TAG[b.diff] : undefined;
   return (
-    <div className={`fm-box${ghost ? ' ghost' : idle ? ' idle' : dim ? ' dimc' : ''}${tone}${here ? ' cur' : ''}`} data-id={b.id} style={{ left: r.x, top: r.y, width: r.w, height: r.h }}>
+    <div
+      className={`fm-box${ghost ? ' ghost' : idle ? ' idle' : dim ? ' dimc' : ''}${tone}${here ? ' cur' : ''}${onClick ? ' click' : ''}`}
+      data-id={b.id}
+      style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+      {...(onClick ? { role: 'button', tabIndex: 0, onClick, onKeyDown: (e: KeyboardEvent) => { stopKeys(e); if (e.key === 'Enter' || e.key === ' ') onClick(); } } : {})}
+    >
       <div className="nm">
         <span title={b.id}>{b.name}</span>
         {tag && <span className={`tagb ${b.diff}`}>{tag}</span>}
@@ -392,11 +439,13 @@ interface PlayerProps {
   speed: number;
   stage: Stage;
   focus: (s: FlowStep) => boolean;
+  /** ← / → のキーの表示を出すか（要求コースでは ← / → は章の移動なので出さない） */
+  keys: boolean;
   dispatch: (c: Command) => void;
 }
 
 /** 再生の帯: ▶・前・次・ステップの帯・n/全部・速さ */
-function Player({ steps, stops, i, play, speed, stage, focus, dispatch }: PlayerProps) {
+function Player({ steps, stops, i, play, speed, stage, focus, keys, dispatch }: PlayerProps) {
   const first = stops[0] ?? 0;
   const last = stops[stops.length - 1] ?? 0;
   return (
@@ -404,11 +453,11 @@ function Player({ steps, stops, i, play, speed, stage, focus, dispatch }: Player
       <button type="button" className="pb" onClick={() => dispatch({ id: 'map.play' })} onKeyDown={stopKeys}>
         {play ? '■ 止める' : '▶ 再生'}
       </button>
-      <button type="button" className="pb" disabled={i <= first} onClick={() => dispatch({ id: 'course.prev' })} onKeyDown={stopKeys}>
-        ◀ 前 <Key action="course.prev" />
+      <button type="button" className="pb" disabled={i <= first} onClick={() => dispatch({ id: 'map.prev' })} onKeyDown={stopKeys}>
+        ◀ 前 {keys && <Key action="course.prev" />}
       </button>
-      <button type="button" className="pb" disabled={i >= last} onClick={() => dispatch({ id: 'course.forward' })} onKeyDown={stopKeys}>
-        次 ▶ <Key action="course.forward" />
+      <button type="button" className="pb" disabled={i >= last} onClick={() => dispatch({ id: 'map.next' })} onKeyDown={stopKeys}>
+        次 ▶ {keys && <Key action="course.forward" />}
       </button>
       <span className="fm-ticks">
         {steps.map((s) => {

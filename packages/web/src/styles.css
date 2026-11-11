@@ -1247,3 +1247,14 @@ button.req-row{cursor:pointer}button.req-row:hover{background:var(--accent-soft)
 .req-course button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:1180px){.req-course{--req-nav-w:190px;--req-files-w:190px}.req-center{padding:12px}.req-guide{margin-left:20px}}
 @media(max-width:800px){.req-course{--req-nav-w:150px;--req-files-w:0px;grid-template-columns:150px minmax(0,1fr)}.req-files{display:none}.req-guide{margin-left:8px}}
+/* 要求コースの地図（要求ごとの地図）。② この PR だけの小さい形: 段ボタン・下のコード欄・横の欄なし。濃い箱・濃い線がその章の差分 */
+.fmap.compact{padding:0;gap:6px}
+.fmap.compact .fm-scroll{max-height:none;overflow:hidden}
+.fmap.compact .fm-box.dimc{opacity:.35}
+.fmap.compact .fm-box.click{cursor:pointer;border-color:var(--accent)}
+.fmap.compact .fm-box.click:hover{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.fm-chip{position:absolute;z-index:3;transform:translateY(-50%);border:1px solid var(--accent);background:var(--panel);color:var(--ink);border-radius:999px;font:600 10.5px/15px var(--sans);padding:0 7px;cursor:pointer;white-space:nowrap}
+.fm-chip:hover{background:var(--accent-soft)}
+.req-map{margin:8px 0}
+.req-map.pin{position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0;border-bottom:1px solid var(--line)}
+.req-nomap,.req-outside{margin:6px 0;font-size:12.5px;color:var(--muted)}

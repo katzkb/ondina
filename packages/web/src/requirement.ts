@@ -13,8 +13,12 @@ export interface RequirementUi {
   files: Record<string, boolean>;
   editor: { hunkId: string; label: 'ask' | 'imo' } | null;
   scroll: { path: string; n: number } | null;
+  /** 章の地図の状態（段は ② だけ）。章を移ると最初のステップ・停止に戻る */
+  map: { flow: string | null; step: number; play: boolean };
+  /** 地図を真ん中の欄の上に留める（保存しない。章を移っても変えない） */
+  pin: boolean;
 }
-export const NO_REQUIREMENT: RequirementUi = { chapter: 'start', narrow: false, focusN: 0, openHunks: [], files: {}, editor: null, scroll: null };
+export const NO_REQUIREMENT: RequirementUi = { chapter: 'start', narrow: false, focusN: 0, openHunks: [], files: {}, editor: null, scroll: null, map: { flow: null, step: 0, play: false }, pin: false };
 
 /** local と古い解析には GitHub の並びが無いので、従来のファイル順で表示する。 */
 export function requirementFiles(analysis: Analysis): Array<{ path: string }> {
