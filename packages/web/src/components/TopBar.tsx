@@ -58,7 +58,7 @@ export function TopBar({ analyses, current, meter, view, course, requirement = f
           </span>
         </>
       )}
-      {meter && view !== 'prs' && <MeterBar m={meter} />}
+      {meter && view !== 'prs' && <MeterBar m={meter} view={view} dispatch={dispatch} />}
       {/* メーターの無い PR 一覧でも、行き先を他の画面と同じ右寄せの位置に置く */}
       {view === 'prs' && <span className="fill" />}
       <nav className="go" aria-label="画面">
@@ -69,15 +69,18 @@ export function TopBar({ analyses, current, meter, view, course, requirement = f
           全体図{view === 'course' && <kbd>Esc</kbd>}
         </button>
         {requirement ? (
-          <button type="button" className={`btn quiet${view === 'req' ? ' on' : ''}`} aria-current={view === 'req' ? 'page' : undefined} onClick={() => dispatch({ id: 'view.course' })}>コース</button>
+          <button type="button" className={`btn quiet${view === 'req' ? ' on' : ''}`} aria-current={view === 'req' ? 'page' : undefined} onClick={() => dispatch({ id: 'view.course' })}>要求コース</button>
         ) : course !== null && view !== 'course' && (
           <button type="button" className="btn quiet" onClick={() => dispatch({ id: 'view.course' })}>
             {course.id === 0 ? 'コース外に戻る' : `コース ${course.id} に戻る`}
           </button>
         )}
-        <button type="button" className={`btn quiet${view === 'hows' ? ' on' : ''}`} aria-current={view === 'hows' ? 'page' : undefined} disabled={!loaded} onClick={() => dispatch({ id: 'view.hows' })}>
-          目的ごと
-        </button>
+        {/* チケットのある PR は目的ごとの画面を持たない（要求コースが代わる） */}
+        {!requirement && (
+          <button type="button" className={`btn quiet${view === 'hows' ? ' on' : ''}`} aria-current={view === 'hows' ? 'page' : undefined} disabled={!loaded} onClick={() => dispatch({ id: 'view.hows' })}>
+            目的ごと
+          </button>
+        )}
         <button type="button" className={`btn quiet${view === 'diff' ? ' on' : ''}`} aria-current={view === 'diff' ? 'page' : undefined} disabled={!loaded} onClick={() => dispatch({ id: 'view.diff' })}>
           差分一覧 <Key action="view.diff" />
         </button>
@@ -131,7 +134,8 @@ function cls(r: Ratio, strict: boolean): string {
   return strict ? 'm bad' : 'm';
 }
 
-function MeterBar({ m }: { m: Meter }) {
+function MeterBar({ m, view, dispatch }: { m: Meter; view: View; dispatch: (c: Command) => void }) {
+  const req = m.requirements;
   return (
     <div className="meter" aria-label="完了メーター">
       <span className={cls(m.assigned, true)}>
@@ -143,12 +147,21 @@ function MeterBar({ m }: { m: Meter }) {
       <span className="m">
         絡み <b>{m.tangled}</b>
       </span>
-      <span className={cls(m.tours, false)}>
-        コース <b>{m.tours.n}/{m.tours.total}</b>
-      </span>
-      <span className={cls(m.specs, true)}>
-        仕様 <b>{m.specs.n}/{m.specs.total}</b>
-      </span>
+      {req ? (
+        // チケットのある PR: コースと仕様の代わりに、要求の進み具合 1 つ。押すと要求コース
+        <button type="button" className={cls(req, false)} aria-current={view === 'req' ? 'page' : undefined} title="要求コースを開く" onClick={() => dispatch({ id: 'view.course' })}>
+          要求 <b>{req.n}/{req.total}</b>
+        </button>
+      ) : (
+        <>
+          <span className={cls(m.tours, false)}>
+            コース <b>{m.tours.n}/{m.tours.total}</b>
+          </span>
+          <span className={cls(m.specs, true)}>
+            仕様 <b>{m.specs.n}/{m.specs.total}</b>
+          </span>
+        </>
+      )}
     </div>
   );
 }

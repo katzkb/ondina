@@ -32,7 +32,8 @@ export function haystack(item: PaletteItem): string {
 /** How / シンボル / ファイルの 3 種。シンボルは追従グループのメンバーも 1 件ずつ出す（2026-09-19 に決めた「1 件ずつ確認する」と揃える） */
 export function paletteItems(analysis: Analysis, packagePrefix?: string): PaletteItem[] {
   const files = groupFiles(analysis.hunks, [], packagePrefix);
-  const hows: PaletteItem[] = analysis.hows.map((h) => ({ kind: 'how', target: { kind: 'how', howId: h.id }, label: h.title, sub: h.why }));
+  // チケットのある PR は目的ごとの画面を出さないので How も出さない
+  const hows: PaletteItem[] = analysis.chapters ? [] : analysis.hows.map((h) => ({ kind: 'how', target: { kind: 'how', howId: h.id }, label: h.title, sub: h.why }));
   const hunks: PaletteItem[] = files.flatMap((f) =>
     f.hunks.map((h) => ({ kind: 'hunk' as const, target: { kind: 'hunk' as const, hunkId: h.id }, label: h.symbol, sub: shortPath(h.path, packagePrefix) })),
   );

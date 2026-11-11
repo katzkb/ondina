@@ -18,6 +18,8 @@ export interface Meter {
   tours: Ratio;
   /** 対応する How がある仕様項目数 / 仕様項目数 */
   specs: Ratio;
+  /** チケットのある PR だけ。全部の差分が「わかった」か「聞く」の要求の数 / 差分のある要求の数（差分が見つからない要求は数えない） */
+  requirements?: Ratio;
 }
 
 export function meter(analysis: Analysis, viewedIds: readonly string[]): Meter {
@@ -28,11 +30,13 @@ export function meter(analysis: Analysis, viewedIds: readonly string[]): Meter {
   const tangled = analysis.hunks.filter((h) => h.hows.length > 1).length;
   const toursDone = analysis.tours.filter((t) => t.steps.every((s) => s.hunkId === undefined || viewed.has(s.hunkId))).length;
   const specsDone = analysis.specs.filter((s) => s.hows.length > 0).length;
+  const specChapters = (analysis.chapters ?? []).filter((c) => c.kind === 'spec' && c.hunkIds.length > 0);
   return {
     assigned: { n: assigned, total },
     viewed: { n: seen, total },
     tangled,
     tours: { n: toursDone, total: analysis.tours.length },
     specs: { n: specsDone, total: analysis.specs.length },
+    ...(analysis.chapters ? { requirements: { n: specChapters.filter((c) => c.hunkIds.every((id) => viewed.has(id))).length, total: specChapters.length } } : {}),
   };
 }

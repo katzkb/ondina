@@ -15,7 +15,7 @@ describe('requirement course in App', () => {
   it('opens from top bar and explain Enter, writes chapter URL, restores a history entry', async () => {
     render(<App api={fakeApi(requirementAnalysis()).api} />);
     await screen.findByLabelText('入口');
-    fireEvent.click(screen.getByRole('button', { name: 'コース' }));
+    fireEvent.click(screen.getByRole('button', { name: '要求コース' }));
     expect(await screen.findByLabelText('要求コース')).toBeInTheDocument();
     expect(window.location.pathname).toBe('/local/aaaaaaa/req/start');
     fireEvent.click(within(screen.getByRole('navigation', { name: '章' })).getByRole('button', { name: /^要求 1/ }));

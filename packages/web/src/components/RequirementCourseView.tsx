@@ -1,5 +1,5 @@
 // 要求コース。章・意図は Analysis から、操作はすべてコマンドを通す。
-import type { Analysis, CommentDraft, DiffMode, Hunk, IntentNote, ReviewState } from '@ondina/model';
+import type { Analysis, AnalysisSummary, CommentDraft, DiffMode, Hunk, IntentNote, ReviewState } from '@ondina/model';
 import { useEffect, useMemo, useRef } from 'react';
 import type { Command } from '../commands/commands.js';
 import { composingKey } from '../commands/keymap.js';
@@ -10,7 +10,10 @@ import type { ElkLike } from '../map/layout.js';
 import { pickRange } from '../memo.js';
 import { chapterLabel, chapterText, intentOf, requirementFiles, requirementPick, type RequirementChapter, type RequirementUi } from '../requirement.js';
 import { boxChapters, chapterMap, startMap, type ChapterMap, type NoMap } from '../requirementMap.js';
-import type { FocusLine, MemoUi } from '../state/reducer.js';
+import type { FocusLine, MemoUi, SendStatus } from '../state/reducer.js';
+import { AskButton } from './AskButton.js';
+import { ApproveButton } from './ClosingView.js';
+import { CommentDrafts } from './CommentDrafts.js';
 import { ProjectQ, WhyQ } from './ExplainStages.js';
 import { FlowMap, type ReqMapProps } from './FlowMap.js';
 import { Lines } from './Lines.js';
@@ -34,14 +37,24 @@ export interface RequirementCourseViewProps {
   speed?: number;
   zoom?: number;
   elk?: () => ElkLike;
+  /** 最後のページ（締めにあった部品）用。無ければ送れない・承認の PR ページなしの形 */
+  current?: AnalysisSummary | null;
+  packagePrefix?: string | undefined;
+  send?: SendStatus;
+  canSend?: boolean;
+  /** AI の下書きを直している途中の文（AppState.draftText） */
+  draftText?: Readonly<Record<string, string>>;
   dispatch: (c: Command) => void;
 }
+
+const IDLE: SendStatus = { status: 'idle' };
+const NO_DRAFT_TEXT: Readonly<Record<string, string>> = {};
 
 const CHAPTER_LEGEND = '濃い箱と濃い線が、この章の差分です。薄い所は、この章の差分ではありません。再生は濃い線だけで止まり、濃い箱を押すとその差分へ移ります。';
 const START_LEGEND = '箱の下のチップは、その箱に差分がある要求です。押すとその章へ移ります。再生は全部の呼び出しを順に流します。';
 
 /** 章の地図（はじめには全体の地図）。出さない章は理由の 1 文 */
-function RequirementMap({ analysis, at, plan, speed, zoom, elk, dispatch }: { analysis: Analysis; at: RequirementUi; plan: ChapterMap | NoMap; speed: number; zoom: number; elk?: () => ElkLike; dispatch: (c: Command) => void }) {
+export function RequirementMap({ analysis, at, plan, speed, zoom, elk, dispatch }: { analysis: Analysis; at: RequirementUi; plan: ChapterMap | NoMap; speed: number; zoom: number; elk?: () => ElkLike; dispatch: (c: Command) => void }) {
   const chips = useMemo(() => (plan.kind === 'map' && plan.calls === null ? boxChapters(analysis, plan.facts) : null), [analysis, plan]);
   if (plan.kind === 'none') return <p className="req-nomap">{plan.reason}</p>;
   const req: ReqMapProps = chips
@@ -197,7 +210,14 @@ export function RequirementCourseView(props: RequirementCourseViewProps) {
               {files.every((f) => doneFile(f.path)) && <p>ありません。</p>}
             </div>
           </div>
-          <div className="req-actions"><button className="btn" type="button" onClick={() => dispatch({ id: 'view.closing' })}>締めを開く</button></div>
+          {/* 締めにあった部品（送るコメント・承認）。同じ部品を使い回す */}
+          <div className="req-closing">
+            <CommentDrafts comments={review.comments} send={props.send ?? IDLE} canSend={props.canSend ?? false} local={props.current?.key === 'local'} githubDiff={analysis.githubDiff} memo={props.memo} draftText={props.draftText ?? NO_DRAFT_TEXT} packagePrefix={props.packagePrefix} dispatch={dispatch} />
+            <div className="req-actions">
+              <ApproveButton enterKey={false} prUrl={props.current?.prUrl} local={props.current?.key === 'local'} dispatch={dispatch} />
+              <AskButton className="btn" />
+            </div>
+          </div>
         </>}
         {chapter?.kind === 'spec' && chapter.hunkIds.length === 0 && <p className="req-missing">この要求に当たる差分が見つかりません</p>}
         {chapter && <DefLinks defs={analysis.defs} dispatch={dispatch}>

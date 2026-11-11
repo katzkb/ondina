@@ -5,7 +5,7 @@
 // 押すとそのコースを選ぶ = home.select）、無ければ赤の「対応するコースなし」。原文はその下に畳む（home.ticket で開く。見本を比べて決めた形）。
 // 作者の説明は原文（pr.body）を Markdown として描き（GitHub と同じ規則。2026-10-10）、裏付けのない文（claims の backed: false）と完全一致する箇所にマーカー（2026-09-19 決定）。
 // リンクは新しいタブ。画像は読めなければ（GitHub Enterprise Server の画像はログインが要る）リンクに替える。mermaid は図にする。
-import type { Analysis, BodyCode, Claim, How, LlmRun, Spec, Ticket, TicketCandidate, TicketPlace, TicketSearch } from '@ondina/model';
+import type { Analysis, BodyCode, Claim, LlmRun, Ticket, TicketCandidate, TicketPlace, TicketSearch } from '@ondina/model';
 import { toJsxRuntime, type Components } from 'hast-util-to-jsx-runtime';
 import { useMemo, useState, type ComponentProps } from 'react';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
@@ -16,6 +16,9 @@ import { placeName, quoteOf } from '../ticketPlace.js';
 import { ExplainStages } from './ExplainStages.js';
 import { Mermaid } from './Mermaid.js';
 import { courseBg } from '../course.js';
+
+// eslint-disable-next-line ondina/wording-endings -- 承認済みの見本で決めた短い状態ラベル
+const MISSING_LABEL = '差分が見つからない';
 
 export interface ExplainViewProps {
   analysis: Analysis;
@@ -173,7 +176,7 @@ function TicketSection({ analysis, sel, ticketOpen, dispatch, flavor }: Omit<Exp
   return (
     <>
       {lead}
-      <Requirements specs={analysis.specs} hows={analysis.hows} sel={sel} dispatch={dispatch} />
+      <Requirements analysis={analysis} sel={sel} dispatch={dispatch} />
       <button type="button" className="tkt-toggle" aria-expanded={ticketOpen} onClick={() => dispatch({ id: 'home.ticket' })}>
         <span aria-hidden="true">{ticketOpen ? '▾' : '▸'}</span>
         <b>チケットの原文</b>
@@ -185,19 +188,24 @@ function TicketSection({ analysis, sel, ticketOpen, dispatch, flavor }: Omit<Exp
 }
 
 /** チケットから抜き出した要求（10.8）。LLM の推定なので点線の枠と「AI」。行の右は対応するコースの丸（押すとそのコースを選ぶ）、無ければ赤 */
-function Requirements({ specs, hows, sel, dispatch }: { specs: readonly Spec[]; hows: readonly How[]; sel: number | null; dispatch: (c: Command) => void }) {
+function Requirements({ analysis, sel, dispatch }: { analysis: Analysis; sel: number | null; dispatch: (c: Command) => void }) {
+  const { specs, hows, chapters } = analysis;
   const title = new Map(hows.map((h) => [h.id, h.title]));
   return (
     <div className="spec-ai">
       <div className="cap">
-        <span className="chip ai">AI</span>チケットから抜き出した要求<span className="muted">· 右 = 対応するコース（LLM が選び、ないものは赤）</span>
+        <span className="chip ai">AI</span>チケットから抜き出した要求
+        <span className="muted">{chapters ? '· 右 = その要求の差分の数（押すとその章へ。見つからないものは赤）' : '· 右 = 対応するコース（LLM が選び、ないものは赤）'}</span>
       </div>
       {specs.map((s, i) => (
         <div className="spec" key={s.id}>
           <span className="i">{i + 1}</span>
           <span className="t">{s.text}</span>
           <span className="hs">
-            {s.hows.length === 0 ? (
+            {chapters ? (
+              // チケットのある PR は、要求ごとの章へ（差分の数。章は analysis.chapters の spec）
+              <SpecDiffs analysis={analysis} specId={s.id} dispatch={dispatch} />
+            ) : s.hows.length === 0 ? (
               <span className="chip d">対応するコースなし</span>
             ) : (
               s.hows.map((n) => (
@@ -210,6 +218,17 @@ function Requirements({ specs, hows, sel, dispatch }: { specs: readonly Spec[]; 
         </div>
       ))}
     </div>
+  );
+}
+
+function SpecDiffs({ analysis, specId, dispatch }: { analysis: Analysis; specId: string; dispatch: (c: Command) => void }) {
+  const at = analysis.chapters?.findIndex((c) => c.kind === 'spec' && c.specId === specId) ?? -1;
+  const n = at < 0 ? 0 : analysis.chapters![at]!.hunkIds.length;
+  if (at < 0) return <span className="chip d">{MISSING_LABEL}</span>;
+  return (
+    <button type="button" className={`chip${n === 0 ? ' d' : ' h'}`} style={{ cursor: 'pointer' }} onClick={() => dispatch({ id: 'req.go', chapter: at })}>
+      {n === 0 ? MISSING_LABEL : `差分 ${n}`}
+    </button>
   );
 }
 

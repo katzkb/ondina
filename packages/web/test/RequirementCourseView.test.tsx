@@ -87,7 +87,7 @@ describe('requirement course from goldens', () => {
   it.each(['start', 'end'] as const)('has simple %s page and existing-screen link', (chapter) => {
     render(<Harness chapter={chapter} />);
     expect(within(screen.getByRole('region', { name: '読む差分' })).getByRole('heading', { level: 2 })).toHaveTextContent(chapter === 'start' ? 'はじめに' : 'Approve の前に');
-    expect(screen.getByRole('button', { name: chapter === 'start' ? '説明を開く' : '締めを開く' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: chapter === 'start' ? '説明を開く' : /GitHub で承認/ })).toBeInTheDocument();
   });
 });
 
@@ -317,7 +317,7 @@ describe('requirement end page', () => {
     ];
     const { container, box, commands, center } = bookendView('end', a, { viewed: [logger[0]!.id, feature.id], comments });
     expect([...container.querySelectorAll('.req-tiles > *')].map((e) => e.textContent)).toEqual(['1 / 3GitHub の Viewed', '2聞くこと', '1意見', '2まだのファイル']);
-    expect(center.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['要求と差分のずれ自動', '聞くこと', '意見', 'まだ「わかった」も「聞く」も付けていないファイル']);
+    expect(center.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['要求と差分のずれ自動', '聞くこと', '意見', 'まだ「わかった」も「聞く」も付けていないファイル', '自分のメモそのまま送る4', 'AI の下書き採用したものだけ送る0 / 1']);
     const remaining = within(box('まだ「わかった」も「聞く」も付けていないファイル')).getAllByRole('button');
     expect(remaining.map((r) => r.textContent)).toEqual([logger[0]!.path, invoice[0]!.path]);
     fireEvent.click(remaining[0]!);
@@ -328,16 +328,18 @@ describe('requirement end page', () => {
     fireEvent.click(askRow);
     expect(askBox.getByText(outside.body).closest('button')).toBeNull();
     fireEvent.click(within(box('意見')).getByRole('button', { name: /集計の意見/ }));
-    for (const body of ['除外した質問', '除外した意見', 'AI の質問', '従来のメモ']) expect(center.queryByText(body)).toBeNull();
+    // 聞くこと・意見の箱には出ない（締めから来た「自分のメモ」「AI の下書き」の箱には、AI の下書きと従来のメモが出る）
+    for (const body of ['除外した質問', '除外した意見', 'AI の質問', '従来のメモ']) for (const title of ['聞くこと', '意見']) expect(within(box(title)).queryByText(body)).toBeNull();
     const mismatch = within(box('要求と差分のずれ自動')).getAllByRole('button');
     expect(mismatch).toHaveLength(1);
     expect(mismatch[0]).toHaveTextContent(`要求 3 · ${a.specs[2]!.text}`);
     fireEvent.click(mismatch[0]!);
-    fireEvent.click(center.getByRole('button', { name: '締めを開く' }));
+    // 締めを開くボタンは無い（締めの中身がこのページにある）
+    expect(center.queryByRole('button', { name: '締めを開く' })).toBeNull();
     expect(commands).toEqual([
       { id: 'req.goHunk', hunkId: logger[1]!.id }, { id: 'req.goHunk', hunkId: invoice[0]!.id },
       { id: 'req.goHunk', hunkId: logger[1]!.id }, { id: 'req.goHunk', hunkId: invoice[1]!.id },
-      { id: 'req.go', chapter: 2 }, { id: 'view.closing' },
+      { id: 'req.go', chapter: 2 },
     ]);
   });
   it('shows empty messages and keeps closing available when everything is viewed and no requirements are missing', () => {
@@ -349,7 +351,7 @@ describe('requirement end page', () => {
     expect(box('聞くこと')).toHaveTextContent('まだありません。');
     expect(box('意見')).toHaveTextContent('まだありません。');
     expect(box('要求と差分のずれ自動')).toHaveTextContent('差分が見つからない要求はありません。');
-    fireEvent.click(center.getByRole('button', { name: '締めを開く' }));
-    expect(commands).toEqual([{ id: 'view.closing' }]);
+    expect(center.queryByRole('button', { name: '締めを開く' })).toBeNull();
+    expect(commands).toEqual([]);
   });
 });
