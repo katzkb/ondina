@@ -4,6 +4,7 @@
 // - 会話が空のときは決まった形の候補（自動）。押すとそのまま送る
 // - 答えは LLM の文なので点線の枠と「AI」のチップ（原則 4）。行の場所は青い下線（押すとその行へ）、材料にない場所は「場所を確かめられません」
 // - ネットで調べた事実は末尾に脚注の番号、答えの下に「調べたページ」（別のタブで開く）。行もページも無い事実は「出典なし」（2026-10-15）
+// - 作者が書いていない「なぜ」を材料から推し量った項目（guess）は、点線の下線と「推定」のチップ（2026-11-11。原則 2）
 // - 待っている間は経過秒と「止める」。失敗は理由と「もう一度」「LLM コマンドを設定する」
 // - 別の場所の答えが見ていない間に来ていれば、入力欄の上にその場所の名前（2026-10-20。答えが来た印は場所ごと）
 // - 「+」で選んだ行について聞いているときは、何についての右に「× 場所全体にする」
@@ -243,7 +244,7 @@ function Answer({ answer, dispatch, children }: { answer: AskAnswer; dispatch: (
         <ul>
           {answer.items.map((it, i) => (
             <li key={i}>
-              {it.text}
+              {it.guess ? <span className="guess">{it.text}</span> : it.text}
               {it.cite && (
                 <button type="button" className="ln" onClick={() => dispatch({ id: 'ask.cite', cite: it.cite! })}>
                   {citeLabel(it.cite)}
@@ -257,6 +258,11 @@ function Answer({ answer, dispatch, children }: { answer: AskAnswer; dispatch: (
               {it.unverified && (
                 <span className="chip w" title="LLM が示した行は、材料の中にありませんでした">
                   場所を確かめられません
+                </span>
+              )}
+              {it.guess && (
+                <span className="chip ai" title="作者が書いていないことを、AI が材料から推し量った文です">
+                  推定
                 </span>
               )}
               {it.known && (

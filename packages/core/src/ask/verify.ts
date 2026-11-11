@@ -2,6 +2,7 @@
 // - 行の場所は材料に出した行（h12 / b6 の番号）だけ採る。無ければ場所を外し、項目に unverified の印を付ける（画面に「場所を確かめられない」と出す。近似の破綻を黙って隠さない）
 // - バッククォートは剥がす（画面は Markdown を描かない。2026-10-08 に測った答えは識別子をバッククォートで囲んでいた）
 // - 文の中に漏れた材料の番号（h10 / b6）は「10 行目」「base 側 6 行目」に直す（2026-10-08 に実物で「作者に聞くなら h10 を指す」が出た。読む人は番号の読み方を知らない）
+// - 推定（guess）は作者が書いていない「なぜ」を材料から推し量った文。画面が「推定」と示す（原則 2）。web・known とは一緒にせず推定を残す
 // - ネットのページは http / https の URL だけ採る（画面がリンクにする）。読めなければページを外して出典なし（known）にする（中身が本当にそう書いてあるかは確かめられない。画面で開いて読む）
 import type { AskAnswer, AskCite, AskWeb } from '../model.js';
 import type { AskInput, AskInputLines, AskOutput } from './types.js';
@@ -51,8 +52,10 @@ export function verifyAskAnswer(output: AskOutput, input: AskInput): AskAnswer {
     const c = it.cite === undefined ? undefined : cite(it.cite);
     const w = it.web === undefined ? undefined : web(it.web);
     // 出典なしは、行の場所を書かず、読めるページも無い事実だけ（ページが読めなかった事実もここに入る）
-    const known = it.cite === undefined && !w && (it.known === true || w === null);
-    return { text, ...(c ? { cite: c } : c === null ? { unverified: true as const } : {}), ...(w ? { web: w } : {}), ...(known ? { known: true as const } : {}) };
+    // 推定（guess）は web・known と一緒にしない（推定を優先して残す）。cite は付けてよい
+    const guess = it.guess === true;
+    const known = !guess && it.cite === undefined && !w && (it.known === true || w === null);
+    return { text, ...(c ? { cite: c } : c === null ? { unverified: true as const } : {}), ...(w && !guess ? { web: w } : {}), ...(known ? { known: true as const } : {}), ...(guess ? { guess: true as const } : {}) };
   });
   const tail = plain(output.tail ?? '').trim();
   return { lead: plain(output.lead), items, ...(tail === '' ? {} : { tail }) };

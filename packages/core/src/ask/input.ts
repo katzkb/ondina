@@ -4,9 +4,9 @@
 // - 束のメンバーは代表と逸脱だけ渡す（1 回目の LLM の入力と同じ絞り方）
 // - この場所の行はここで全部入れる。足りなければ案内人が need で頼み、serve が head から読んで reads に足す（2026-11-04）
 // - PR の本文・チケット・背景も入れる（2026-11-04。題しか渡さなかったときは、理由が本文とチケットにあっても「材料からは分からない」と答えた）
-import type { Analysis, AskEntry, AskLines, AskPlace, Background, ExcerptBlock, Hunk, Symbol as OndinaSymbol, Ticket, TokenLine } from '../model.js';
+import type { Analysis, CommitNote, HunkIntent, AskEntry, AskLines, AskPlace, Background, ExcerptBlock, Hunk, Symbol as OndinaSymbol, Ticket, TokenLine } from '../model.js';
 import { ticketPlainText } from '../spec/input.js';
-import type { AskInput, AskInputHunk, AskInputPlace, AskInputRelated, AskInputSelected, AskInputStop } from './types.js';
+import type { AskInput, AskInputHunk, AskInputIntent, AskInputPlace, AskInputRelated, AskInputSelected, AskInputStop } from './types.js';
 
 /** 周りの場所（呼ぶ・呼ばれる・テスト）の上限。大きなシンボルでもプロンプトが膨らみすぎないように */
 const MAX_RELATED = 12;
@@ -14,6 +14,9 @@ const MAX_RELATED = 12;
 const MAX_HISTORY = 3;
 /** PR の本文とチケットの本文の上限（字）。超えたら切って末尾に ⋯ */
 export const ASK_TEXT_LIMIT = 4000;
+/** コミットの説明の件数の上限と、body 1 件の上限（字） */
+const MAX_COMMITS = 30;
+const COMMIT_BODY_LIMIT = 1000;
 
 const OUTSIDE = 0;
 
@@ -76,9 +79,11 @@ export function buildAskInput(analysis: Analysis, place: AskPlace, question: str
   const body = clip(analysis.pr.body ?? '');
   const ticket = analysis.pr.ticket;
   const background = analysis.background === undefined ? undefined : backgroundInput(analysis.background);
+  const commits = commitsInput(analysis.commits ?? []);
   return {
     pr: { title: analysis.pr.title, ...(body === '' ? {} : { body }), ...(ticket === undefined ? {} : { ticket: ticketInput(ticket) }) },
     ...(background === undefined ? {} : { background }),
+    ...(commits.length === 0 ? {} : { commits }),
     courses: analysis.hows.map((w) => ({ id: w.id, title: w.title, why: w.why })),
     place: buildPlace(analysis, place),
     history: history.slice(-MAX_HISTORY).map((e) => ({ question: e.question, answer: [e.answer.lead, ...e.answer.items.map((i) => i.text), ...(e.answer.tail ? [e.answer.tail] : [])].join('\n') })),
@@ -90,6 +95,19 @@ const clip = (s: string): string => {
   const t = s.trim();
   return t.length > ASK_TEXT_LIMIT ? `${t.slice(0, ASK_TEXT_LIMIT)}\n⋯` : t;
 };
+
+/** コミットの説明: sha は 7 字、古い順のまま先頭から 30 件、body は 1000 字で切って末尾に ⋯ */
+function commitsInput(commits: readonly CommitNote[]): NonNullable<AskInput['commits']> {
+  return commits.slice(0, MAX_COMMITS).map((c) => ({ sha: c.sha.slice(0, 7), title: c.title, body: c.body.length > COMMIT_BODY_LIMIT ? `${c.body.slice(0, COMMIT_BODY_LIMIT)}⋯` : c.body }));
+}
+
+/** 意図の notes を渡す形に。commit は 7 字に縮める */
+function intentInput(i: HunkIntent): AskInputIntent {
+  return {
+    notes: i.notes.map((n) => (n.kind === 'written' ? { kind: 'written' as const, from: n.from, quote: n.quote, text: n.text, ...(n.commit === undefined ? {} : { commit: n.commit.slice(0, 7) }) } : { kind: n.kind, text: n.text })),
+    ...(i.ask === undefined ? {} : { ask: i.ask }),
+  };
+}
 
 /** 取れなかったチケット（error）は ref だけ */
 function ticketInput(t: Ticket): NonNullable<AskInput['pr']['ticket']> {
@@ -114,6 +132,12 @@ function buildPlace(analysis: Analysis, place: AskPlace): AskInputPlace {
   const symbolOf = new Map(analysis.symbols.map((s) => [s.id, s]));
   const hunkSymbol = new Map(analysis.symbols.flatMap((s) => (s.hunkId === undefined ? [] : [[s.hunkId, s] as const])));
 
+  const intentOf = new Map((analysis.intents ?? []).map((x) => [x.hunkId, x]));
+  /** 自分の意図、無ければ追従の代表の意図（HunkIntent の決まり）。無ければ欄を出さない */
+  const intentFor = (h: Hunk | undefined): { intent: AskInputIntent } | Record<string, never> => {
+    const found = h === undefined ? undefined : (intentOf.get(h.id) ?? (h.group === undefined ? undefined : intentOf.get(h.group.representative)));
+    return found === undefined ? {} : { intent: intentInput(found) };
+  };
   const inputHunk = (h: Hunk): AskInputHunk => {
     const g = h.group;
     const role = g === undefined ? undefined : g.representative === h.id ? 'representative' : g.deviations.includes(h.id) ? 'deviation' : 'member';
@@ -122,6 +146,7 @@ function buildPlace(analysis: Analysis, place: AskPlace): AskInputPlace {
       path: h.path,
       ...(h.kind === 'none' ? {} : { kind: h.kind }),
       ...(g === undefined || role === undefined ? {} : { group: { pattern: g.pattern, members: g.members.length, role } }),
+      ...intentFor(h),
       lines: hunkLines(h),
     };
   };
@@ -155,6 +180,7 @@ function buildPlace(analysis: Analysis, place: AskPlace): AskInputPlace {
         path: s?.path ?? hunk?.path ?? '',
         changed: hunk !== undefined,
         test: hunk?.kind === 'test' || testFrom.has(step.symbolId),
+        ...intentFor(hunk),
         lines: linesOf(s, hunk),
       };
     });

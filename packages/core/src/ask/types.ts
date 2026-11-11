@@ -8,9 +8,19 @@ export interface AskInputLines {
   lines: string[];
 }
 
-/** 差分 1 つ（hunk）。group は追従の束のときの役（代表・逸脱・メンバー）とパターン */
+/**
+ * 差分の意図（Analysis.intents。追従のメンバーは代表の意図）。written = 作者が書いたもの（引用は検証済み。commit は 7 字）、guess / none = LLM の推定・書いていない
+ * ask = 意図が書かれていないときの作者への質問の下書き
+ */
+export interface AskInputIntent {
+  notes: Array<{ kind: 'written'; from: 'pr-body' | 'ticket' | 'parent' | 'commit'; quote: string; text: string; commit?: string } | { kind: 'guess'; text: string } | { kind: 'none'; text: string }>;
+  ask?: string;
+}
+
+/** 差分 1 つ（hunk）。group は追従の束のときの役（代表・逸脱・メンバー）とパターン。intent が無い = 意図の無い差分 */
 export interface AskInputHunk extends AskInputLines {
   symbol: string;
+  intent?: AskInputIntent;
   kind?: 'core' | 'ripple' | 'test';
   group?: { pattern: string; members: number; role: 'representative' | 'deviation' | 'member' };
 }
@@ -20,6 +30,7 @@ export interface AskInputStop extends AskInputLines {
   symbol: string;
   changed: boolean;
   test: boolean;
+  intent?: AskInputIntent;
 }
 
 /** コードの場所の周り。calls = この場所が呼ぶ、calledBy = この場所を呼ぶ、testedBy = この場所を確かめるテスト、referencedBy = この場所を参照する（束のメンバーは代表と逸脱だけ） */
@@ -74,6 +85,8 @@ export interface AskInput {
     existing?: Array<{ names: Array<{ fqName: string; path: string }>; text: string; removed: boolean }>;
     terms?: Array<{ word: string; code: string; meaning?: string }>;
   };
+  /** 差分の範囲のコミットの説明（sha は 7 字、古い順、30 件まで。body は 1000 字で切って末尾に ⋯）。無い = 説明が無い解析 */
+  commits?: Array<{ sha: string; title: string; body: string }>;
   courses: Array<{ id: number; title: string; why: string }>;
   place: AskInputPlace;
   /** 案内人が need で頼み、serve が head から読んだ物（頼んだ順）。無い = まだ頼んでいない */
@@ -101,6 +114,6 @@ export interface AskNeed {
 /** LLM の出力（検証前）。cite の line が null や欠けでも読んでおき、検証で場所を外す。web の url も形だけ読み、検証で http / https だけ採る */
 export interface AskOutput {
   lead: string;
-  items: Array<{ text: string; cite?: { path: string; side: string; line: number | null; endLine?: number | null }; web?: { url: string; title: string }; known?: true }>;
+  items: Array<{ text: string; cite?: { path: string; side: string; line: number | null; endLine?: number | null }; web?: { url: string; title: string }; known?: true; guess?: true }>;
   tail?: string;
 }

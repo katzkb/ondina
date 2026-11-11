@@ -601,11 +601,12 @@ export interface AskWeb {
 
 /**
  * 案内人の答え（10.5）。lead / tail は文、items は事実 1 つずつ。unverified = LLM が付けた行の場所が材料に無かった（場所を外した）。
- * web = ネットで調べたページ。known = 行の場所もページも無い、LLM が元から知っている事実（画面は「出典なし」）。どれも無い項目は材料の事実（件数など行を付けられないもの）
+ * web = ネットで調べたページ。known = 行の場所もページも無い、LLM が元から知っている事実（画面は「出典なし」）。どれも無い項目は材料の事実（件数など行を付けられないもの）。
+ * guess = 作者が書いていない「なぜ」を、LLM が材料から推し量った文（provenance: llm。画面は「推定」。cite は推定の元にした行で、付けてよい。web・known とは一緒にしない）
  */
 export interface AskAnswer {
   lead: string;
-  items: Array<{ text: string; cite?: AskCite; unverified?: true; web?: AskWeb; known?: true }>;
+  items: Array<{ text: string; cite?: AskCite; unverified?: true; web?: AskWeb; known?: true; guess?: true }>;
   tail?: string;
 }
 
