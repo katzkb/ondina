@@ -300,7 +300,7 @@ hunk 一覧の行:
 - フレーバーの明暗は `packages/web/src/theme.ts` の表 1 つに置く。プルダウンの中身・Mermaid の明暗・古い形の読み替えはそこから引く
 - アクセント色は選択可（mauve 既定、blue、lavender、teal、peach、pink）
 - 切り替えは設定のモーダル（上の帯の歯車。3.0）。2026-09-30 まではレールの最下部
-- 保存先は `.ondina/ui.json` の `theme`（`{ mode, light, dark, accent }`。PR をまたぐ。3.8）。画面のテーマは `ui.json` > `ondina.config.yaml` の `theme`（11 章）> 既定（システムに合わせる / latte / mocha / mauve）。解析がなくても効く（2026-10-11。それまでは PR ごとの `ReviewState` にあり、解析がないと押しても変わらず、push で headSha が変わると既定に戻っていた）
+- 保存先は `.ondina/ui.json` の `theme`（`{ mode, light, dark, accent }`。PR をまたぐ。3.8）。画面のテーマは `ui.json` > `ondina.config.yaml` の `theme`（11 章）> 既定（システムに合わせる / latte / mocha / mauve）。選べるテーマは Catppuccin の 4 つ（latte / frappe / macchiato / mocha）に、GitHub Light（`github-light`、ライト）と GitHub Dark（`github-dark`、ダーク）を足したもの。GitHub のテーマは GitHub（Primer）の色で、Catppuccin と同じ変数名（`--mauve` など）に GitHub の同名の色を入れる。アクセントもそのまま効く。コードの色は Shiki が付けた Catppuccin の役割名（`c-mauve` など）を CSS で GitHub の構文の色に読み替える。解析がなくても効く（2026-10-11。それまでは PR ごとの `ReviewState` にあり、解析がないと押しても変わらず、push で headSha が変わると既定に戻っていた）
 - 2026-10-22 より前の形 `{ flavor, accent }`（`ui.json` と yaml）は、読むときにそのフレーバーの明暗に固定する。ライトのフレーバーなら「ライト」で `light` に、ダークのフレーバーなら「ダーク」で `dark` に入れる。`ui.json` は次の保存で新しい形になる
 - UI フォント Inter（日本語は Noto Sans JP）、コードフォント JetBrains Mono
 - パネル配置は IDEA New UI に倣う: 背景 crust、パネル base、サブパネル mantle、境界 surface0
@@ -739,7 +739,7 @@ interface DisplayConfig {                    // 11章の表示だけの部分。
 }
 interface ThemeSettings {                    // 3.5（2026-10-22）
   mode: 'system' | 'light' | 'dark';         // system = OS の外観（prefers-color-scheme）に合わせる
-  light: string; dark: string;               // ライト・ダークのときのフレーバー（light は latte、dark は frappe / macchiato / mocha）
+  light: string; dark: string;               // ライト・ダークのときのフレーバー（light は latte / github-light、dark は frappe / macchiato / mocha / github-dark）
   accent: string;
 }
 ```
@@ -920,7 +920,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
 | 実装言語（CLI・パイプライン・UI） | TypeScript（Node 22） | Shiki が JS、tree-sitter は web-tree-sitter（wasm）で扱いやすい、LSP クライアントは `vscode-jsonrpc`、UI と型を共有できる。代替: Kotlin/JVM（jtreesitter + lsp4j）。Kotlin で書くなら UI との型共有は JSON Schema 経由 |
 | 構文解析 | web-tree-sitter + `@tree-sitter-grammars/tree-sitter-kotlin`（wasm 同梱） | 宣言単位の切り出しと AST 正規化。型解決は不要なので十分。fwcd 版の npm パッケージは wasm を同梱しない（ネイティブバインディングのみ）ため、wasm を同梱する tree-sitter-grammars 版を使う。ノード名はほぼ同じで、サンプル PR の構文は全てパースできることを確認済み。代替: fwcd 版を emscripten で自前ビルドして vendor する |
 | 意味解析 | JetBrains 公式 Kotlin Language Server（kotlin-lsp） | IntelliJ IDEA と同じ解析エンジン。Alpha。Gradle / Maven の JVM プロジェクト対応、Android Gradle Plugin は実験的、KMP は未対応。Homebrew cask `kotlin-lsp` または JetBrains のダウンロード CDN から取得 |
-| ハイライト | Shiki + Catppuccin 公式テーマ（`catppuccin-latte/frappe/macchiato/mocha` を同梱） | 色を手で書かない。意味トークンは VS Code の既定対応表でスコープに落として同じテーマで着色 |
+| ハイライト | Shiki + Catppuccin 公式テーマ（`catppuccin-latte/frappe/macchiato/mocha` を同梱） | 色を手で書かない。意味トークンは VS Code の既定対応表でスコープに落として同じテーマで着色。GitHub のテーマは Shiki を通さず、同じ Catppuccin の役割名を CSS で GitHub の構文の色に塗り替える |
 | レイアウト | elkjs（layered） | コースの地図。層状レイアウトが本業。描画は自前 SVG（React Flow は不要） |
 | UI | React + Vite、CSS 変数（Catppuccin） | プロトタイプは素の JS。本実装ではコンポーネント化。Tailwind は使わない（デザイントークンを CSS 変数で持つ） |
 | LLM | 外部の LLM コマンド（`sh -c` で起動、stdin にプロンプト、stdout に JSON。既定は `claude -p`、Codex / OpenCode などに差し替え可。5.3） | 1 回のラベリングで十分。特定ベンダーの SDK は持たない（2026-09-17 決定。Claude 限定にしない、サブスクリプションで使える）。出力の形は Stage 3 で検査 |
@@ -1571,7 +1571,7 @@ ide: { scheme: jetbrains, product: idea, project: order-service }
 - **テストの置き場を書かないとき**（2026-10-12）: `layers` の `Tests` も `sourceRoots` の `test` もなければ、テストは構成の推定の `tests` で見分ける（5.2 の 7）。書けば推定より優先される。`layers` を書いて `Tests` を書かないと、構成の推定が走らないので何もテストにならない（analyze の stderr に「テストを見分けていません」と 1 行出す）
 - **`lsp` を書かないとき**（2026-10-09）: kotlin は既定の起動方法で、コマンドは環境変数 `ONDINA_LSP_COMMAND`、なければ kotlin-lsp の置き場（9.1）
 - **ないとき**: 既定値で動く（ゲートしない）。`analyze` は stderr に `ondina.config.yaml がないので既定の設定で解析します` を 1 行出す。既定値: `sourceRoots: []`、`layers: []`、`allowedDependencies: {}`、`normalize: {}`、`lsp: {}`、`theme: { system, latte, mocha, mauve }`、`ide: { jetbrains, idea }`（`project` はなければ対象リポジトリのディレクトリ名）、`packagePrefix` なし（短縮しない）
-- **検証**: 使うキーだけ型を検査し、違えば `analyze` はエラーで止めてキー名と直し方を 1 行で出す（例: `ondina.config.yaml: layers[1].match は文字列の配列にしてください`）。定義されていないキーは無視する。`layers` の名前の重複と、`allowedDependencies` が `layers` にない層名を指すのはエラー。`theme.mode` は `system` / `light` / `dark`、`theme.light` はライトのフレーバー（latte）、`theme.dark` はダークのフレーバー（frappe / macchiato / mocha）、`theme.accent` は既知のアクセントだけ（明暗は `@catppuccin/palette` の `dark` から引く）。古い `theme.flavor` はエラーにせず、3.5 と同じくそのフレーバーの明暗に固定して読む（値は 4 つのフレーバーのどれか）。`ide.scheme` は `jetbrains` だけ。構文エラーも `analyze` を止める。`serve` は止められないので stderr に出して既定値で描く
+- **検証**: 使うキーだけ型を検査し、違えば `analyze` はエラーで止めてキー名と直し方を 1 行で出す（例: `ondina.config.yaml: layers[1].match は文字列の配列にしてください`）。定義されていないキーは無視する。`layers` の名前の重複と、`allowedDependencies` が `layers` にない層名を指すのはエラー。`theme.mode` は `system` / `light` / `dark`、`theme.light` はライトのテーマ（latte / github-light）、`theme.dark` はダークのテーマ（frappe / macchiato / mocha / github-dark）、`theme.accent` は既知のアクセントだけ（明暗は `@catppuccin/palette` の `dark` から引く）。古い `theme.flavor` はエラーにせず、3.5 と同じくそのフレーバーの明暗に固定して読む（値は 4 つのフレーバーのどれか）。`ide.scheme` は `jetbrains` だけ。構文エラーも `analyze` を止める。`serve` は止められないので stderr に出して既定値で描く
 - **使う先（M0）**: `packagePrefix` → ⌘K の一覧などのパス短縮（`files.ts` の `shortPath`。差分一覧のファイル列は 2026-10-19 にファイルツリーにして短縮をやめた。3.4）、`theme` → `ui.json` に `theme` がないときのテーマ（3.5。一度 UI で変えれば `ui.json` が優先される）、`ide` → `IDEA で開く`（3.6）。`layers` の glob 割当（5.2 の 4）は 2026-09-21 に実装（`Analysis.symbols` の `layer`）。**`layers` の並び順は割当に効く**ので、書き換えたら `analyze` を実行し直す必要がある。`normalize` は 8 章。`lsp` は 9.1 で使う（2026-09-21 に実装）。**LSP コマンドの解決順は 環境変数 `ONDINA_LSP_COMMAND` > yaml の `lsp.<language>.command` > kotlin-lsp の置き場**（値は実行ファイルのパス 1 本。`spawn(command, args)` で起動するので 2 語は渡せない）。`args` は yaml のままで、`{cacheDir}` だけ ondina が `.ondina/<key>/lsp/head` に置換する
 - fixture: `fixtures/order-service/ondina.config.yaml` を `build-repo.sh` がリポジトリ直下にコピーする
 

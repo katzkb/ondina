@@ -12,8 +12,9 @@ import { FLAVORS } from '../highlight/tokenizer.js';
 export const ACCENTS: readonly string[] = ['mauve', 'blue', 'lavender', 'teal', 'peach', 'pink'];
 
 const MODES: readonly ThemeMode[] = ['system', 'light', 'dark'];
-const LIGHT_FLAVORS = FLAVORS.filter((f) => !flavors[f].dark);
-const DARK_FLAVORS = FLAVORS.filter((f) => flavors[f].dark);
+// ライト・ダークの選択肢は Catppuccin のフレーバーに GitHub のテーマを足したもの（GitHub は画面の CSS だけの色で、Shiki は通さない。旧 theme.flavor は Catppuccin のまま）
+const LIGHT_FLAVORS: readonly string[] = [...FLAVORS.filter((f) => !flavors[f].dark), 'github-light'];
+const DARK_FLAVORS: readonly string[] = [...FLAVORS.filter((f) => flavors[f].dark), 'github-dark'];
 
 const DEFAULT_LSP = { args: [] as string[], readyTimeoutSec: 600 };
 
