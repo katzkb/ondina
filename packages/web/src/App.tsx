@@ -449,7 +449,7 @@ export function App({ api = httpApi, initialKey }: { api?: Api; initialKey?: str
             dispatch={dispatch}
           />
         )}
-        {s.view === 'req' && s.analysis && s.review && <RequirementCourseView analysis={s.analysis} review={s.review} at={s.requirement} selectedHunk={s.selectedHunk} memo={s.memo} mode={diffMode.c} focusLine={s.focusLine} speed={s.ui.mapSpeed ?? 1} zoom={s.mapZoom} dispatch={dispatch} />}
+        {s.view === 'req' && s.analysis && s.review && <RequirementCourseView analysis={s.analysis} review={s.review} at={s.requirement} selectedHunk={s.selectedHunk} memo={s.memo} mode={diffMode.c} focusLine={s.focusLine} speed={s.ui.mapSpeed ?? 1} zoom={s.mapZoom} current={s.current} packagePrefix={packagePrefix} send={s.send} canSend={canSend(s)} draftText={s.draftText} dispatch={dispatch} />}
         {s.view === 'course' && s.analysis && s.review && (
           <CourseView analysis={s.analysis} review={s.review} diffMode={diffMode.c} course={s.course} briefMap={s.briefMap} speed={s.ui.mapSpeed ?? 1} skipImports={s.ui.autoCheckImports === true} courseMap={s.courseMap} fullFile={s.fullFile} fold={s.fold} folded={s.courseFolded} panes={s.ui.panes} peek={s.peek} zoom={s.mapZoom} repoName={s.current?.repoName ?? null} memo={s.memo} draftText={s.draftText} focusLine={s.focusLine} {...defBack} treeShut={s.treeShut.course} ask={s.ask} dispatch={dispatch} />
         )}

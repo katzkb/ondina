@@ -28,6 +28,18 @@ export interface ClosingViewProps {
   dispatch: (c: Command) => void;
 }
 
+/** 「GitHub で承認」と一言（締めと、チケットのある PR の要求コースの最後のページが使う）。PR ページを開くだけで、いつでも押せる */
+export function ApproveButton({ prUrl, local, enterKey = true, dispatch }: { prUrl: string | undefined; local: boolean; /** Enter で押せる画面だけ印を出す */ enterKey?: boolean; dispatch: (c: Command) => void }) {
+  return (
+    <>
+      <button className="btn primary" type="button" disabled={!prUrl} title={prUrl ? 'GitHub の PR ページを新しいタブで開く' : 'PR 番号のない解析なので、開く PR ページがありません'} onClick={() => dispatch({ id: 'closing.approve' })}>
+        GitHub で承認{enterKey && <> <kbd>Enter</kbd></>}
+      </button>
+      <span className="muted">{local ? 'PR がないので、承認する PR ページはありません' : 'いつでも押せます。PR ページを開きます'}</span>
+    </>
+  );
+}
+
 export function ClosingView({ analysis, review, current, packagePrefix, send, canSend, memo, draftText, dispatch }: ClosingViewProps) {
   const f = useMemo(() => closingFacts(analysis, review), [analysis, review]);
   const outside = f.outside;
@@ -117,10 +129,7 @@ export function ClosingView({ analysis, review, current, packagePrefix, send, ca
         </div>
         <div className="side">
           <CommentDrafts comments={review.comments} send={send} canSend={canSend} local={local} githubDiff={analysis.githubDiff} memo={memo} draftText={draftText} packagePrefix={packagePrefix} dispatch={dispatch} />
-          <button className="btn primary" type="button" disabled={!prUrl} title={prUrl ? 'GitHub の PR ページを新しいタブで開く' : 'PR 番号のない解析なので、開く PR ページがありません'} onClick={() => dispatch({ id: 'closing.approve' })}>
-            GitHub で承認 <kbd>Enter</kbd>
-          </button>
-          <span className="muted">{local ? 'PR がないので、承認する PR ページはありません' : 'いつでも押せます。PR ページを開きます'}</span>
+          <ApproveButton prUrl={prUrl} local={local} dispatch={dispatch} />
           <button className="btn" type="button" onClick={() => dispatch({ id: 'view.home' })}>
             全体図へ
           </button>

@@ -17,6 +17,9 @@ import type { HomeState } from '../state/reducer.js';
 import { ExplainView } from './ExplainView.js';
 import { Key } from './Key.js';
 import { LlmNotice } from './LlmNotice.js';
+import { chapterLabel, chapterText, NO_REQUIREMENT } from '../requirement.js';
+import { startMap } from '../requirementMap.js';
+import { RequirementMap } from './RequirementCourseView.js';
 import { MapNotice } from './MapNotice.js';
 
 export interface HomeViewProps {
@@ -32,6 +35,9 @@ export interface HomeViewProps {
   /** 差し替えはテスト用（jsdom に Web Worker が無い） */
   elk?: () => ElkLike;
 }
+
+// eslint-disable-next-line ondina/wording-endings -- 承認済みの見本で決めた短い状態ラベル
+const MISSING_LABEL = '差分が見つからない';
 
 const label = (id: number) => (id === OUTSIDE ? '外' : String(id));
 
@@ -57,7 +63,8 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
 
   const nx = nextCourse(all, review);
   // 選んでいなければ次のコース。全部完了なら締めへ（コースが無くコース外だけのときはコース外。reducer の startHome と同じ）
-  const start = analysis.chapters ? 'コース 1 から始める' : sel ? `${sel.id === OUTSIDE ? 'コース外' : `コース ${sel.id} `}に入る` : nx ? `コース ${nx.id} から始める` : all.some((c) => c.id !== OUTSIDE) ? '締めへ' : all.length > 0 ? 'コース外から始める' : null;
+  const chapters = analysis.chapters;
+  const start = chapters ? 'はじめから読む' : sel ? `${sel.id === OUTSIDE ? 'コース外' : `コース ${sel.id} `}に入る` : nx ? `コース ${nx.id} から始める` : all.some((c) => c.id !== OUTSIDE) ? '締めへ' : all.length > 0 ? 'コース外から始める' : null;
   const completed = new Set(review.course?.completed ?? []);
 
   const onNode = (id: string) => {
@@ -77,12 +84,18 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
           </button>
         </span>
         <h2>{analysis.pr.title}</h2>
-        <span className="chip">{`差分 ${analysis.hunks.length} · コース ${all.filter((c) => c.id !== OUTSIDE).length} · 外 ${outside}`}</span>
-        <span className="share" aria-label="コースごとの差分の割合">
-          {share.map((x) => (
-            <i key={x.id} className={`cc${x.id}`} style={{ ...courseBg(x.id), flexGrow: x.n }} title={`${x.id === OUTSIDE ? 'コース外' : `コース ${x.id}`}: 差分 ${x.n}`} />
-          ))}
-        </span>
+        {chapters ? (
+          <span className="chip">{`差分 ${analysis.hunks.length} · 要求 ${chapters.filter((c) => c.kind === 'spec').length}`}</span>
+        ) : (
+          <>
+            <span className="chip">{`差分 ${analysis.hunks.length} · コース ${all.filter((c) => c.id !== OUTSIDE).length} · 外 ${outside}`}</span>
+            <span className="share" aria-label="コースごとの差分の割合">
+              {share.map((x) => (
+                <i key={x.id} className={`cc${x.id}`} style={{ ...courseBg(x.id), flexGrow: x.n }} title={`${x.id === OUTSIDE ? 'コース外' : `コース ${x.id}`}: 差分 ${x.n}`} />
+              ))}
+            </span>
+          </>
+        )}
         <span className="sp" />
         <AskButton className="btn" />
         {start && (
@@ -94,7 +107,12 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
       <LlmNotice llm={analysis.llm} text={analysis.llmText} dispatch={dispatch} />
       <MapNotice analysis={analysis} />
       <div className="hubbody">
-        {home.tab === 'map' && analysis.flows && analysis.flows.length > 0 ? (
+        {chapters && home.tab === 'map' ? (
+          // チケットのある PR は、要求コースの「はじめに」と同じ地図（箱に要求のチップ）
+          <div className="req-home-map" aria-label="全体の地図">
+            <RequirementMap analysis={analysis} at={{ ...NO_REQUIREMENT, chapter: 'start', map: { flow: home.flow, step: home.step, play: home.play } }} plan={startMap(analysis, home.flow)} speed={speed} zoom={zoom} dispatch={dispatch} {...(elk ? { elk } : {})} />
+          </div>
+        ) : home.tab === 'map' && analysis.flows && analysis.flows.length > 0 ? (
           <FlowMap
             analysis={analysis}
             flows={analysis.flows}
@@ -128,6 +146,36 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
           <ExplainView analysis={analysis} flavor={flavor} sel={home.sel} ticketOpen={home.ticket} stage={home.stage} dispatch={dispatch} />
         )}
       </div>
+      {chapters ? (
+        <div className="cards" role="list" aria-label="章の並び">
+          {chapters.map((c, i) => {
+            const seen = c.hunkIds.filter((id) => review.viewed.includes(id)).length;
+            const text = chapterText(analysis, c);
+            return (
+              <div key={i} role="listitem" className="ccard">
+                <button type="button" className="pick" onClick={() => dispatch({ id: 'req.go', chapter: i })} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}>
+                  <span className="h">
+                    <b>{chapterLabel(analysis, i)}</b>
+                    {c.kind === 'spec' && c.hunkIds.length === 0 && <span className="chip d">{MISSING_LABEL}</span>}
+                  </span>
+                  {text !== '' && <span className="req-short" title={text}>{text}</span>}
+                  {c.hunkIds.length > 0 && (
+                    <>
+                      <small>
+                        <span>{`${seen} / ${c.hunkIds.length}`}</span>
+                        <span>{`差分 ${c.hunkIds.length}`}</span>
+                      </small>
+                      <span className="bar">
+                        <i style={{ width: `${Math.round((seen / c.hunkIds.length) * 100)}%` }} />
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
       <div className="cards" role="list" aria-label="コースの並び">
         {all.length === 0 && <div className="empty">コースがありません（LLM が目的ごとに分けていない解析）</div>}
         {all.map((c) => {
@@ -168,6 +216,7 @@ export function HomeView({ analysis, review, flavor, home, zoom, speed = 1, disp
           );
         })}
       </div>
+      )}
     </section>
   );
 }

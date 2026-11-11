@@ -759,7 +759,7 @@ function reduceAll(state: AppState, command: Command): Reduced {
       ];
       // 同じ PR のバージョン（解析し直して切り替えた・同じ版を解析し直した・左上で選んだ）なら、今の画面と選んでいるファイルのまま。コースにいれば同じコースの最初の未確認の停留所へ
       const keep = sameVersionPlace(state, command.summary, command.analysis, review, files);
-      return { effects, state: {
+      const next: AppState = {
         ...state,
         view: command.view ?? keep?.view ?? 'home',
         home: { tab: 'text', sel: null, ticket: false, stage: 1, mapStage: 1, flow: null, step: 0, play: false },
@@ -792,7 +792,11 @@ function reduceAll(state: AppState, command: Command): Reduced {
         ask: NO_ASK,
         focusLine: null,
         treeShut: NO_TREE,
-      } };
+      };
+      // チケットのある PR は目的ごと・締めの画面を持たない（前の版で開いていた画面・AI レビューの「見る」から着く締めも要求コースへ）
+      const view = next.view;
+      const settled = command.analysis.chapters && (view === 'hows' || view === 'closing') ? requirementGo({ ...next, analysis: command.analysis, review }, view === 'closing' ? 'end' : 'start').state : next;
+      return { effects, state: settled };
     }
     case 'analysis.select':
       return { state, effects: [{ type: 'loadAnalysis', key: command.key, headSha: command.headSha }] };
@@ -840,10 +844,14 @@ function reduceAll(state: AppState, command: Command): Reduced {
     case 'view.home':
       return none({ ...state, view: 'home', ...LEAVE });
     case 'view.hows':
+      // チケットのある PR には目的ごとの画面を出さない。要求コースの「はじめに」へ
+      if (loaded(state) && state.analysis.chapters) return requirementGo(state, 'start');
       return none({ ...state, view: 'hows', peek: null });
     case 'view.diff':
       return none({ ...state, view: 'diff', peek: null });
     case 'view.closing':
+      // 締めの中身は要求コースの最後のページにある
+      if (loaded(state) && state.analysis.chapters) return requirementGo(state, 'end');
       return none({ ...state, view: 'closing', peek: null });
     case 'view.course':
       if (loaded(state) && state.analysis.chapters) return requirementGo(state, 'start');
@@ -1249,6 +1257,7 @@ function goTo(state: Loaded, page: Page): Reduced {
     case 'map':
       return via({ id: 'view.home' }, { id: 'home.tab', tab: 'map' });
     case 'hows': {
+      if (state.analysis.chapters) return requirementGo(state, 'start');
       if (page.how !== null && !state.analysis.hows.some((h) => h.id === page.how)) return explain();
       const r = via({ id: 'view.hows' });
       return { ...r, state: { ...r.state, selectedHow: page.how } };
@@ -1358,6 +1367,7 @@ function groupKeyOf(state: Loaded, hunkId: string | null): string | null {
  */
 function pick(state: Loaded, target: PaletteTarget): Reduced {
   const closed = { ...state, showPalette: false, peek: null };
+  if (target.kind === 'how' && state.analysis.chapters) return none(closed);
   if (target.kind === 'how') return none({ ...closed, view: 'hows', selectedHow: target.howId });
   if (target.kind === 'file') return none({ ...selectFile(closed, target.path).state, view: 'diff', showPalette: false });
   if (target.kind === 'callee') {
