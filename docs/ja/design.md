@@ -920,7 +920,7 @@ ondina.config.yaml ──▶ 追従検出(AST正規化) + パターン導出   �
 | 実装言語（CLI・パイプライン・UI） | TypeScript（Node 22） | Shiki が JS、tree-sitter は web-tree-sitter（wasm）で扱いやすい、LSP クライアントは `vscode-jsonrpc`、UI と型を共有できる。代替: Kotlin/JVM（jtreesitter + lsp4j）。Kotlin で書くなら UI との型共有は JSON Schema 経由 |
 | 構文解析 | web-tree-sitter + `@tree-sitter-grammars/tree-sitter-kotlin`（wasm 同梱） | 宣言単位の切り出しと AST 正規化。型解決は不要なので十分。fwcd 版の npm パッケージは wasm を同梱しない（ネイティブバインディングのみ）ため、wasm を同梱する tree-sitter-grammars 版を使う。ノード名はほぼ同じで、サンプル PR の構文は全てパースできることを確認済み。代替: fwcd 版を emscripten で自前ビルドして vendor する |
 | 意味解析 | JetBrains 公式 Kotlin Language Server（kotlin-lsp） | IntelliJ IDEA と同じ解析エンジン。Alpha。Gradle / Maven の JVM プロジェクト対応、Android Gradle Plugin は実験的、KMP は未対応。Homebrew cask `kotlin-lsp` または JetBrains のダウンロード CDN から取得 |
-| ハイライト | Shiki + Catppuccin 公式テーマ（`catppuccin-latte/frappe/macchiato/mocha` を同梱） | 色を手で書かない。意味トークンは VS Code の既定対応表でスコープに落として同じテーマで着色。GitHub のテーマは Shiki を通さず、同じ Catppuccin の役割名を CSS で GitHub の構文の色に塗り替える |
+| ハイライト | Shiki + Catppuccin 公式テーマ（`catppuccin-latte/frappe/macchiato/mocha` を同梱） | 色を手で書かない。意味トークンは VS Code の既定対応表でスコープに落として同じテーマで着色。GitHub のテーマは Shiki を通さず、同じ Catppuccin の役割名を CSS で GitHub の構文の色に塗り替える。近似のため、記号はコメントと同じ役割なので灰色（GitHub は本文の色）、`string` などの型名はオレンジ（GitHub は青）になる |
 | レイアウト | elkjs（layered） | コースの地図。層状レイアウトが本業。描画は自前 SVG（React Flow は不要） |
 | UI | React + Vite、CSS 変数（Catppuccin） | プロトタイプは素の JS。本実装ではコンポーネント化。Tailwind は使わない（デザイントークンを CSS 変数で持つ） |
 | LLM | 外部の LLM コマンド（`sh -c` で起動、stdin にプロンプト、stdout に JSON。既定は `claude -p`、Codex / OpenCode などに差し替え可。5.3） | 1 回のラベリングで十分。特定ベンダーの SDK は持たない（2026-09-17 決定。Claude 限定にしない、サブスクリプションで使える）。出力の形は Stage 3 で検査 |
