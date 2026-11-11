@@ -8,9 +8,11 @@ export type Scheme = 'light' | 'dark';
 /** id は styles.css の [data-flavor] と同じ */
 const THEMES: ReadonlyArray<{ id: string; name: string; scheme: Scheme }> = [
   { id: 'latte', name: 'Latte', scheme: 'light' },
+  { id: 'github-light', name: 'GitHub Light', scheme: 'light' },
   { id: 'frappe', name: 'Frappé', scheme: 'dark' },
   { id: 'macchiato', name: 'Macchiato', scheme: 'dark' },
   { id: 'mocha', name: 'Mocha', scheme: 'dark' },
+  { id: 'github-dark', name: 'GitHub Dark', scheme: 'dark' },
 ];
 
 /** core の ACCENTS と同じ列（web は core を読まない。原則 5） */

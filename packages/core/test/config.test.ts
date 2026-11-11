@@ -93,9 +93,13 @@ describe('parseConfig', () => {
 
   it('theme は選び方と、ライト・ダークそれぞれの Catppuccin のフレーバーとアクセントだけ受ける', () => {
     expect(() => parseConfig('theme: { mode: auto }\n')).toThrow("theme.mode は system / light / dark のどれかにしてください（'auto'）");
-    expect(() => parseConfig('theme: { light: mocha }\n')).toThrow("theme.light は latte のどれかにしてください（'mocha'）");
-    expect(() => parseConfig('theme: { dark: latte }\n')).toThrow("theme.dark は frappe / macchiato / mocha のどれかにしてください（'latte'）");
+    expect(() => parseConfig('theme: { light: mocha }\n')).toThrow("theme.light は latte / github-light のどれかにしてください（'mocha'）");
+    expect(() => parseConfig('theme: { dark: latte }\n')).toThrow("theme.dark は frappe / macchiato / mocha / github-dark のどれかにしてください（'latte'）");
     expect(() => parseConfig('theme: { accent: red }\n')).toThrow("theme.accent は mauve / blue / lavender / teal / peach / pink のどれかにしてください（'red'）");
+  });
+
+  it('theme.light / theme.dark は GitHub のテーマも受ける', () => {
+    expect(parseConfig('theme: { light: github-light, dark: github-dark }\n').theme).toEqual({ mode: 'system', light: 'github-light', dark: 'github-dark', accent: 'mauve' });
   });
 
   it('古い theme.flavor は、そのフレーバーの明暗に固定して読む', () => {

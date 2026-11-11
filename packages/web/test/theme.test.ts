@@ -25,13 +25,15 @@ describe('flavorOf', () => {
 
 describe('テーマの表', () => {
   it('プルダウンの中身はライトとダークで分かれる', () => {
-    expect(themesOf('light').map((t) => t.name)).toEqual(['Latte']);
-    expect(themesOf('dark').map((t) => t.name)).toEqual(['Frappé', 'Macchiato', 'Mocha']);
+    expect(themesOf('light').map((t) => t.name)).toEqual(['Latte', 'GitHub Light']);
+    expect(themesOf('dark').map((t) => t.name)).toEqual(['Frappé', 'Macchiato', 'Mocha', 'GitHub Dark']);
   });
 
   it('フレーバーの明暗', () => {
     expect(schemeOf('latte')).toBe('light');
     expect(schemeOf('macchiato')).toBe('dark');
+    expect(schemeOf('github-light')).toBe('light');
+    expect(schemeOf('github-dark')).toBe('dark');
   });
 });
 
@@ -49,6 +51,12 @@ describe('parseTheme', () => {
     expect(parseTheme({ mode: 'dusk', light: 'mocha', dark: 'latte', accent: 'red' })).toEqual(DEFAULT_THEME);
     expect(parseTheme({ mode: 'dark', dark: 'macchiato' })).toEqual({ mode: 'dark', light: 'latte', dark: 'macchiato', accent: 'mauve' });
     expect(parseTheme({ flavor: 'dracula', accent: 'teal' })).toEqual({ ...DEFAULT_THEME, accent: 'teal' });
+  });
+
+  it('GitHub のテーマも選べる', () => {
+    expect(parseTheme({ light: 'github-light' })?.light).toBe('github-light');
+    expect(parseTheme({ dark: 'github-dark' })?.dark).toBe('github-dark');
+    expect(parseTheme({ flavor: 'github-dark' })).toEqual({ ...DEFAULT_THEME, mode: 'dark', dark: 'github-dark' });
   });
 
   it('オブジェクトでなければ読まない', () => {
