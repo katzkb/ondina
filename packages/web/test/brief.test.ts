@@ -22,12 +22,12 @@ describe('placeLabel / lineLabel', () => {
 });
 
 describe('courseChecks', () => {
-  it('番号は並びの順。場所は読む順の番号と「execute 16 行」の呼び名', () => {
+  it('番号は並びの順。場所は読む順の番号と「execute 17 行」の呼び名', () => {
     const cs = courseChecks(analysis, c5, infos());
     expect(cs.map((c) => c.n)).toEqual([1, 2, 3, 4]);
     expect(cs[1]!.at.map((a) => [a.k, a.label])).toEqual([
-      [0, 'execute 16 行'],
-      [5, 'テスト 19 行'],
+      [0, 'execute 17 行'],
+      [2, 'Order 8 行'],
     ]);
     expect(cs[1]!.at[0]!.say).toBeTruthy();
   });
@@ -35,9 +35,9 @@ describe('courseChecks', () => {
   it('場所を全部「問題なし」にした確かめることだけ seen', () => {
     const [execute, , , , , missing] = c5.steps;
     const one = { ...review, viewed: [execute!.hunkId!] };
-    expect(courseChecks(analysis, c5, infos(one)).map((c) => c.seen)).toEqual([true, false, true, false]);
+    expect(courseChecks(analysis, c5, infos(one)).map((c) => c.seen)).toEqual([true, false, false, false]);
     const two = { ...review, viewed: [execute!.hunkId!, missing!.hunkId!] };
-    expect(courseChecks(analysis, c5, infos(two))[1]!.seen).toBe(true);
+    expect(courseChecks(analysis, c5, infos(two))[3]!.seen).toBe(true);
   });
 
   it('古い解析・LLM の無い解析は空。停留所に無い場所は落とし、場所が残らない文は出さない', () => {

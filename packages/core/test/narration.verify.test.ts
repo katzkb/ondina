@@ -315,10 +315,10 @@ describe('applyNarration（fixture の記録）', () => {
     }
   });
 
-  it('コース 5 の 2 つ目は execute の 16 行（find の呼び出し）とテストの行', () => {
+  it('コース 5 の 2 つ目は execute の 17 行（適用の呼び出し）と Order の行', () => {
     const t5 = r.tours.find((t) => t.howId === 5)!;
     const [execute] = t5.steps;
-    expect(t5.checks![1]!.at[0]).toMatchObject({ symbolId: execute!.symbolId, lines: [16] });
+    expect(t5.checks![1]!.at[0]).toMatchObject({ symbolId: execute!.symbolId, lines: [17] });
     expect(t5.checks![1]!.at).toHaveLength(2);
   });
 

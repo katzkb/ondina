@@ -1,17 +1,21 @@
 // 流れの地図（設計書 3.1。2026-11-05 の見本 flow5）のステップ。流れの木（Analysis.flows）を段ごとに「呼ぶ → 中の呼び出し → 戻る」の順に開く。
 // ① 背景 = 変わる前にある呼び出しだけ、② この PR = 全部（状態で色）、③ マージ後 = 変わった後にある呼び出しだけ。
 // コースの範囲では、そのコースの変更の呼び出しとその戻りだけで止まる（ほかは灰色）。ここは純粋関数（reducer と画面の両方が使う）
-import type { Analysis, CallFlow, FlowCall } from '@ondina/model';
+import type { Analysis, CallFlow, FlowCall, Provenance } from '@ondina/model';
 
 export type Stage = 1 | 2 | 3;
 
 export interface FlowStep {
   /** 1 から */
   i: number;
-  /** 呼び出しの番号（呼ばれる順。戻りは呼び出しと同じ番号） */
-  n: number;
+  /** 筋書きのステップは常に call。筋書きが無い流れだけ、呼び出しの後に戻りのステップが来る */
   dir: 'call' | 'ret';
-  call: FlowCall;
+  /** 通る呼び出し（呼ぶ順）。筋書きが無ければ 1 つ */
+  calls: FlowCall[];
+  /** calls と同じ並びの呼び出しの番号（その段を深さ優先で歩いた呼ばれる順。戻りは呼び出しと同じ番号） */
+  nums: number[];
+  /** 筋書きのステップだけ。provenance が llm なら画面は AI の札と点線 */
+  title?: { text: string; provenance: Provenance };
 }
 
 /** その段にある呼び出しか。根は入口の状態で決める（足しただけの入口は ① に無く、消しただけの入口は ③ に無い） */
@@ -21,28 +25,42 @@ export function inStage(c: FlowCall, stage: Stage): boolean {
   return stage === 1 ? c.before !== undefined : c.after !== undefined;
 }
 
-/** 段のステップ。入口がその段に無ければ空 */
+/** 段のステップ。入口がその段に無ければ空。筋書きがあれば筋書きのステップ（段にある呼び出しだけ。空は落とす）、無ければ呼び出しごとに 呼ぶ → 中 → 戻る */
 export function flowSteps(flow: CallFlow, stage: Stage): FlowStep[] {
-  const out: FlowStep[] = [];
-  let n = 0;
+  if (!inStage(flow.root, stage)) return [];
+  const nums = new Map<string, number>();
+  const byKey = new Map<string, FlowCall>();
+  const plain: FlowStep[] = [];
   const walk = (c: FlowCall) => {
-    const num = ++n;
-    out.push({ i: out.length + 1, n: num, dir: 'call', call: c });
+    const num = nums.size + 1;
+    nums.set(c.key, num);
+    byKey.set(c.key, c);
+    plain.push({ i: plain.length + 1, dir: 'call', calls: [c], nums: [num] });
     for (const k of c.kids) if (inStage(k, stage)) walk(k);
-    out.push({ i: out.length + 1, n: num, dir: 'ret', call: c });
+    plain.push({ i: plain.length + 1, dir: 'ret', calls: [c], nums: [num] });
   };
-  if (inStage(flow.root, stage)) walk(flow.root);
-  return out;
+  walk(flow.root);
+  const story: FlowStep[] = [];
+  for (const st of flow.story ?? []) {
+    const calls = st.calls.flatMap((k) => (nums.has(k) ? [byKey.get(k)!] : []));
+    if (calls.length === 0) continue;
+    story.push({ i: story.length + 1, dir: 'call', calls, nums: calls.map((c) => nums.get(c.key)!), title: { text: st.title, provenance: st.titleProvenance } });
+  }
+  // 筋書きがこの段の呼び出しを 1 つも含まなければ、今までどおり 1 呼び出しずつ
+  return story.length > 0 ? story : plain;
 }
 
-/** 段をまたいで同じステップを指す鍵 */
-export const stepKey = (s: FlowStep) => `${s.call.key}|${s.dir}`;
+/** 段をまたいで同じステップを指す鍵（筋書きのステップは先頭の呼び出し） */
+export const stepKey = (s: FlowStep) => `${s.calls[0]!.key}|${s.dir}`;
 
 /** 範囲: コースの番号、または色を付ける呼び出しの key の集合（要求コースの章） */
 export type Scope = number | ReadonlySet<string>;
 
-/** その範囲の変更のステップか（呼び出しとその戻り） */
-export const inCourse = (s: FlowStep, course: Scope) => (typeof course === 'number' ? s.call.courses.includes(course) : course.has(s.call.key));
+/** その範囲の変更の呼び出しか */
+export const callInCourse = (c: FlowCall, course: Scope) => (typeof course === 'number' ? c.courses.includes(course) : course.has(c.key));
+
+/** その範囲の変更のステップか（呼び出しのどれかが範囲に入る） */
+export const inCourse = (s: FlowStep, course: Scope) => s.calls.some((c) => callInCourse(c, course));
 
 /** コースの範囲はこの PR の段だけで効く（見本: ① と ③ は流れそのもの） */
 export const scoped = (stage: Stage, course: Scope | null): course is Scope => stage === 2 && course !== null;
@@ -93,10 +111,13 @@ export function carryStep(from: readonly FlowStep[], to: readonly FlowStep[], st
   const at = new Map(to.map((s) => [stepKey(s), s.i]));
   const same = at.get(stepKey(cur));
   if (same !== undefined) return same;
-  // 鍵は根からの道を / で繋いだもの。親の呼び出しの「呼ぶ」ステップへ
-  const parts = cur.call.key.split('/');
-  for (let k = parts.length - 1; k > 0; k--) {
-    const hit = at.get(`${parts.slice(0, k).join('/')}|call`);
+  // 呼び出しの key から、それを通る「呼ぶ」ステップへ
+  const callAt = new Map<string, number>();
+  for (const s of to) if (s.dir === 'call') for (const c of s.calls) if (!callAt.has(c.key)) callAt.set(c.key, s.i);
+  // 鍵は根からの道を / で繋いだもの。自分の呼び出し（呼ぶ向きのとき）、無ければ親の呼び出しの「呼ぶ」ステップへ
+  const parts = cur.calls[0]!.key.split('/');
+  for (let k = cur.dir === 'call' ? parts.length : parts.length - 1; k > 0; k--) {
+    const hit = callAt.get(parts.slice(0, k).join('/'));
     if (hit !== undefined) return hit;
   }
   return to[0]?.i ?? 0;

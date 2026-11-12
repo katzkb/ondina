@@ -185,6 +185,16 @@ describe('buildNarrationInput（fixture）', () => {
           '足した ApplyDiscountUseCase.execute: repository.save(order)',
           '足した OrderController.apply: repository.save(order)',
         ],
+        calls: [
+          { id: 'c1', call: '入口: OrderController.apply', status: '変えた' },
+          { id: 'c2', call: 'OrderController.apply: useCase.execute(OrderId(id), body.discountCode)', status: '変えた' },
+          { id: 'c3', call: 'ApplyDiscountUseCase.execute: repository.find(id)', status: '同じ' },
+          { id: 'c4', call: 'ApplyDiscountUseCase.execute: order.applyDiscount(DiscountCommand(code))', status: '足した' },
+          { id: 'c5', call: 'domain.Order: DiscountPolicy.rateFor(cmd.code)', status: '足した' },
+          { id: 'c6', call: 'ApplyDiscountUseCase.execute: repository.save(order)', status: '足した' },
+          { id: 'c7', call: 'OrderController.apply: repository.save(order)', status: '足した' },
+          { id: 'c8', call: 'OrderController.apply: OrderResponse.from(order)', status: '同じ' },
+        ],
       },
     ]);
   });

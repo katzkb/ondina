@@ -152,6 +152,11 @@ export function stageOf(call: FlowCall, side: Side): FlowCall | undefined {
   return { ...call, kids: call.kids.map((k) => stageOf(k, side)).filter((k): k is FlowCall => k !== undefined) };
 }
 
+/** 呼び出しの木を深さ優先（呼ぶ順）で平らにする。根を含む。LLM への入力の id（c1 から）と筋書きの検査が同じ順を使う（2026-11-12） */
+export function flowCallsInOrder(root: FlowCall): FlowCall[] {
+  return [root, ...root.kids.flatMap(flowCallsInOrder)];
+}
+
 function rootStatus(h: Pick<Hunk, 'lines'> | undefined): FlowCall['status'] {
   if (h === undefined) return 'changed';
   const has = (c: string) => h.lines.some((l) => l[0] === c);

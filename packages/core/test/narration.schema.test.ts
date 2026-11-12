@@ -20,7 +20,7 @@ const good = {
       stops: [{ symbolId: 's1', role: '注文。割引額を持つ。' }],
     },
   ],
-  behaviors: [{ id: 'f1', title: '割引コードで割り引く', before: '注文を読んで返す。', change: '割引を計算するようになる。', after: '受け取る → 計算する → 返す。' }],
+  behaviors: [{ id: 'f1', title: '割引コードで割り引く', before: '注文を読んで返す。', change: '割引を計算するようになる。', after: '受け取る → 計算する → 返す。', steps: [] }],
 };
 
 describe('parseNarrationOutput', () => {
@@ -36,7 +36,12 @@ describe('parseNarrationOutput', () => {
   });
 
   it('動きの題: 題が欠けたら空、id が文字列でなければ失敗', () => {
-    expect(parseNarrationOutput('{"behaviors":[{"id":"b1"}]}')).toMatchObject({ output: { behaviors: [{ id: 'b1', title: '', before: '', change: '', after: '' }] } });
+    expect(parseNarrationOutput('{"behaviors":[{"id":"b1"}]}')).toMatchObject({ output: { behaviors: [{ id: 'b1', title: '', before: '', change: '', after: '', steps: [] }] } });
+    expect(parseNarrationOutput('{"behaviors":[{"id":"f1","steps":[{"title":"受け取る","calls":["c1","c2"]},{"title":"返す"}]}]}')).toMatchObject({
+      output: { behaviors: [{ id: 'f1', steps: [{ title: '受け取る', calls: ['c1', 'c2'] }, { title: '返す', calls: [] }] }] },
+    });
+    expect(parseNarrationOutput('{"behaviors":[{"id":"f1","steps":{}}]}')).toEqual({ error: 'behaviors[0].steps が配列ではありません' });
+    expect(parseNarrationOutput('{"behaviors":[{"id":"f1","steps":[{"title":"a","calls":[1]}]}]}')).toEqual({ error: 'behaviors[0].steps[0].calls が文字列の配列ではありません' });
     expect(parseNarrationOutput('{"behaviors":[{"id":1}]}')).toEqual({ error: 'behaviors[0].id が文字列ではありません' });
   });
 

@@ -69,6 +69,11 @@ export interface NarrationInputBehavior {
   after: string[];
   /** この PR で変わった呼び出し（②）。呼ぶ順に「足した / 変えた / 消した 呼ぶ側: 式」。変えたもので式が違えば「前の式 → 後の式」 */
   changes: string[];
+  /**
+   * 呼び出しの一覧（2026-11-12。② の木の深さ優先の順。根も含む）。id は "c1" から。LLM は筋書きのステップに id を並べる。
+   * call は「呼ぶ側の短い名前: 呼び出しの式」（式が無ければ呼ばれる側の短い名前）。根は「入口: <入口の短い名前>」
+   */
+  calls: Array<{ id: string; call: string; status: '足した' | '変えた' | '消した' | '同じ' }>;
 }
 
 export interface NarrationInput {
@@ -113,7 +118,8 @@ export interface NarrationOutput {
   courses: Array<{ howId: number; change: { before: string; after: string }; checks: NarrationOutputCheck[]; stops: Array<{ symbolId: string; role: string }> }>;
   /**
    * 流れの題（2026-11-04）と段ごとの文（2026-11-05。before = ① 背景、change = ② この PR、after = ③ マージ後）。並びが見せる順。
-   * 古い記録には無い（空。段の文は空文字）
+   * steps = 筋書き（2026-11-12）。1 ステップ = 何が起きるかの見出しと、通る呼び出しの id（入力の behaviors[].calls[].id）。
+   * 古い記録には無い（空。段の文は空文字、steps は空配列）
    */
-  behaviors: Array<{ id: string; title: string; before: string; change: string; after: string }>;
+  behaviors: Array<{ id: string; title: string; before: string; change: string; after: string; steps: Array<{ title: string; calls: string[] }> }>;
 }

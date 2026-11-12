@@ -8,7 +8,7 @@
 //   （呼ぶ順と状態はプログラムが組んだ事実。原則 3）。入力の欄の名前は behaviors のまま
 // - 作者の説明・前回の結果・辺・層の無いパスは渡さない（文を書くのに要らない。入口の説明は差分だけから書く）
 import { shortName } from '../behavior/build.js';
-import { stageOf } from '../flow/build.js';
+import { flowCallsInOrder, stageOf } from '../flow/build.js';
 import type { Edge, CallFlow, FlowCall, How, Hunk, Symbol as OndinaSymbol, Tour } from '../model.js';
 import { headLines } from '../hunks/changed-lines.js';
 import type { RemovedDeclaration } from '../hunks/removed.js';
@@ -98,12 +98,19 @@ export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, 
       const expr = k.status === 'removed' ? (pre ?? nameOf(k.to)) : k.status === 'changed' && pre !== undefined && post !== undefined && pre !== post ? `${pre} → ${post}` : (post ?? pre ?? nameOf(k.to));
       return [...(k.status === 'same' ? [] : [`${CHANGE_WORD[k.status]} ${nameOf(k.from!)}: ${expr}`]), ...changesOf(k)];
     });
+  const callsList = (f: CallFlow): NarrationInputBehavior['calls'] =>
+    flowCallsInOrder(f.root).map((c, i) => ({
+      id: `c${i + 1}`,
+      call: c.from === null ? `入口: ${nameOf(c.to)}` : `${nameOf(c.from)}: ${c.after?.call?.text ?? c.before?.call?.text ?? nameOf(c.to)}`,
+      status: CALL_STATUS_WORD[c.status],
+    }));
   const moves = flows.map((f): NarrationInputBehavior => ({
     id: f.id,
     start: symbolOf.get(f.root.to)?.fqName ?? f.root.to,
     before: sideCalls(f.root, 'before'),
     after: sideCalls(f.root, 'after'),
     changes: changesOf(f.root),
+    calls: callsList(f),
   }));
   const used = [...new Map(courses.flatMap((c) => c.related.filter((r) => r.dir === 'out')).map((r) => [r.symbol, r])).values()];
 
@@ -121,6 +128,7 @@ export function buildNarrationInput({ base, hows, hunks, symbols, edges, tours, 
   };
 }
 
+const CALL_STATUS_WORD = { same: '同じ', changed: '変えた', added: '足した', removed: '消した' } as const;
 const CHANGE_WORD = { added: '足した', changed: '変えた', removed: '消した' } as const;
 
 /** 統合形式の行の頭に head の行番号と「|」を付ける。削除の行（"-"）は番号の代わりに空白。桁はいちばん大きい番号に揃える */
