@@ -1,6 +1,8 @@
 // 要求コースの地図の状態: ← / → は章の移動のまま、再生帯の前・次（map.prev / map.next）だけが地図を進める
 import { describe, expect, it } from 'vitest';
+import type { CallFlow, FlowCall } from '@ondina/model';
 import type { Command } from '../src/commands/commands.js';
+import { flowSteps } from '../src/map/flowmap/steps.js';
 import { initialState, reduce, type AppState } from '../src/state/reducer.js';
 import { emptyReview } from './fixture.js';
 import { requirementAnalysis } from './requirementFixture.js';
@@ -88,5 +90,35 @@ describe('requirement course map', () => {
     expect(home.view).toBe('home');
     expect(viaButton.home.step).toBeGreaterThan(0);
     expect(viaButton.home).toEqual(viaKey.home);
+  });
+
+  it('入口の地図タブは、画面と同じ ② のステップ数で再生・次が最後まで進む（① のステップ数で止まらない）', () => {
+    // ① に無い（足された）呼び出しを含む流れ: ① は 4 ステップ、② は 6 ステップ
+    const call = (key: string, status: FlowCall['status'], kids: FlowCall[] = []): FlowCall => ({
+      key,
+      from: key === '>root#1' ? null : '>root#1',
+      to: key,
+      status,
+      ...(status === 'added' ? {} : { before: {} }),
+      ...(status === 'removed' ? {} : { after: {} }),
+      courses: [],
+      kids,
+    });
+    const flow: CallFlow = { id: 'f1', title: 't', titleProvenance: 'ast', root: call('>root#1', 'same', [call('a', 'same'), call('b', 'added')]) };
+    const base = loaded();
+    const analysis = { ...base.analysis!, flows: [flow] };
+    const s0 = run({ ...base, analysis } as AppState, { id: 'home.tab', tab: 'map' });
+    const last = flowSteps(flow, 2).at(-1)!.i;
+    expect(flowSteps(flow, 1).at(-1)!.i).toBeLessThan(last);
+    expect(s0.home.mapStage).toBe(1);
+
+    let s = run(s0, { id: 'map.play' });
+    for (let k = 0; k < 20; k++) s = run(s, { id: 'map.tick' });
+    expect(s.home.step).toBe(last);
+    expect(s.home.play).toBe(false);
+
+    s = s0;
+    for (let k = 0; k < 20; k++) s = run(s, { id: 'map.next' });
+    expect(s.home.step).toBe(last);
   });
 });

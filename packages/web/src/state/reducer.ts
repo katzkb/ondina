@@ -1179,8 +1179,14 @@ function flowNav(state: Loaded): { at: MapWhere; nav: BriefMap; steps: FlowStep[
   if (state.view === 'home' && state.home.tab === 'map') {
     const h = state.home;
     at = 'home';
-    nav = { stage: h.mapStage, flow: h.flow, step: h.step, play: h.play };
-    course = sel = h.sel;
+    if (state.analysis.chapters !== undefined) {
+      // チケットのある PR の入口の地図は画面が ②・範囲なしで描くので、ステップ数もそれで数える
+      nav = { stage: 2, flow: h.flow, step: h.step, play: h.play };
+      course = sel = null;
+    } else {
+      nav = { stage: h.mapStage, flow: h.flow, step: h.step, play: h.play };
+      course = sel = h.sel;
+    }
     flows = state.analysis.flows ?? [];
   } else if (state.view === 'course' && state.course?.screen === 'brief' && state.peek === null) {
     at = 'brief';
