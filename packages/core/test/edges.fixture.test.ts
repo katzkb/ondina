@@ -79,12 +79,13 @@ describe('buildCallGraph（fixture・実機の記録）', () => {
     expect(baseline.map((s) => s.fqName)).toContain('com.example.order.domain.DiscountPolicy.rateFor');
   });
 
-  it('呼び出し関係を測れなかった変更シンボルが 26 件（戻り型が value class の関数など。9 章）', async () => {
+  it('callHierarchy が答えなかった変更シンボルのうち、関数は references の補いで測れた扱いになり、残るのは 3 件（クラス・プロパティ。9 章）', async () => {
     const { symbols, unmeasured } = await run();
-    expect(unmeasured).toBe(26);
-    expect(symbols.filter((s) => s.edgesMeasured === false)).toHaveLength(26);
-    // Order.total() は Money（value class）を返すので callHierarchy に出てこない
-    expect(symbols.find((s) => s.fqName === 'com.example.admin.OrderAdminView.discountField')!.edgesMeasured).toBe(false);
+    expect(unmeasured).toBe(3);
+    expect(symbols.filter((s) => s.edgesMeasured === false)).toHaveLength(3);
+    expect(symbols.filter((s) => s.edgesMeasured === false).every((s) => s.kind !== 'function')).toBe(true);
+    // 戻り型が value class の関数。callHierarchy は答えないが、references は 0 件と測れている
+    expect(symbols.find((s) => s.fqName === 'com.example.admin.OrderAdminView.discountField')!.edgesMeasured).toBe(true);
   });
 
   it('testCount はテストの数。OrderRepositoryImpl.save は 3 件のテストから呼ばれている', async () => {

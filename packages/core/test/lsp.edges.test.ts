@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Hunk, Symbol as OndinaSymbol } from '@ondina/model';
 import { hunkId } from '../src/hunks/stable-id.js';
 import { buildSymbols } from '../src/symbols/build.js';
-import { buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphSource, type CallItem } from '../src/lsp/edges.js';
+import { buildBaseCallEdges, buildCallGraph, crossesLayers, fqNameOf, signatureTypes, symbolKindOf, type CallGraphSource, type CallItem } from '../src/lsp/edges.js';
 
 const DOMAIN = { name: 'Domain', match: ['**/domain/**'] };
 const API = { name: 'API', match: ['**/api/**'] };
@@ -559,5 +559,85 @@ describe('buildCallGraph の未変更シンボルの行（設計書 3.3）', () 
       () => 'x\n'.repeat(20),
     );
     expect(r.symbols.filter((s) => s.changed).every((s) => s.excerpt === undefined)).toBe(true);
+  });
+});
+
+describe('buildCallGraph の references での補い（引数か戻り型が value class の関数。issue #47）', () => {
+  const total = hunk(ORDER, 'com.example.order.domain.Order.total');
+  const showId = hunkId(CONTROLLER, 'com.example.order.api.OrderController.show');
+  const controllerRanges = [
+    { name: 'OrderController', kind: 5, start: 1, end: 30 },
+    { name: 'OrderController.show', kind: 6, start: 10, end: 15 },
+  ];
+  const testRanges = [
+    { name: 'OrderTest', kind: 5, start: 1, end: 30 },
+    { name: 'OrderTest.`checks total`', kind: 6, start: 10, end: 15 },
+  ];
+  const readHead = (p: string): string | undefined =>
+    p === CONTROLLER ? 'package com.example.order.api\n\nclass OrderController\n' : p === ORDER_TEST ? 'package com.example.order.domain\n' : undefined;
+  const failed = { probes: [{ hunkId: total.id }] };
+
+  it('probe が答えなかった関数は、references の位置を囲む未変更の宣言からの call 辺になり、測れた扱いになる', () => {
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: CONTROLLER, line: 12 }] }, testRefs: { [total.id]: [] }, ranges: { [CONTROLLER]: controllerRanges } }, readHead);
+    expect(r.edges).toEqual([expect.objectContaining({ from: showId, to: total.id, kind: 'call', lines: [13], provenance: 'lsp' })]);
+    const caller = r.symbols.find((s) => s.id === showId)!;
+    expect(caller).toMatchObject({ fqName: 'com.example.order.api.OrderController.show', changed: false, layer: 'API' });
+    expect(r.symbols.find((s) => s.id === total.id)!.edgesMeasured).toBe(true);
+    expect(r.unmeasured).toBe(0);
+  });
+
+  it('同じ呼び出し元が call hierarchy の item でも出ていれば、同じ Symbol に合わさる（二重にならない）', () => {
+    const real = item(CONTROLLER, 'com.example.order.api', 'OrderController.show(OrderId)');
+    const r = build([total], { ...failed, calls: [{ from: real, to: item(ORDER, 'com.example.order.domain', 'Order.total()'), kind: 'call', lines: [12] }], refs: { [total.id]: [{ path: CONTROLLER, line: 12 }] }, testRefs: { [total.id]: [] }, ranges: { [CONTROLLER]: controllerRanges } }, readHead);
+    expect(r.symbols.filter((s) => s.id === showId)).toHaveLength(1);
+    expect(r.edges.filter((e) => e.kind === 'call')).toHaveLength(1);
+  });
+
+  it('テストからの参照は、変わっていないテストなら辺にしない', () => {
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: ORDER_TEST, line: 12 }] }, testRefs: { [total.id]: [`${ORDER_TEST}#checks total`] }, ranges: { [ORDER_TEST]: testRanges } }, readHead);
+    expect(r.edges).toEqual([]);
+    expect(r.symbols.filter((s) => !s.changed)).toEqual([]);
+  });
+
+  it('変えたテスト関数からの参照は kind: test の辺にする', () => {
+    const test = hunk(ORDER_TEST, 'com.example.order.domain.OrderTest.`checks total`');
+    const r = build([total, test], { probes: [{ hunkId: total.id }, { hunkId: test.id, item: item(ORDER_TEST, 'com.example.order.domain', 'OrderTest.checks total()') }], refs: { [total.id]: [{ path: ORDER_TEST, line: 12 }] }, testRefs: { [total.id]: [`${ORDER_TEST}#checks total`] }, ranges: { [ORDER_TEST]: testRanges } }, readHead);
+    expect(r.edges).toEqual([expect.objectContaining({ from: test.id, to: total.id, kind: 'test' })]);
+  });
+
+  it('refs を測っていなければ未取得のまま。0 件なら測れた扱いで辺は無い', () => {
+    const none = build([total], failed, readHead);
+    expect(none.symbols[0]!.edgesMeasured).toBe(false);
+    expect(none.unmeasured).toBe(1);
+    const zero = build([total], { ...failed, refs: { [total.id]: [] } }, readHead);
+    expect(zero.symbols[0]!.edgesMeasured).toBe(true);
+    expect(zero.unmeasured).toBe(0);
+    expect(zero.edges).toEqual([]);
+  });
+
+  it('呼び出し元のファイルが読めなければ、その位置は捨てる（名前を揃えられない）', () => {
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: CONTROLLER, line: 12 }] }, testRefs: { [total.id]: [] }, ranges: { [CONTROLLER]: controllerRanges } });
+    expect(r.edges).toEqual([]);
+    expect(r.symbols[0]!.edgesMeasured).toBe(true);
+  });
+
+  it('package 行の無いファイルの宣言は detail 無しの名前になる', () => {
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: CONTROLLER, line: 12 }] }, testRefs: { [total.id]: [] }, ranges: { [CONTROLLER]: controllerRanges } }, () => 'class OrderController\n');
+    expect(r.symbols.find((s) => !s.changed)!.fqName).toBe('OrderController.show');
+  });
+
+  it('クラスの hunk は、答えが無く references があっても補わない（未取得のまま）', () => {
+    const cls = hunk(ORDER, 'com.example.order.domain.Order', { symbolKind: 'class' });
+    const r = build([cls], { probes: [{ hunkId: cls.id }], refs: { [cls.id]: [{ path: CONTROLLER, line: 12 }] }, ranges: { [CONTROLLER]: controllerRanges } }, readHead);
+    expect(r.edges).toEqual([]);
+    expect(r.symbols[0]!.edgesMeasured).toBe(false);
+    expect(r.unmeasured).toBe(1);
+  });
+
+  it('buildBaseCallEdges も同じ補いで call 辺と未変更シンボルを返す', () => {
+    const symbols = buildSymbols([total], LAYERS);
+    const base = buildBaseCallEdges({ probes: [{ hunkId: total.id }], calls: [], signatures: {}, testRefs: { [total.id]: [] }, refs: { [total.id]: [{ path: CONTROLLER, line: 12 }] }, ranges: { [CONTROLLER]: controllerRanges } }, { hunks: [total], symbols, layers: LAYERS, allowedDependencies: ALLOWED, readHead });
+    expect(base.edges.map((e) => [e.from, e.to, e.kind])).toEqual([[showId, total.id, 'call']]);
+    expect(base.symbols.map((s) => s.id)).toEqual([showId]);
   });
 });

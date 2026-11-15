@@ -1238,7 +1238,7 @@ Cases producing unavailable and reason text:
 
 Call relationships have gaps. **“Not called” and “not retrieved” differ**, so attach `Symbol.edgesMeasured: false` to changed symbols for which `prepareCallHierarchy` gave no response. `analyze` prints their count to stderr (principle 2).
 
-**Functions returning `@JvmInline value class` never appear in call relationships** (measured 6/6):
+**Functions taking or returning `@JvmInline value class` never appear in call relationships** (return types measured 6/6):
 
 | Declaration | Return type | `prepareCallHierarchy` |
 |---|---|---|
@@ -1249,13 +1249,15 @@ Call relationships have gaps. **“Not called” and “not retrieved” differ*
 | `ApplyDiscountUseCase.execute(...)` | `Order` | 1 item |
 | `OrderRepositoryImpl.save(Order)` | None (Unit) | 1 item |
 
-`Order.total()` is actually called by `OrderTest`, yet absent even from the caller's `outgoingCalls`. ondina cannot fill this gap.
+`Order.total()` is actually called by `OrderTest`, yet absent even from the caller's `outgoingCalls`.
+
+The cause is JVM name mangling (a function with a value class parameter or return type gets a suffixed JVM name), and `@JvmName` makes it answer (2026-11-15, measured for both parameter and return types on kotlin-lsp 271.2085.0). `textDocument/references` still answers, so **incoming calls to such a function are filled from references** (2026-11-16). The declaration enclosing each reference position (function or constructor, else property, else class, innermost first) becomes the caller of a `kind: 'call'` edge. The caller's name is the file's `package` line plus the declaration's dotted name, which yields the same FQ name as a call hierarchy item (positions in files that cannot be read are dropped). A reference from a test file becomes `kind: 'test'` only when the enclosing declaration is a changed test function (matching plain `incomingCalls`, which never returns tests). Zero references still counts as measured, so `edgesMeasured: true`; it stays `false` only when references were not measured. Class and property hunks are not filled. **Outgoing calls from such a function remain unmeasured** (they are not edges when the callee is unchanged). The base-side call relationships (step 1 of the flow map) ask references only for functions that got no answer and are filled the same way.
 
 Other things that do not become edges: operators (`subtotal - discount`), instance property reads (`order.discount`), constructors (`Order(...)`). **Companion property reads (`Money.Companion.ZERO`) do appear as edges**.
 
 **`incomingCalls` does not return calls from tests**. Incoming calls for `OrderRepositoryImpl.save` contain only two production-code calls, omitting three test locations. They appear in the test function's `outgoingCalls`, so **build test edges (`kind: 'test'`) from the test side**. Count `Symbol.testCount` from `textDocument/references`, not edges (round test-file references to their enclosing test functions; two calls from the same test count as one).
 
-Actual fixture counts: of 42 changed hunks (excluding file hunks), callHierarchy responded for 16; 20 call edges (10 test, two layer crossings); four unchanged symbols on paths; 26 could not be retrieved (on 2026-10-12, dropping calls from unchanged lines reduced 22 → 20 edges and 5 → 4 symbols).
+Actual fixture counts (before this fill): of 42 changed hunks (excluding file hunks), callHierarchy responded for 16; 20 call edges (10 test, two layer crossings); four unchanged symbols on paths; 26 could not be retrieved (on 2026-10-12, dropping calls from unchanged lines reduced 22 → 20 edges and 5 → 4 symbols). With the references fill, 23 functions count as measured (all have zero references, so no edges are added) and 3 remain unretrievable (two classes, one property).
 
 **Gaps filled by reference edges (measured 2026-09-23, implemented 2026-09-24)**: with call edges alone, 18 of 48 changed symbols had edges, and all 22 hunks in the follow-on bundle had none (not viable as a map). `textDocument/references` answers for properties and classes as well as functions (`Order.discount` ← 27 files, `Order` ← 28 files), so round reference positions to enclosing declarations and create `Edge(kind:'reference')` **only when both endpoints are changed symbols** (without this restriction, grows to 178 edges). Fixture has 46 reference edges (three layer crossings); changed symbols with edges increase from 18 → 40 / 48. Even `Order.total()` (value-class return), which callHierarchy does not answer, yields five references. Do not use reference edges for course paths (they have no order). Do not pass them to LLM input either.
 
