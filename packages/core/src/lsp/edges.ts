@@ -42,7 +42,12 @@ export interface CallGraphSource {
    * 変更 hunk の id → そのシンボルを参照している位置（宣言自身は含まない。テストも含む）。
    * 欄があって空 = 測って 0 件、欄が無い = 測っていない（原則 2）。2026-09-24 に足した（参照辺の材料）
    */
-  refs: Record<string, Array<{ path: string; line: number }>>;
+  refs: Record<string, Array<{
+    path: string;
+    line: number;
+    /** 参照がテストファイル（CLI の isTestPath）にある。欄が無い = テストファイルではない、または 2026-11-16 より前の記録 */
+    test?: true;
+  }>>;
   /** 参照が出たファイルの宣言の範囲。参照の位置を囲っている宣言へ丸めるため。name は入れ子を . で繋いだもの（"Order.total"） */
   ranges: Record<string, DeclarationRange[]>;
 }
@@ -299,15 +304,13 @@ function fallbackCalls(src: CallGraphSource, ctx: CallGraphContext, changedOf: (
     if (probe.item !== undefined || hunk === undefined || hunk.symbolKind !== 'function' || locations === undefined) continue;
     covered.add(hunk.id);
     const to: CallItem = { name: hunk.symbolFqName, kind: 12, path: hunk.path };
-    const tests = src.testRefs[hunk.id] ?? [];
     for (const loc of locations) {
       const range = enclosingDeclaration(src.ranges[loc.path] ?? [], loc.line);
       const detail = packageOf(loc.path);
       if (range === undefined || detail === undefined) continue;
       const from: CallItem = { name: range.name, detail, kind: range.kind, path: loc.path, line: range.start };
       const fromChanged = changedOf(from);
-      if (fromChanged !== undefined && fromChanged.id === changedOf(to)?.id) continue;
-      const isTest = tests.some((t) => t.startsWith(`${loc.path}#`));
+      const isTest = loc.test === true;
       if (isTest && fromChanged === undefined) continue;
       calls.push({ from, to, kind: isTest ? 'test' : 'call', lines: [loc.line] });
     }

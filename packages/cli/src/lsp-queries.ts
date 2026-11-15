@@ -120,15 +120,16 @@ export async function collectCallGraph(client: LspClient, args: CollectCallGraph
     if (!probed && hunk.symbolKind === 'function' && declaration !== undefined && !hoverAt.has(hunk.symbolFqName)) hoverAt.set(hunk.symbolFqName, { uri, position: declaration });
     if (needRefs && declaration !== undefined) {
       const refs = (await client.request<Array<{ uri: string; range: { start: Position } }> | null>('textDocument/references', { textDocument: { uri }, position: declaration, context: { includeDeclaration: false } })) ?? [];
-      const locations: Array<{ path: string; line: number }> = [];
+      const locations: Array<{ path: string; line: number; test?: true }> = [];
       const tests = new Set<string>();
       for (const ref of refs) {
         const refPath = rel(ref.uri);
         const line = ref.range.start.line;
-        locations.push({ path: refPath, line });
+        const isTest = args.isTestPath(refPath);
+        locations.push(isTest ? { path: refPath, line, test: true } : { path: refPath, line });
         const refSymbols = await documentSymbols(refPath);
         if (!(refPath in src.ranges)) src.ranges[refPath] = flattenRanges(refSymbols);
-        if (!args.isTestPath(refPath)) continue;
+        if (!isTest) continue;
         const fn = enclosingFunction(refSymbols, line);
         if (fn !== undefined) tests.add(`${refPath}#${fn}`);
       }

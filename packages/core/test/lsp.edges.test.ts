@@ -594,15 +594,27 @@ describe('buildCallGraph の references での補い（引数か戻り型が val
   });
 
   it('テストからの参照は、変わっていないテストなら辺にしない', () => {
-    const r = build([total], { ...failed, refs: { [total.id]: [{ path: ORDER_TEST, line: 12 }] }, testRefs: { [total.id]: [`${ORDER_TEST}#checks total`] }, ranges: { [ORDER_TEST]: testRanges } }, readHead);
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: ORDER_TEST, line: 12, test: true }] }, ranges: { [ORDER_TEST]: testRanges } }, readHead);
     expect(r.edges).toEqual([]);
     expect(r.symbols.filter((s) => !s.changed)).toEqual([]);
   });
 
   it('変えたテスト関数からの参照は kind: test の辺にする', () => {
     const test = hunk(ORDER_TEST, 'com.example.order.domain.OrderTest.`checks total`');
-    const r = build([total, test], { probes: [{ hunkId: total.id }, { hunkId: test.id, item: item(ORDER_TEST, 'com.example.order.domain', 'OrderTest.checks total()') }], refs: { [total.id]: [{ path: ORDER_TEST, line: 12 }] }, testRefs: { [total.id]: [`${ORDER_TEST}#checks total`] }, ranges: { [ORDER_TEST]: testRanges } }, readHead);
+    const r = build([total, test], { probes: [{ hunkId: total.id }, { hunkId: test.id, item: item(ORDER_TEST, 'com.example.order.domain', 'OrderTest.checks total()') }], refs: { [total.id]: [{ path: ORDER_TEST, line: 12, test: true }] }, ranges: { [ORDER_TEST]: testRanges } }, readHead);
     expect(r.edges).toEqual([expect.objectContaining({ from: test.id, to: total.id, kind: 'test' })]);
+  });
+
+  it('テストファイルの参照を囲むのが関数でなく（プロパティ）、ほかに関数へ丸まる参照が無くても、call 辺にしない', () => {
+    const propRanges = [{ name: 'OrderTest', kind: 5, start: 1, end: 30 }, { name: 'OrderTest.fixture', kind: 7, start: 10, end: 15 }];
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: ORDER_TEST, line: 12, test: true }] }, ranges: { [ORDER_TEST]: propRanges } }, readHead);
+    expect(r.edges).toEqual([]);
+    expect(r.symbols.filter((s) => !s.changed)).toEqual([]);
+  });
+
+  it('テストファイルでない参照は、testRefs と無関係に call 辺のまま', () => {
+    const r = build([total], { ...failed, refs: { [total.id]: [{ path: CONTROLLER, line: 12 }] }, testRefs: { [total.id]: [`${ORDER_TEST}#checks total`] }, ranges: { [CONTROLLER]: controllerRanges } }, readHead);
+    expect(r.edges).toEqual([expect.objectContaining({ from: showId, to: total.id, kind: 'call' })]);
   });
 
   it('refs を測っていなければ未取得のまま。0 件なら測れた扱いで辺は無い', () => {

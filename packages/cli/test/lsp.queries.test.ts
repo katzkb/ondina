@@ -229,7 +229,7 @@ describe('collectCallGraph の参照（references を辺の材料にする。202
     const src = await collectCallGraph(client, { hunks: [h], root: ROOT, isTestPath });
     expect(calls.filter((c) => c.method === 'textDocument/references')).toHaveLength(1);
     expect(src.probes).toEqual([{ hunkId: h.id }]);
-    expect(src.refs).toEqual({ [h.id]: [{ path: IMPL, line: 12 }, { path: TEST, line: 20 }] });
+    expect(src.refs).toEqual({ [h.id]: [{ path: IMPL, line: 12 }, { path: TEST, line: 20, test: true }] });
     expect(src.testRefs).toEqual({ [h.id]: [`${TEST}#persists discount`] });
   });
 
