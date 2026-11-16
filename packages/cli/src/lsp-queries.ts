@@ -4,8 +4,9 @@
 // 2026-09-22 の実測で分かった注意点:
 // - documentSymbol はバッククォートを外した名前を返す（`persists discount` → persists discount）。
 //   突き合わせは core の symbolName が外す
-// - prepareCallHierarchy は [] を返すことがある（戻り型が value class の関数）。呼ばれていないのではなく測れていないので、
-//   probes には item 無しで残す（黙って消さない。原則 2）
+// - prepareCallHierarchy は [] を返すことがある（引数か戻り型が @JvmInline value class の関数。JVM 名が mangled になる。
+//   2026-11-15 に kotlin-lsp 271.2085.0 で実測。@JvmName で直る）。probes には item 無しで残し、
+//   その関数への呼び出しは references から core が組む（callsOnly でも references を聞く）
 // - incomingCalls はテストからの呼び出しを返さない。テストの辺はテスト側の outgoingCalls から作る
 import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -91,27 +92,6 @@ export async function collectCallGraph(client: LspClient, args: CollectCallGraph
     const symbols = await documentSymbols(hunk.path);
     const name = symbolName(hunk.symbolFqName);
 
-    // 参照（プロパティ・クラスにも打つ。呼び出し関係が測れないシンボルでも参照は取れる。2026-09-23 実測）。
-    // 位置は宣言そのもの。テストからの参照は囲っているテスト関数に丸めて数える（同じテストから 2 回参照しても 1 件）
-    const declaration = args.callsOnly === true ? undefined : findDeclarationPosition(symbols, name);
-    if (declaration !== undefined) {
-      const refs = (await client.request<Array<{ uri: string; range: { start: Position } }> | null>('textDocument/references', { textDocument: { uri }, position: declaration, context: { includeDeclaration: false } })) ?? [];
-      const locations: Array<{ path: string; line: number }> = [];
-      const tests = new Set<string>();
-      for (const ref of refs) {
-        const refPath = rel(ref.uri);
-        const line = ref.range.start.line;
-        locations.push({ path: refPath, line });
-        const refSymbols = await documentSymbols(refPath);
-        if (!(refPath in src.ranges)) src.ranges[refPath] = flattenRanges(refSymbols);
-        if (!args.isTestPath(refPath)) continue;
-        const fn = enclosingFunction(refSymbols, line);
-        if (fn !== undefined) tests.add(`${refPath}#${fn}`);
-      }
-      src.refs[hunk.id] = locations;
-      src.testRefs[hunk.id] = [...tests].sort();
-    }
-
     // クラス丸ごとの hunk は中の関数を全部聞く。probes には最初に答えた関数を 1 つ残す（どれも答えなければ item 無し）
     let probed = false;
     for (const position of findCallablePositions(symbols, name)) {
@@ -132,6 +112,30 @@ export async function collectCallGraph(client: LspClient, args: CollectCallGraph
       }
     }
     if (!probed) src.probes.push({ hunkId: hunk.id });
+
+    // 参照（プロパティ・クラスにも打つ。callsOnly では呼び出し関係が答えなかった関数だけ（core が呼び出し辺に補う）。呼び出し関係が測れないシンボルでも参照は取れる。2026-09-23 実測）。
+    // 位置は宣言そのもの。テストからの参照は囲っているテスト関数に丸めて数える（同じテストから 2 回参照しても 1 件）
+    const declaration = findDeclarationPosition(symbols, name);
+    const needRefs = args.callsOnly !== true || (!probed && hunk.symbolKind === 'function');
+    if (!probed && hunk.symbolKind === 'function' && declaration !== undefined && !hoverAt.has(hunk.symbolFqName)) hoverAt.set(hunk.symbolFqName, { uri, position: declaration });
+    if (needRefs && declaration !== undefined) {
+      const refs = (await client.request<Array<{ uri: string; range: { start: Position } }> | null>('textDocument/references', { textDocument: { uri }, position: declaration, context: { includeDeclaration: false } })) ?? [];
+      const locations: Array<{ path: string; line: number; test?: true }> = [];
+      const tests = new Set<string>();
+      for (const ref of refs) {
+        const refPath = rel(ref.uri);
+        const line = ref.range.start.line;
+        const isTest = args.isTestPath(refPath);
+        locations.push(isTest ? { path: refPath, line, test: true } : { path: refPath, line });
+        const refSymbols = await documentSymbols(refPath);
+        if (!(refPath in src.ranges)) src.ranges[refPath] = flattenRanges(refSymbols);
+        if (!isTest) continue;
+        const fn = enclosingFunction(refSymbols, line);
+        if (fn !== undefined) tests.add(`${refPath}#${fn}`);
+      }
+      src.refs[hunk.id] = locations;
+      src.testRefs[hunk.id] = [...tests].sort();
+    }
   }
 
   // 辺に出た宣言のシグネチャ（辺ラベル）。取れなければ欄ごと入れない

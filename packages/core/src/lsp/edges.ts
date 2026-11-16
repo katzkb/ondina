@@ -4,8 +4,10 @@
 // 2026-09-22 に kotlin-lsp 263.4702.0 で実測した形:
 // - CallHierarchyItem の name は "Order.applyDiscount(DiscountCommand)"、detail はパッケージ。繋げば FQ 名になる
 // - 引数の型は name の括弧の中にもあるが、引数名が無い。hover のシグネチャなら引数も戻り型も取れるので、辺ラベルは hover から取る
-// - 戻り型が @JvmInline value class の関数は callHierarchy に一切出てこない（実測 6/6）。
-//   「呼ばれていない」と「測れていない」は別物なので、答えが無かった変更シンボルには edgesMeasured: false を付ける（原則 2）
+// - 引数か戻り型が @JvmInline value class の関数は JVM 名が mangled になり、prepareCallHierarchy が [] を返す（戻り型は 2026-09-22 に実測 6/6、
+//   引数と戻り型の両方を 2026-11-15 に kotlin-lsp 271.2085.0 で実測。@JvmName を付ければ答える）。references は応答するので、
+//   その関数への呼び出し（incoming）は references から組む（fallbackCalls）。出ていく呼び出しは測れないまま。
+//   「呼ばれていない」と「測れていない」は別物なので、references も無かった変更シンボルには edgesMeasured: false を付ける（原則 2）
 // - incomingCalls はテストからの呼び出しを返さない。テストの辺はテスト側の outgoingCalls から作る（kind: 'test' は cli が付ける）
 import type { Edge, Hunk, Symbol as OndinaSymbol, SymbolKind } from '../model.js';
 import { changedLines } from '../hunks/changed-lines.js';
@@ -40,7 +42,12 @@ export interface CallGraphSource {
    * 変更 hunk の id → そのシンボルを参照している位置（宣言自身は含まない。テストも含む）。
    * 欄があって空 = 測って 0 件、欄が無い = 測っていない（原則 2）。2026-09-24 に足した（参照辺の材料）
    */
-  refs: Record<string, Array<{ path: string; line: number }>>;
+  refs: Record<string, Array<{
+    path: string;
+    line: number;
+    /** 参照がテストファイル（CLI の isTestPath）にある。欄が無い = テストファイルではない、または 2026-11-16 より前の記録 */
+    test?: true;
+  }>>;
   /** 参照が出たファイルの宣言の範囲。参照の位置を囲っている宣言へ丸めるため。name は入れ子を . で繋いだもの（"Order.total"） */
   ranges: Record<string, DeclarationRange[]>;
 }
@@ -76,7 +83,7 @@ export interface CallGraphResult {
   edges: Edge[];
   /** 変更シンボル（testCount / edgesMeasured を足したもの）+ 経路上の未変更シンボル */
   symbols: OndinaSymbol[];
-  /** callHierarchy が答えなかった変更シンボルの数 */
+  /** callHierarchy も references の補いも答えなかった変更シンボルの数 */
   unmeasured: number;
 }
 
@@ -171,7 +178,8 @@ export function buildCallGraph(src: CallGraphSource, ctx: CallGraphContext): Cal
     if (lines === undefined || call.lines === undefined || call.lines.length === 0) return true;
     return call.lines.some((l) => lines.has(l + 1));
   };
-  const calls = src.calls.filter(fromDiff);
+  const fallback = fallbackCalls(src, ctx, changedOf);
+  const calls = [...src.calls, ...fallback.calls].filter(fromDiff);
 
   const edges = new Map<string, Edge>();
   // 同じ両端の記録（インターフェースと実装など）の呼んでいる行は合わせる。位置は 0 始まりで来る
@@ -246,7 +254,7 @@ export function buildCallGraph(src: CallGraphSource, ctx: CallGraphContext): Cal
     if (excerpt.length > 0) s.excerpt = excerpt;
   }
 
-  const probed = new Map(src.probes.map((p) => [p.hunkId, p.item !== undefined]));
+  const probed = new Map(src.probes.map((p) => [p.hunkId, p.item !== undefined || fallback.covered.has(p.hunkId)]));
   const symbols = ctx.symbols.map((s) => {
     const measured = s.hunkId === undefined ? undefined : probed.get(s.hunkId);
     const refs = s.hunkId === undefined ? undefined : src.testRefs[s.hunkId];
@@ -260,7 +268,7 @@ export function buildCallGraph(src: CallGraphSource, ctx: CallGraphContext): Cal
   return {
     edges: [...edges.values()].sort((a, b) => cmp(a.from, b.from) || cmp(a.to, b.to) || cmp(a.kind, b.kind)),
     symbols: [...symbols, ...[...added.values()].sort((a, b) => cmp(a.id, b.id))],
-    unmeasured: src.probes.filter((p) => p.item === undefined).length,
+    unmeasured: src.probes.filter((p) => p.item === undefined && !fallback.covered.has(p.hunkId)).length,
   };
 }
 
@@ -269,8 +277,55 @@ export function buildCallGraph(src: CallGraphSource, ctx: CallGraphContext): Cal
  * 参照辺・テストの数・測れたかどうかは head の答えだけで持つので、ここでは呼び出し辺（kind: call）と、経路上の未変更シンボルだけ返す
  */
 export function buildBaseCallEdges(src: CallGraphSource, ctx: Omit<CallGraphContext, 'side'>): { edges: Edge[]; symbols: OndinaSymbol[] } {
-  const r = buildCallGraph({ ...src, refs: {}, testRefs: {} }, { ...ctx, side: 'base' });
+  const r = buildCallGraph(src, { ...ctx, side: 'base' });
   return { edges: r.edges.filter((e) => e.kind === 'call'), symbols: r.symbols.filter((s) => !s.changed) };
+}
+
+/**
+ * prepareCallHierarchy が答えなかった関数（value class で JVM 名が mangled）への呼び出しを references から作る。
+ * 参照の位置を囲っている宣言を呼ぶ側にして、CallGraphSource.calls と同じ形で返す（以降は通常の流れに乗る）。
+ * covered = references を測れた関数の hunk id（空配列でも測れた。edgesMeasured: true にしてよい）
+ */
+function fallbackCalls(src: CallGraphSource, ctx: CallGraphContext, changedOf: (item: CallItem) => OndinaSymbol | undefined): { calls: CallGraphSource['calls']; covered: Set<string> } {
+  const calls: CallGraphSource['calls'] = [];
+  const covered = new Set<string>();
+  const hunks = new Map(ctx.hunks.map((h) => [h.id, h]));
+  const packages = new Map<string, string | undefined>();
+  const packageOf = (path: string): string | undefined => {
+    if (!packages.has(path)) {
+      const text = ctx.readHead?.(path);
+      packages.set(path, text === undefined ? undefined : (/^package\s+([\w.`]+)/m.exec(text)?.[1]?.replaceAll('`', '') ?? ''));
+    }
+    return packages.get(path);
+  };
+  for (const probe of src.probes) {
+    const hunk = hunks.get(probe.hunkId);
+    const locations = src.refs[probe.hunkId];
+    if (probe.item !== undefined || hunk === undefined || hunk.symbolKind !== 'function' || locations === undefined) continue;
+    covered.add(hunk.id);
+    const to: CallItem = { name: hunk.symbolFqName, kind: 12, path: hunk.path };
+    for (const loc of locations) {
+      const range = enclosingDeclaration(src.ranges[loc.path] ?? [], loc.line);
+      const detail = packageOf(loc.path);
+      if (range === undefined || detail === undefined) continue;
+      const from: CallItem = { name: range.name, detail, kind: range.kind, path: loc.path, line: range.start };
+      const fromChanged = changedOf(from);
+      const isTest = loc.test === true;
+      if (isTest && fromChanged === undefined) continue;
+      calls.push({ from, to, kind: isTest ? 'test' : 'call', lines: [loc.line] });
+    }
+  }
+  return { calls, covered };
+}
+
+/** その行を囲む宣言のうち、関数・コンストラクタ → プロパティ → クラスの順に優先し、同じ段では内側のもの。ローカル（13・14）は使わない */
+function enclosingDeclaration(ranges: readonly DeclarationRange[], line: number): DeclarationRange | undefined {
+  const inside = ranges.filter((r) => line >= r.start && line <= r.end).sort((a, b) => b.start - a.start || a.end - b.end);
+  for (const tier of [[6, 9, 12], [7, 8], [5, 10, 11, 23]]) {
+    const hit = inside.find((r) => tier.includes(r.kind));
+    if (hit !== undefined) return hit;
+  }
+  return undefined;
 }
 
 const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);

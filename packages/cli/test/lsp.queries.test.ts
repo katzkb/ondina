@@ -229,7 +229,7 @@ describe('collectCallGraph の参照（references を辺の材料にする。202
     const src = await collectCallGraph(client, { hunks: [h], root: ROOT, isTestPath });
     expect(calls.filter((c) => c.method === 'textDocument/references')).toHaveLength(1);
     expect(src.probes).toEqual([{ hunkId: h.id }]);
-    expect(src.refs).toEqual({ [h.id]: [{ path: IMPL, line: 12 }, { path: TEST, line: 20 }] });
+    expect(src.refs).toEqual({ [h.id]: [{ path: IMPL, line: 12 }, { path: TEST, line: 20, test: true }] });
     expect(src.testRefs).toEqual({ [h.id]: [`${TEST}#persists discount`] });
   });
 
@@ -258,5 +258,29 @@ describe('collectCallGraph の参照（references を辺の材料にする。202
     const src = await collectCallGraph(client, { hunks: [h], root: ROOT, isTestPath });
     expect(src.refs).toEqual({ [h.id]: [] });
     expect(src.ranges).toEqual({});
+  });
+});
+
+describe('collectCallGraph の references の補い（value class で prepareCallHierarchy が答えない関数。issue #47）', () => {
+  const answers = { documentSymbol: { [uri(IMPL)]: [decl('save', 10)] }, prepare: [], references: [], hover: '```kotlin\nfun save(order: Order): Money\n```' };
+
+  it('callsOnly でも、答えなかった関数には references を聞き、辺ラベルのために宣言へ hover を打つ', async () => {
+    const h = hunk(IMPL, 'com.example.order.infra.OrderRepositoryImpl.save');
+    const { client, calls } = fakeClient(answers);
+    const src = await collectCallGraph(client, { hunks: [h], root: ROOT, isTestPath, callsOnly: true });
+    expect(src.refs).toEqual({ [h.id]: [] });
+    expect(calls.filter((c) => c.method === 'textDocument/hover')).toHaveLength(1);
+    expect(src.signatures['com.example.order.infra.OrderRepositoryImpl.save']).toBe('fun save(order: Order): Money');
+  });
+
+  it('callsOnly で答えた関数、答えなかったクラスには references を聞かない', async () => {
+    const fn = hunk(IMPL, 'com.example.order.infra.OrderRepositoryImpl.save');
+    const cls = hunk(IMPL, 'com.example.order.infra.OrderRepositoryImpl', { symbolKind: 'class' });
+    const ok = fakeClient({ ...answers, prepare: [{ name: 'save()', kind: 6, uri: uri(IMPL), selectionRange: { start: { line: 10, character: 8 } } }] });
+    await collectCallGraph(ok.client, { hunks: [fn], root: ROOT, isTestPath, callsOnly: true });
+    expect(ok.calls.filter((c) => c.method === 'textDocument/references')).toHaveLength(0);
+    const klass = fakeClient({ documentSymbol: { [uri(IMPL)]: [decl('OrderRepositoryImpl', 5, 5)] }, prepare: [] });
+    await collectCallGraph(klass.client, { hunks: [cls], root: ROOT, isTestPath, callsOnly: true });
+    expect(klass.calls.filter((c) => c.method === 'textDocument/references')).toHaveLength(0);
   });
 });

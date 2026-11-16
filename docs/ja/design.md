@@ -1238,7 +1238,7 @@ unavailable になる場合と理由の文:
 
 呼び出し関係には穴がある。**「呼ばれていない」と「取得できていない」は別物**なので、`prepareCallHierarchy` が応答しなかった変更シンボルには `Symbol.edgesMeasured: false` を付け、`analyze` が件数を stderr に出す（原則 2）。
 
-**戻り型が `@JvmInline value class` の関数は、呼び出し関係に一切出てこない**（実測 6/6）:
+**引数か戻り型が `@JvmInline value class` の関数は、呼び出し関係に一切出てこない**（戻り型は実測 6/6）:
 
 | 宣言 | 戻り型 | `prepareCallHierarchy` |
 |---|---|---|
@@ -1249,13 +1249,15 @@ unavailable になる場合と理由の文:
 | `ApplyDiscountUseCase.execute(...)` | `Order` | 1 件 |
 | `OrderRepositoryImpl.save(Order)` | なし（Unit） | 1 件 |
 
-`Order.total()` は `OrderTest` から実際に呼ばれているのに、呼ぶ側の `outgoingCalls` にも出ない。ondina 側では埋められない。
+`Order.total()` は `OrderTest` から実際に呼ばれているのに、呼ぶ側の `outgoingCalls` にも出ない。
+
+原因は JVM 名の mangling（value class を引数か戻り型に持つ関数は JVM 名に接尾辞が付く）で、`@JvmName` を付ければ答える（2026-11-15、kotlin-lsp 271.2085.0 で引数・戻り型の両方を実測）。`textDocument/references` は応答するので、**この関数への呼び出し（incoming）は references から補う**（2026-11-16）。参照の位置を囲っている宣言（関数・コンストラクタ、無ければプロパティ、クラスの順に内側から）を呼ぶ側にして `kind: 'call'` の辺にする。呼ぶ側の名前はファイルの `package` 行 + 宣言の名前の連なりで、call hierarchy の item と同じ FQ 名になる（本文が読めないファイルの位置は捨てる）。テストファイルからの参照は、囲っているのが変更したテスト関数のときだけ `kind: 'test'` にする（通常の `incomingCalls` がテストを返さないのと揃える）。references が 0 件でも測れているので `edgesMeasured: true`、references を測っていないときだけ `false` のまま。クラスやプロパティの hunk は補わない。**この関数から出ていく呼び出しは測れないまま**（相手が変わっていない関数なら辺にならない）。base の呼び出し関係（流れの地図の ①）も、答えなかった関数だけ references を聞いて同じように補う。
 
 そのほか辺にならないもの: 演算子（`subtotal - discount`）、インスタンスのプロパティの読み取り（`order.discount`）、コンストラクタ（`Order(...)`）。**companion のプロパティの読み取り（`Money.Companion.ZERO`）は辺として出る**。
 
 **`incomingCalls` はテストからの呼び出しを返さない**。`OrderRepositoryImpl.save` の incoming は本番コードの 2 件だけで、テスト 3 か所は出ない。テスト関数側の `outgoingCalls` には出るので、**テストの辺（`kind: 'test'`）はテスト側から作る**。`Symbol.testCount` は辺ではなく `textDocument/references` から数える（テストファイルの参照を、囲っているテスト関数に丸める。同じテストから 2 回呼んでも 1 件）。
 
-fixture の実数: 変更 hunk（ファイル hunk 以外）42 件のうち callHierarchy が応答したのは 16 件、呼び出しの辺は 20 本（うちテスト 10 本・層越え 2 本）、経路上の未変更シンボルは 4 件、取得できなかったのは 26 件（2026-10-12 に変わらない行からの呼び出しを落として 22 → 20 本・5 → 4 件）。
+fixture の実数（補う前）: 変更 hunk（ファイル hunk 以外）42 件のうち callHierarchy が応答したのは 16 件、呼び出しの辺は 20 本（うちテスト 10 本・層越え 2 本）、経路上の未変更シンボルは 4 件、取得できなかったのは 26 件（2026-10-12 に変わらない行からの呼び出しを落として 22 → 20 本・5 → 4 件）。references で補うと、関数 23 件が測れた扱いになり（references はどれも 0 件で辺は増えない）、取得できないのは 3 件（クラス 2・プロパティ 1）。
 
 **参照辺で埋まる穴（2026-09-23 実測、2026-09-24 実装）**: 呼び出し辺だけだと変更シンボル 48 件のうち辺を持つのは 18 件で、追従の束 22 件は全滅だった（地図として成立しない）。`textDocument/references` は関数だけでなくプロパティとクラスにも応答する（`Order.discount` ← 27 ファイル、`Order` ← 28 ファイル）ので、参照の位置を囲っている宣言に丸め、**両端が変更シンボルのものだけ**を `Edge(kind:'reference')` にする（縛りを外すと 178 本に膨らむ）。fixture で参照辺 46 本（層越え 3 本）、辺を持つ変更シンボルは 18 → 40 / 48。callHierarchy が応答しない `Order.total()`（戻り型が value class）も references なら 5 件返る。参照辺はコースの経路には使わない（順番を持たない）。LLM 入力にも渡さない。
 
